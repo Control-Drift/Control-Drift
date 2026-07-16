@@ -1,0 +1,2 @@
+## 2026-07-01T18:38:40Z
+Investigate the existing Playwright E2E tests (specifically tests/wizard-e2e-10.spec.js and tests/wizard-stress.spec.js) to understand how Purple Team simulations are executed via the Exercise Wizard UI. Recommend how to structure a new test to run 10 diverse simulations testing varied and complex combinations of coverageRating and outcome configurations (e.g. Optimal, Partial, Minimal, Missed, etc.) across the same and different TTPs. Write your findings to C:\Users\thoma\.gemini\antigravity\scratch\eclipse-ops\.agents\explorer_e2e_m1_1\handoff.md.

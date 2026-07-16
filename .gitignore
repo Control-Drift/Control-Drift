@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.env
+.env.*
+*.log
+logs/
+playwright-report/
+test-results/
+
+deploy/supabase/
+deploy/config.json
+deploy/litellm-config.yaml

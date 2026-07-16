@@ -1,0 +1,2 @@
+## 2026-07-01T19:40:22Z
+Review the implemented strict worst-case scenario rollup logic changes in src/hooks/useMitreData.js, src/components/pages/MitreHeatmap.jsx, and src/components/pages/ExerciseWizard.jsx, and the new Playwright E2E spec in tests/wizard-worst-case-e2e.spec.js. Verify correctness, completeness, and alignment with requirements. Write your review report to C:\Users\thoma\.gemini\antigravity\scratch\eclipse-ops\.agents\reviewer_e2e_m4_1\handoff.md.

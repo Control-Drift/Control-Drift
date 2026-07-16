@@ -1,0 +1,46 @@
+{
+  "Dashboard": {
+    "measuredPageLoadMs": 1552,
+    "navPageLoadMs": 274.19999999925494,
+    "domContentLoadedMs": 205.19999999925494,
+    "usedJSHeapMB": "87.45",
+    "status": "PASS",
+    "errors": [
+      "Dashboard loadDashboardData critical error: ReferenceError: setRecentExercises is not defined\n    at http://127.0.0.1:5173/src/components/pages/Dashboard.jsx:266:9",
+      "Dashboard loadDashboardData critical error: ReferenceError: setRecentExercises is not defined\n    at http://127.0.0.1:5173/src/components/pages/Dashboard.jsx:266:9",
+      "Dashboard loadDashboardData critical error: ReferenceError: setRecentExercises is not defined\n    at http://127.0.0.1:5173/src/components/pages/Dashboard.jsx:266:9",
+      "Dashboard loadDashboardData critical error: ReferenceError: setRecentExercises is not defined\n    at http://127.0.0.1:5173/src/components/pages/Dashboard.jsx:266:9",
+      "Dashboard loadDashboardData critical error: ReferenceError: setRecentExercises is not defined\n    at http://127.0.0.1:5173/src/components/pages/Dashboard.jsx:266:9",
+      "Dashboard loadDashboardData critical error: ReferenceError: setRecentExercises is not defined\n    at http://127.0.0.1:5173/src/components/pages/Dashboard.jsx:266:9",
+      "Dashboard loadDashboardData critical error: ReferenceError: setRecentExercises is not defined\n    at http://127.0.0.1:5173/src/components/pages/Dashboard.jsx:266:9",
+      "Dashboard loadDashboardData critical error: ReferenceError: setRecentExercises is not defined\n    at http://127.0.0.1:5173/src/components/pages/Dashboard.jsx:266:9",
+      "Dashboard loadDashboardData critical error: ReferenceError: setRecentExercises is not defined\n    at http://127.0.0.1:5173/src/components/pages/Dashboard.jsx:266:9"
+    ]
+  },
+  "Posture": {
+    "measuredPageLoadMs": 1202,
+    "navPageLoadMs": 206.69999999925494,
+    "domContentLoadedMs": 205.2999999988824,
+    "usedJSHeapMB": "92.89",
+    "status": "PASS",
+    "errors": [],
+    "timingError": null
+  },
+  "Gaps": {
+    "measuredPageLoadMs": 2514,
+    "navPageLoadMs": 230.5,
+    "domContentLoadedMs": 203.40000000037253,
+    "usedJSHeapMB": "103.95",
+    "status": "PASS",
+    "errors": [],
+    "timingError": null
+  },
+  "HeatmapIdlePerf": {
+    "scriptDurationMs": 209.05200000000002,
+    "renderingDurationMs": 10.806,
+    "cpuTaskDurationMs": 5075.156,
+    "beforeScreenshot": "C:\\Users\\thoma\\.gemini\\antigravity\\scratch\\eclipse-ops\\test-results\\screenshots\\heatmap-before-idle.png",
+    "afterScreenshot": "C:\\Users\\thoma\\.gemini\\antigravity\\scratch\\eclipse-ops\\test-results\\screenshots\\heatmap-after-idle.png",
+    "timestamp": "2026-07-07T17:34:51.671Z"
+  }
+}

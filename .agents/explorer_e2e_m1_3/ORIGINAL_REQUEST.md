@@ -1,0 +1,2 @@
+## 2026-07-01T18:38:40Z
+Investigate the React components (e.g., UnifiedPosturePill.jsx, MitreHeatmap.jsx, and others) to see how TTP details and global heatmap statuses are rendered in the DOM. Detail the CSS selectors or DOM text patterns that the E2E test suite should assert to verify that the visual elements reflect the correct status (e.g. green for high/Optimal, yellow for medium/Partial, orange for minimal/Minimal, red for low/None/Missed). Write your findings to C:\Users\thoma\.gemini\antigravity\scratch\eclipse-ops\.agents\explorer_e2e_m1_3\handoff.md.

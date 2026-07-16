@@ -1,0 +1,650 @@
+[
+  {
+    "timestamp": "2026-06-14T18:29:52.672Z",
+    "loadTimeMs": 801,
+    "domContentLoadedMs": 800,
+    "firstPaintMs": 804,
+    "firstContentfulPaintMs": 852,
+    "usedJSHeapSizeMb": 35.39
+  },
+  {
+    "timestamp": "2026-06-14T18:30:25.706Z",
+    "loadTimeMs": 802,
+    "domContentLoadedMs": 801,
+    "firstPaintMs": 812,
+    "firstContentfulPaintMs": 884,
+    "usedJSHeapSizeMb": 37
+  },
+  {
+    "timestamp": "2026-06-14T18:31:30.575Z",
+    "loadTimeMs": 975,
+    "domContentLoadedMs": 974,
+    "firstPaintMs": 980,
+    "firstContentfulPaintMs": 1044,
+    "usedJSHeapSizeMb": 31.3
+  },
+  {
+    "timestamp": "2026-06-14T18:31:45.379Z",
+    "loadTimeMs": 853,
+    "domContentLoadedMs": 852,
+    "firstPaintMs": 856,
+    "firstContentfulPaintMs": 908,
+    "usedJSHeapSizeMb": 37.12
+  },
+  {
+    "timestamp": "2026-06-14T18:32:55.401Z",
+    "loadTimeMs": 1336,
+    "domContentLoadedMs": 1335,
+    "firstPaintMs": 1340,
+    "firstContentfulPaintMs": 1424,
+    "usedJSHeapSizeMb": 37.02
+  },
+  {
+    "timestamp": "2026-06-14T18:33:09.212Z",
+    "loadTimeMs": 1218,
+    "domContentLoadedMs": 1217,
+    "firstPaintMs": 1220,
+    "firstContentfulPaintMs": 1268,
+    "usedJSHeapSizeMb": 37.12
+  },
+  {
+    "timestamp": "2026-06-14T18:33:40.452Z",
+    "loadTimeMs": 1133,
+    "domContentLoadedMs": 1132,
+    "firstPaintMs": 1136,
+    "firstContentfulPaintMs": 1212,
+    "usedJSHeapSizeMb": 35.31
+  },
+  {
+    "timestamp": "2026-06-14T18:34:01.696Z",
+    "loadTimeMs": 1207,
+    "domContentLoadedMs": 1205,
+    "firstPaintMs": 1212,
+    "firstContentfulPaintMs": 1264,
+    "usedJSHeapSizeMb": 37.13
+  },
+  {
+    "timestamp": "2026-06-14T18:36:02.083Z",
+    "loadTimeMs": 811,
+    "domContentLoadedMs": 810,
+    "firstPaintMs": 820,
+    "firstContentfulPaintMs": 860,
+    "usedJSHeapSizeMb": 37.16
+  },
+  {
+    "timestamp": "2026-06-14T18:37:23.855Z",
+    "loadTimeMs": 775,
+    "domContentLoadedMs": 774,
+    "firstPaintMs": 780,
+    "firstContentfulPaintMs": 824,
+    "usedJSHeapSizeMb": 37.14
+  },
+  {
+    "timestamp": "2026-06-14T18:39:11.099Z",
+    "loadTimeMs": 1199,
+    "domContentLoadedMs": 1197,
+    "firstPaintMs": 1200,
+    "firstContentfulPaintMs": 1252,
+    "usedJSHeapSizeMb": 28.89
+  },
+  {
+    "timestamp": "2026-06-15T17:57:12.542Z",
+    "loadTimeMs": 833,
+    "domContentLoadedMs": 832,
+    "firstPaintMs": 840,
+    "firstContentfulPaintMs": 856,
+    "usedJSHeapSizeMb": 31.87
+  },
+  {
+    "timestamp": "2026-06-15T17:58:49.349Z",
+    "loadTimeMs": 1217,
+    "domContentLoadedMs": 1216,
+    "firstPaintMs": 1220,
+    "firstContentfulPaintMs": 1240,
+    "usedJSHeapSizeMb": 35.47
+  },
+  {
+    "timestamp": "2026-06-15T17:59:28.128Z",
+    "loadTimeMs": 1306,
+    "domContentLoadedMs": 1304,
+    "firstPaintMs": 1308,
+    "firstContentfulPaintMs": 1340,
+    "usedJSHeapSizeMb": 40.88
+  },
+  {
+    "timestamp": "2026-06-15T17:59:55.584Z",
+    "loadTimeMs": 1335,
+    "domContentLoadedMs": 1334,
+    "firstPaintMs": 1344,
+    "firstContentfulPaintMs": 1360,
+    "usedJSHeapSizeMb": 28.62
+  },
+  {
+    "timestamp": "2026-06-15T18:00:13.394Z",
+    "loadTimeMs": 982,
+    "domContentLoadedMs": 981,
+    "firstPaintMs": 984,
+    "firstContentfulPaintMs": 1008,
+    "usedJSHeapSizeMb": 28.63
+  },
+  {
+    "timestamp": "2026-06-15T18:00:34.512Z",
+    "loadTimeMs": 951,
+    "domContentLoadedMs": 950,
+    "firstPaintMs": 956,
+    "firstContentfulPaintMs": 980,
+    "usedJSHeapSizeMb": 29.28
+  },
+  {
+    "timestamp": "2026-06-15T18:00:58.944Z",
+    "loadTimeMs": 1771,
+    "domContentLoadedMs": 1770,
+    "firstPaintMs": 1776,
+    "firstContentfulPaintMs": 1808,
+    "usedJSHeapSizeMb": 29.7
+  },
+  {
+    "timestamp": "2026-06-15T18:01:25.460Z",
+    "loadTimeMs": 971,
+    "domContentLoadedMs": 969,
+    "firstPaintMs": 972,
+    "firstContentfulPaintMs": 1004,
+    "usedJSHeapSizeMb": 33.29
+  },
+  {
+    "timestamp": "2026-06-15T18:03:29.420Z",
+    "loadTimeMs": 943,
+    "domContentLoadedMs": 942,
+    "firstPaintMs": 952,
+    "firstContentfulPaintMs": 968,
+    "usedJSHeapSizeMb": 29.3
+  },
+  {
+    "timestamp": "2026-06-15T18:08:47.291Z",
+    "loadTimeMs": 932,
+    "domContentLoadedMs": 931,
+    "firstPaintMs": 936,
+    "firstContentfulPaintMs": 964,
+    "usedJSHeapSizeMb": 30.63
+  },
+  {
+    "timestamp": "2026-06-15T18:10:18.104Z",
+    "loadTimeMs": 1012,
+    "domContentLoadedMs": 1010,
+    "firstPaintMs": 1016,
+    "firstContentfulPaintMs": 1044,
+    "usedJSHeapSizeMb": 30.5
+  },
+  {
+    "timestamp": "2026-06-15T18:10:46.597Z",
+    "loadTimeMs": 1055,
+    "domContentLoadedMs": 1053,
+    "firstPaintMs": 1060,
+    "firstContentfulPaintMs": 1088,
+    "usedJSHeapSizeMb": 32.09
+  },
+  {
+    "timestamp": "2026-06-15T18:12:19.533Z",
+    "loadTimeMs": 1303,
+    "domContentLoadedMs": 1301,
+    "firstPaintMs": 1308,
+    "firstContentfulPaintMs": 1332,
+    "usedJSHeapSizeMb": 30.5
+  },
+  {
+    "timestamp": "2026-06-15T18:12:56.265Z",
+    "loadTimeMs": 1315,
+    "domContentLoadedMs": 1314,
+    "firstPaintMs": 1320,
+    "firstContentfulPaintMs": 1340,
+    "usedJSHeapSizeMb": 30.46
+  },
+  {
+    "timestamp": "2026-06-15T18:13:19.478Z",
+    "loadTimeMs": 1321,
+    "domContentLoadedMs": 1320,
+    "firstPaintMs": 1332,
+    "firstContentfulPaintMs": 1348,
+    "usedJSHeapSizeMb": 30.5
+  },
+  {
+    "timestamp": "2026-06-15T18:14:56.910Z",
+    "loadTimeMs": 923,
+    "domContentLoadedMs": 922,
+    "firstPaintMs": 924,
+    "firstContentfulPaintMs": 948,
+    "usedJSHeapSizeMb": 32.08
+  },
+  {
+    "timestamp": "2026-06-15T20:24:22.637Z",
+    "loadTimeMs": 915,
+    "domContentLoadedMs": 914,
+    "firstPaintMs": 920,
+    "firstContentfulPaintMs": 944,
+    "usedJSHeapSizeMb": 43.56
+  },
+  {
+    "timestamp": "2026-06-15T20:24:57.282Z",
+    "loadTimeMs": 929,
+    "domContentLoadedMs": 928,
+    "firstPaintMs": 932,
+    "firstContentfulPaintMs": 956,
+    "usedJSHeapSizeMb": 37.81
+  },
+  {
+    "timestamp": "2026-06-15T20:25:44.553Z",
+    "loadTimeMs": 913,
+    "domContentLoadedMs": 912,
+    "firstPaintMs": 916,
+    "firstContentfulPaintMs": 936,
+    "usedJSHeapSizeMb": 43.63
+  },
+  {
+    "timestamp": "2026-06-15T20:26:22.548Z",
+    "loadTimeMs": 942,
+    "domContentLoadedMs": 941,
+    "firstPaintMs": 952,
+    "firstContentfulPaintMs": 1012,
+    "usedJSHeapSizeMb": 36.94
+  },
+  {
+    "timestamp": "2026-06-15T20:27:55.909Z",
+    "loadTimeMs": 1296,
+    "domContentLoadedMs": 1295,
+    "firstPaintMs": 1300,
+    "firstContentfulPaintMs": 1364,
+    "usedJSHeapSizeMb": 28
+  },
+  {
+    "timestamp": "2026-06-15T20:28:20.474Z",
+    "loadTimeMs": 1516,
+    "domContentLoadedMs": 1515,
+    "firstPaintMs": 1520,
+    "firstContentfulPaintMs": 1596,
+    "usedJSHeapSizeMb": 28
+  },
+  {
+    "timestamp": "2026-06-15T20:29:25.300Z",
+    "loadTimeMs": 1306,
+    "domContentLoadedMs": 1305,
+    "firstPaintMs": 1308,
+    "firstContentfulPaintMs": 1380,
+    "usedJSHeapSizeMb": 53.88
+  },
+  {
+    "timestamp": "2026-06-15T20:33:53.978Z",
+    "loadTimeMs": 921,
+    "domContentLoadedMs": 920,
+    "firstPaintMs": 924,
+    "firstContentfulPaintMs": 996,
+    "usedJSHeapSizeMb": 36.2
+  },
+  {
+    "timestamp": "2026-06-16T19:28:06.326Z",
+    "loadTimeMs": 996,
+    "domContentLoadedMs": 995,
+    "firstPaintMs": 1000,
+    "firstContentfulPaintMs": 1064,
+    "usedJSHeapSizeMb": 35.8
+  },
+  {
+    "timestamp": "2026-06-16T20:12:23.698Z",
+    "loadTimeMs": 1368,
+    "domContentLoadedMs": 1367,
+    "firstPaintMs": 1372,
+    "firstContentfulPaintMs": 1436,
+    "usedJSHeapSizeMb": 36.17
+  },
+  {
+    "timestamp": "2026-06-16T20:12:53.186Z",
+    "loadTimeMs": 1347,
+    "domContentLoadedMs": 1345,
+    "firstPaintMs": 1352,
+    "firstContentfulPaintMs": 1420,
+    "usedJSHeapSizeMb": 29.27
+  },
+  {
+    "timestamp": "2026-06-16T22:09:35.779Z",
+    "loadTimeMs": 946,
+    "domContentLoadedMs": 945,
+    "firstPaintMs": 948,
+    "firstContentfulPaintMs": 1016,
+    "usedJSHeapSizeMb": 36.72
+  },
+  {
+    "timestamp": "2026-06-16T22:30:45.068Z",
+    "loadTimeMs": 927,
+    "domContentLoadedMs": 926,
+    "firstPaintMs": 928,
+    "firstContentfulPaintMs": 992,
+    "usedJSHeapSizeMb": 47.44
+  },
+  {
+    "timestamp": "2026-06-17T18:39:26.416Z",
+    "loadTimeMs": 1367,
+    "domContentLoadedMs": 1366,
+    "firstPaintMs": 1372,
+    "firstContentfulPaintMs": 1448,
+    "usedJSHeapSizeMb": 48.68
+  },
+  {
+    "timestamp": "2026-06-17T18:42:19.247Z",
+    "loadTimeMs": 1024,
+    "domContentLoadedMs": 1023,
+    "firstPaintMs": 1028,
+    "firstContentfulPaintMs": 1092,
+    "usedJSHeapSizeMb": 35.34
+  },
+  {
+    "timestamp": "2026-06-17T18:44:16.238Z",
+    "loadTimeMs": 1111,
+    "domContentLoadedMs": 1110,
+    "firstPaintMs": 1116,
+    "firstContentfulPaintMs": 1184,
+    "usedJSHeapSizeMb": 47.6
+  },
+  {
+    "timestamp": "2026-06-17T18:44:39.954Z",
+    "loadTimeMs": 1000,
+    "domContentLoadedMs": 998,
+    "firstPaintMs": 1008,
+    "firstContentfulPaintMs": 1080,
+    "usedJSHeapSizeMb": 29.26
+  },
+  {
+    "timestamp": "2026-06-17T18:47:17.486Z",
+    "loadTimeMs": 1188,
+    "domContentLoadedMs": 1186,
+    "firstPaintMs": 1192,
+    "firstContentfulPaintMs": 1256,
+    "usedJSHeapSizeMb": 36.82
+  },
+  {
+    "timestamp": "2026-06-17T18:48:13.296Z",
+    "loadTimeMs": 920,
+    "domContentLoadedMs": 919,
+    "firstPaintMs": 924,
+    "firstContentfulPaintMs": 988,
+    "usedJSHeapSizeMb": 35.74
+  },
+  {
+    "timestamp": "2026-06-17T18:50:06.422Z",
+    "loadTimeMs": 921,
+    "domContentLoadedMs": 919,
+    "firstPaintMs": 924,
+    "firstContentfulPaintMs": 1004,
+    "usedJSHeapSizeMb": 42.37
+  },
+  {
+    "timestamp": "2026-06-17T18:51:27.975Z",
+    "loadTimeMs": 929,
+    "domContentLoadedMs": 928,
+    "firstPaintMs": 932,
+    "firstContentfulPaintMs": 1004,
+    "usedJSHeapSizeMb": 37.94
+  },
+  {
+    "timestamp": "2026-06-17T18:52:16.452Z",
+    "loadTimeMs": 1299,
+    "domContentLoadedMs": 1298,
+    "firstPaintMs": 1304,
+    "firstContentfulPaintMs": 1364,
+    "usedJSHeapSizeMb": 43.06
+  },
+  {
+    "timestamp": "2026-06-17T18:53:11.345Z",
+    "loadTimeMs": 1281,
+    "domContentLoadedMs": 1280,
+    "firstPaintMs": 1284,
+    "firstContentfulPaintMs": 1344,
+    "usedJSHeapSizeMb": 31.72
+  },
+  {
+    "timestamp": "2026-06-17T18:53:45.834Z",
+    "loadTimeMs": 1315,
+    "domContentLoadedMs": 1314,
+    "firstPaintMs": 1324,
+    "firstContentfulPaintMs": 1380,
+    "usedJSHeapSizeMb": 40.01
+  },
+  {
+    "timestamp": "2026-06-17T18:54:23.907Z",
+    "loadTimeMs": 932,
+    "domContentLoadedMs": 931,
+    "firstPaintMs": 936,
+    "firstContentfulPaintMs": 1004,
+    "usedJSHeapSizeMb": 36.83
+  },
+  {
+    "timestamp": "2026-06-17T18:55:20.885Z",
+    "loadTimeMs": 942,
+    "domContentLoadedMs": 940,
+    "firstPaintMs": 944,
+    "firstContentfulPaintMs": 1004,
+    "usedJSHeapSizeMb": 28.81
+  },
+  {
+    "timestamp": "2026-06-17T18:55:45.803Z",
+    "loadTimeMs": 1069,
+    "domContentLoadedMs": 1067,
+    "firstPaintMs": 1072,
+    "firstContentfulPaintMs": 1140,
+    "usedJSHeapSizeMb": 53.82
+  },
+  {
+    "timestamp": "2026-06-17T18:56:14.392Z",
+    "loadTimeMs": 1028,
+    "domContentLoadedMs": 1026,
+    "firstPaintMs": 1032,
+    "firstContentfulPaintMs": 1104,
+    "usedJSHeapSizeMb": 28.81
+  },
+  {
+    "timestamp": "2026-06-17T18:56:34.842Z",
+    "loadTimeMs": 958,
+    "domContentLoadedMs": 956,
+    "firstPaintMs": 964,
+    "firstContentfulPaintMs": 1024,
+    "usedJSHeapSizeMb": 34.35
+  },
+  {
+    "timestamp": "2026-06-17T18:56:50.339Z",
+    "loadTimeMs": 1163,
+    "domContentLoadedMs": 1161,
+    "firstPaintMs": 1172,
+    "firstContentfulPaintMs": 1232,
+    "usedJSHeapSizeMb": 31.72
+  },
+  {
+    "timestamp": "2026-06-17T18:59:26.254Z",
+    "loadTimeMs": 1674,
+    "domContentLoadedMs": 1673,
+    "firstPaintMs": 1676,
+    "firstContentfulPaintMs": 1744,
+    "usedJSHeapSizeMb": 51.95
+  },
+  {
+    "timestamp": "2026-06-17T19:00:28.100Z",
+    "loadTimeMs": 1152,
+    "domContentLoadedMs": 1150,
+    "firstPaintMs": 1156,
+    "firstContentfulPaintMs": 1236,
+    "usedJSHeapSizeMb": 52.22
+  },
+  {
+    "timestamp": "2026-06-17T19:00:46.639Z",
+    "loadTimeMs": 992,
+    "domContentLoadedMs": 990,
+    "firstPaintMs": 996,
+    "firstContentfulPaintMs": 1072,
+    "usedJSHeapSizeMb": 52
+  },
+  {
+    "timestamp": "2026-06-17T19:04:28.455Z",
+    "loadTimeMs": 948,
+    "domContentLoadedMs": 947,
+    "firstPaintMs": 952,
+    "firstContentfulPaintMs": 1016,
+    "usedJSHeapSizeMb": 39.76
+  },
+  {
+    "timestamp": "2026-06-17T20:55:34.152Z",
+    "loadTimeMs": 1008,
+    "domContentLoadedMs": 1007,
+    "firstPaintMs": 1016,
+    "firstContentfulPaintMs": 1076,
+    "usedJSHeapSizeMb": 35.07
+  },
+  {
+    "timestamp": "2026-06-17T21:59:40.587Z",
+    "loadTimeMs": 957,
+    "domContentLoadedMs": 955,
+    "firstPaintMs": 960,
+    "firstContentfulPaintMs": 1028,
+    "usedJSHeapSizeMb": 39.99
+  },
+  {
+    "timestamp": "2026-06-17T22:03:08.677Z",
+    "loadTimeMs": 967,
+    "domContentLoadedMs": 966,
+    "firstPaintMs": 968,
+    "firstContentfulPaintMs": 1036,
+    "usedJSHeapSizeMb": 31.92
+  },
+  {
+    "timestamp": "2026-06-17T22:35:16.150Z",
+    "loadTimeMs": 1494,
+    "domContentLoadedMs": 1493,
+    "firstPaintMs": 1496,
+    "firstContentfulPaintMs": 1568,
+    "usedJSHeapSizeMb": 32.67
+  },
+  {
+    "timestamp": "2026-06-24T01:26:55.361Z",
+    "loadTimeMs": 1531,
+    "domContentLoadedMs": 1465,
+    "firstPaintMs": 1476,
+    "firstContentfulPaintMs": 1532,
+    "usedJSHeapSizeMb": 31.95
+  },
+  {
+    "timestamp": "2026-06-24T01:29:24.441Z",
+    "loadTimeMs": 1132,
+    "domContentLoadedMs": 1065,
+    "firstPaintMs": 1076,
+    "firstContentfulPaintMs": 1132,
+    "usedJSHeapSizeMb": 44.96
+  },
+  {
+    "timestamp": "2026-06-24T01:31:10.470Z",
+    "loadTimeMs": 1187,
+    "domContentLoadedMs": 1110,
+    "firstPaintMs": 1116,
+    "firstContentfulPaintMs": 1184,
+    "usedJSHeapSizeMb": 31.03
+  },
+  {
+    "timestamp": "2026-06-24T01:31:59.368Z",
+    "loadTimeMs": 1494,
+    "domContentLoadedMs": 1427,
+    "firstPaintMs": 1436,
+    "firstContentfulPaintMs": 1492,
+    "usedJSHeapSizeMb": 31.05
+  },
+  {
+    "timestamp": "2026-06-24T01:36:12.007Z",
+    "loadTimeMs": 1162,
+    "domContentLoadedMs": 1097,
+    "firstPaintMs": 1104,
+    "firstContentfulPaintMs": 1160,
+    "usedJSHeapSizeMb": 31.06
+  },
+  {
+    "timestamp": "2026-06-24T01:43:30.938Z",
+    "loadTimeMs": 1134,
+    "domContentLoadedMs": 1069,
+    "firstPaintMs": 1084,
+    "firstContentfulPaintMs": 1132,
+    "usedJSHeapSizeMb": 40.06
+  },
+  {
+    "timestamp": "2026-06-24T01:45:44.001Z",
+    "loadTimeMs": 1154,
+    "domContentLoadedMs": 1087,
+    "firstPaintMs": 1096,
+    "firstContentfulPaintMs": 1152,
+    "usedJSHeapSizeMb": 40.36
+  },
+  {
+    "timestamp": "2026-06-24T01:49:00.010Z",
+    "loadTimeMs": 1163,
+    "domContentLoadedMs": 1090,
+    "firstPaintMs": 1100,
+    "firstContentfulPaintMs": 1160,
+    "usedJSHeapSizeMb": 31.11
+  },
+  {
+    "timestamp": "2026-06-24T01:51:03.956Z",
+    "loadTimeMs": 1152,
+    "domContentLoadedMs": 1079,
+    "firstPaintMs": 1088,
+    "firstContentfulPaintMs": 1144,
+    "usedJSHeapSizeMb": 31.11
+  },
+  {
+    "timestamp": "2026-06-24T02:22:08.781Z",
+    "loadTimeMs": 1490,
+    "domContentLoadedMs": 1426,
+    "firstPaintMs": 1436,
+    "firstContentfulPaintMs": 1488,
+    "usedJSHeapSizeMb": 31.11
+  },
+  {
+    "timestamp": "2026-06-24T23:50:54.689Z",
+    "loadTimeMs": 1715,
+    "domContentLoadedMs": 1641,
+    "firstPaintMs": 1648,
+    "firstContentfulPaintMs": 1716,
+    "usedJSHeapSizeMb": 40.4
+  },
+  {
+    "timestamp": "2026-06-24T23:52:24.392Z",
+    "loadTimeMs": 1707,
+    "domContentLoadedMs": 1603,
+    "firstPaintMs": 1612,
+    "firstContentfulPaintMs": 1704,
+    "usedJSHeapSizeMb": 40.38
+  },
+  {
+    "timestamp": "2026-06-24T23:54:41.404Z",
+    "loadTimeMs": 1225,
+    "domContentLoadedMs": 1155,
+    "firstPaintMs": 1160,
+    "firstContentfulPaintMs": 1224,
+    "usedJSHeapSizeMb": 31.15
+  },
+  {
+    "timestamp": "2026-06-25T00:02:12.120Z",
+    "loadTimeMs": 1201,
+    "domContentLoadedMs": 1133,
+    "firstPaintMs": 1144,
+    "firstContentfulPaintMs": 1200,
+    "usedJSHeapSizeMb": 31.14
+  },
+  {
+    "timestamp": "2026-06-26T20:25:44.647Z",
+    "loadTimeMs": 1163,
+    "domContentLoadedMs": 1094,
+    "firstPaintMs": 1104,
+    "firstContentfulPaintMs": 1164,
+    "usedJSHeapSizeMb": 40.73
+  },
+  {
+    "timestamp": "2026-06-26T20:30:23.126Z",
+    "loadTimeMs": 1486,
+    "domContentLoadedMs": 1465,
+    "firstPaintMs": 1472,
+    "firstContentfulPaintMs": 1548,
+    "usedJSHeapSizeMb": 31.44
+  }
+]

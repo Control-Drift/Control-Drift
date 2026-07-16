@@ -1,0 +1,5 @@
+{
+  "provider": "supabase",
+  "endpoint": "https://your-project-id.supabase.co",
+  "apiKey": "your-anon-key"
+}

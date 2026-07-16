@@ -1,0 +1,36 @@
+version: "3.8"
+
+services:
+  # -----------------------------------------------------------
+  # Control Drift - Frontend Application
+  # -----------------------------------------------------------
+  control-drift:
+    build:
+      context: ../
+      dockerfile: deploy/Dockerfile
+    container_name: control-drift
+    ports:
+      - "80:80"
+    volumes:
+      # Mount the configuration file directly so admins can edit it without rebuilding
+      - ./config.json:/usr/share/nginx/html/config.json
+    restart: always
+
+  # -----------------------------------------------------------
+  # AI Proxy - LiteLLM
+  # -----------------------------------------------------------
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm-proxy
+    ports:
+      - "4000:4000"
+    environment:
+      # Master keys securely loaded on the server
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-sk-dummy}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-dummy}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-dummy}
+      - LITELLM_MASTER_KEY=sk-enterprise-master-key # Prevent unauthorized external usage
+    volumes:
+      - ./litellm-config.yaml:/app/config.yaml
+    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    restart: always
