@@ -190,6 +190,7 @@ export default function Dashboard() {
   const [topSecurityControls, setTopSecurityControls] = React.useState([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [activePhaseSubject, setActivePhaseSubject] = React.useState(null);
+  const [selectedPhaseSubject, setSelectedPhaseSubject] = React.useState(null);
   const [isKillChainModalOpen, setIsKillChainModalOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -630,6 +631,13 @@ export default function Dashboard() {
       loadDashboardData();
   }, [loadDashboardData]);
 
+  // Set initial active phase once data is loaded
+  React.useEffect(() => {
+      if (radarData && radarData.length > 0 && !activePhaseSubject) {
+          setActivePhaseSubject(radarData[0].subject);
+      }
+  }, [radarData]);
+
   const {
       grsScore,
       totalValidated,
@@ -840,6 +848,7 @@ export default function Dashboard() {
             
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '300px' }}>
                 {/* Master View (The Chain) */}
+                {!selectedPhaseSubject && (
                 <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', padding: '10px 10px 25px 10px', overflowX: 'auto' }}>
                     {/* The glowing track line */}
                     <div style={{ position: 'absolute', top: '50%', left: '40px', right: '40px', height: '4px', background: 'rgba(255,255,255,0.05)', transform: 'translateY(-50%)', borderRadius: '2px', zIndex: 0 }}>
@@ -871,7 +880,8 @@ export default function Dashboard() {
                             return (
                                 <div key={phase.subject} 
                                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', position: 'relative', width: '80px', cursor: 'pointer' }}
-                                     onClick={() => setActivePhaseSubject(phase.subject)}>
+                                     onMouseEnter={() => setActivePhaseSubject(phase.subject)}
+                                     onClick={() => setSelectedPhaseSubject(phase.subject)}>
                                     
                                     {/* Label above */}
                                     <div style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: isActive ? 800 : 600, fontFamily: 'monospace', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.5px', height: '40px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', textShadow: isActive ? '0 2px 4px rgba(0,0,0,0.8)' : 'none', transition: 'all 0.3s' }}>
@@ -900,12 +910,14 @@ export default function Dashboard() {
                         })}
                     </div>
                 </div>
+                )}
 
                 {/* Detail View (HUD Console) */}
-                {activePhaseSubject && (
-                <div style={{ flex: 1, background: 'rgba(10,11,16,0.6)', borderRadius: '12px', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', overflow: 'hidden', marginTop: '10px' }}>
+                {(activePhaseSubject || selectedPhaseSubject) && (
+                <div style={{ flex: selectedPhaseSubject ? 1 : '0 0 auto', background: 'rgba(10,11,16,0.6)', borderRadius: '12px', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', overflow: 'hidden', marginTop: '10px' }}>
                     {(() => {
-                        const activeData = radarData && radarData.find(d => d.subject === activePhaseSubject) || (radarData && radarData[0]);
+                        const currentSubject = selectedPhaseSubject || activePhaseSubject;
+                        const activeData = radarData && radarData.find(d => d.subject === currentSubject) || (radarData && radarData[0]);
                         if (!activeData) return null;
                         const risk = activeData.risk;
                         const tested = activeData.tested;
@@ -954,9 +966,11 @@ export default function Dashboard() {
                                 <div style={{ padding: '15px 20px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)' }}>
                                     <div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            <button onClick={() => setActivePhaseSubject(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px' }} onMouseOver={e => e.currentTarget.style.color = 'var(--text-primary)'} onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}>
-                                                <X size={18} />
-                                            </button>
+                                            {selectedPhaseSubject && (
+                                                <button onClick={() => setSelectedPhaseSubject(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px' }} onMouseOver={e => e.currentTarget.style.color = 'var(--text-primary)'} onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}>
+                                                    <X size={18} />
+                                                </button>
+                                            )}
                                             <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', color: 'var(--text-primary)', fontFamily: 'monospace' }}>[{activeData.subject.toUpperCase()}]</h4>
                                         </div>
                                         <div style={{ color: color, fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginLeft: '33px' }}>{statusText}</div>
@@ -968,6 +982,7 @@ export default function Dashboard() {
                                 </div>
                                 
                                 {/* Scrollable Events List */}
+                                {selectedPhaseSubject && (
                                 <div style={{ flex: 1, overflowY: 'auto', padding: '15px 20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
                                     {filteredEvents.length === 0 ? (
                                         <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', marginTop: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
@@ -1033,6 +1048,7 @@ export default function Dashboard() {
                                         })
                                     )}
                                 </div>
+                                )}
                             </div>
                         );
                     })()}
