@@ -631,12 +631,6 @@ export default function Dashboard() {
       loadDashboardData();
   }, [loadDashboardData]);
 
-  // Set initial active phase once data is loaded
-  React.useEffect(() => {
-      if (radarData && radarData.length > 0 && !activePhaseSubject) {
-          setActivePhaseSubject(radarData[0].subject);
-      }
-  }, [radarData]);
 
   const {
       grsScore,
@@ -651,6 +645,13 @@ export default function Dashboard() {
       areaData,
       mitreCoveragePercentage
   } = metrics;
+
+  // Set initial active phase once data is loaded
+  React.useEffect(() => {
+      if (radarData && radarData.length > 0 && !activePhaseSubject) {
+          setActivePhaseSubject(radarData[0].subject);
+      }
+  }, [radarData, activePhaseSubject]);
 
   const isRemoteConnected = !!dbAdapter && !isDbLoading && dbConfig?.provider !== 'local';
 
