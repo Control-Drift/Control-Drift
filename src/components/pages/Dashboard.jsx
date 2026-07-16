@@ -189,7 +189,7 @@ export default function Dashboard() {
   });
   const [topSecurityControls, setTopSecurityControls] = React.useState([]);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [activePhaseSubject, setActivePhaseSubject] = React.useState("Pre-Attack");
+  const [activePhaseSubject, setActivePhaseSubject] = React.useState(null);
   const [isKillChainModalOpen, setIsKillChainModalOpen] = React.useState(false);
 
   React.useEffect(() => {
@@ -840,6 +840,7 @@ export default function Dashboard() {
             
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '300px' }}>
                 {/* Master View (The Chain) */}
+                {!activePhaseSubject && (
                 <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', padding: '10px 10px 25px 10px', overflowX: 'auto' }}>
                     {/* The glowing track line */}
                     <div style={{ position: 'absolute', top: '50%', left: '40px', right: '40px', height: '4px', background: 'rgba(255,255,255,0.05)', transform: 'translateY(-50%)', borderRadius: '2px', zIndex: 0 }}>
@@ -871,7 +872,6 @@ export default function Dashboard() {
                             return (
                                 <div key={phase.subject} 
                                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', position: 'relative', width: '80px', cursor: 'pointer' }}
-                                     onMouseEnter={() => setActivePhaseSubject(phase.subject)}
                                      onClick={() => setActivePhaseSubject(phase.subject)}>
                                     
                                     {/* Label above */}
@@ -901,8 +901,10 @@ export default function Dashboard() {
                         })}
                     </div>
                 </div>
+                )}
 
                 {/* Detail View (HUD Console) */}
+                {activePhaseSubject && (
                 <div style={{ flex: 1, background: 'rgba(10,11,16,0.6)', borderRadius: '12px', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', overflow: 'hidden', marginTop: '10px' }}>
                     {(() => {
                         const activeData = radarData && radarData.find(d => d.subject === activePhaseSubject) || (radarData && radarData[0]);
@@ -953,8 +955,13 @@ export default function Dashboard() {
                                 {/* Header */}
                                 <div style={{ padding: '15px 20px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)' }}>
                                     <div>
-                                        <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', color: 'var(--text-primary)', fontFamily: 'monospace' }}>[{activeData.subject.toUpperCase()}]</h4>
-                                        <div style={{ color: color, fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>{statusText}</div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                            <button onClick={() => setActivePhaseSubject(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px' }} onMouseOver={e => e.currentTarget.style.color = 'var(--text-primary)'} onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}>
+                                                <X size={18} />
+                                            </button>
+                                            <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', color: 'var(--text-primary)', fontFamily: 'monospace' }}>[{activeData.subject.toUpperCase()}]</h4>
+                                        </div>
+                                        <div style={{ color: color, fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginLeft: '33px' }}>{statusText}</div>
                                     </div>
                                     <div style={{ textAlign: 'right', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
                                         <div style={{ fontSize: '1.8rem', fontWeight: 900, color: color, lineHeight: '1' }}>{tested > 0 ? `${risk}%` : '--'}</div>
@@ -979,7 +986,6 @@ export default function Dashboard() {
                                             else if (ex.status === 'Missed') outcomeStyle = { color: 'var(--danger)', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.3)' };
 
                                             const eventName = ex.finding || ex.name || 'Simulated Event';
-                                            const simName = ex.simulation || 'Unknown Context';
                                             const ttp = ex.ttp || 'Unknown TTP';
 
                                             return (
@@ -1003,19 +1009,9 @@ export default function Dashboard() {
                                                             </span>
                                                         </div>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                                                                <Terminal size={12} /> {simName}
-                                                            </span>
-                                                            <span>•</span>
                                                             <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontFamily: 'monospace' }}>
                                                                 <Target size={12} /> {ttp}
                                                             </span>
-                                                            {ex.date && (
-                                                                <>
-                                                                    <span>•</span>
-                                                                    <span>{new Date(ex.date).toLocaleDateString()}</span>
-                                                                </>
-                                                            )}
                                                         </div>
                                                     </div>
                                                     
@@ -1042,6 +1038,7 @@ export default function Dashboard() {
                         );
                     })()}
                 </div>
+                )}
             </div>
          </div>
 
