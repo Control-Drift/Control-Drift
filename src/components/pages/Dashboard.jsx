@@ -970,11 +970,72 @@ export default function Dashboard() {
                                             No simulated events mapped to this phase.
                                         </div>
                                     ) : (
-                                        filteredEvents.map((ex, i) => (
-                                            <div key={i} style={{ pointerEvents: 'none' }}>
-                                                <EventCard proc={ex} isCollapsed={true} isReadOnly={true} />
-                                            </div>
-                                        ))
+                                        filteredEvents.map((ex, i) => {
+                                            let outcomeStyle = { color: 'var(--text-primary)', bg: 'rgba(255,255,255,0.1)', border: 'rgba(255,255,255,0.2)' };
+                                            if (ex.status === 'Prevented & Alerted') outcomeStyle = { color: 'var(--success)', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)' };
+                                            else if (ex.status === 'Prevented') outcomeStyle = { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.3)' };
+                                            else if (ex.status === 'Alerted') outcomeStyle = { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.3)' };
+                                            else if (ex.status === 'Logged') outcomeStyle = { color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)' };
+                                            else if (ex.status === 'Missed') outcomeStyle = { color: 'var(--danger)', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.3)' };
+
+                                            const eventName = ex.finding || ex.name || 'Simulated Event';
+                                            const simName = ex.simulation || 'Unknown Context';
+                                            const ttp = ex.ttp || 'Unknown TTP';
+
+                                            return (
+                                                <div key={i} className="hover-lift" style={{ 
+                                                    background: 'linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)', 
+                                                    border: '1px solid var(--glass-border)', 
+                                                    borderLeft: `4px solid ${outcomeStyle.color}`,
+                                                    borderRadius: '8px', 
+                                                    padding: '12px 16px', 
+                                                    display: 'flex', 
+                                                    justifyContent: 'space-between', 
+                                                    alignItems: 'center',
+                                                    transition: 'all 0.2s ease',
+                                                    cursor: 'default'
+                                                }}>
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <Shield size={14} color={outcomeStyle.color} />
+                                                            <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '0.3px' }}>
+                                                                {eventName}
+                                                            </span>
+                                                        </div>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                                <Terminal size={12} /> {simName}
+                                                            </span>
+                                                            <span>•</span>
+                                                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontFamily: 'monospace' }}>
+                                                                <Target size={12} /> {ttp}
+                                                            </span>
+                                                            {ex.date && (
+                                                                <>
+                                                                    <span>•</span>
+                                                                    <span>{new Date(ex.date).toLocaleDateString()}</span>
+                                                                </>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <div style={{ 
+                                                        background: outcomeStyle.bg, 
+                                                        border: `1px solid ${outcomeStyle.border}`, 
+                                                        color: outcomeStyle.color, 
+                                                        padding: '4px 10px', 
+                                                        borderRadius: '20px', 
+                                                        fontSize: '0.7rem', 
+                                                        fontWeight: 800, 
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '0.5px',
+                                                        boxShadow: `0 0 10px ${outcomeStyle.bg}`
+                                                    }}>
+                                                        {ex.status || 'Unknown'}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
                                     )}
                                 </div>
                             </div>
