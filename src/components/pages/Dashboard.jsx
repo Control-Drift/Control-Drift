@@ -828,7 +828,7 @@ export default function Dashboard() {
 
       <div className="slide-in-staggered dashboard-grid" style={{ marginBottom: '40px' }}>
          {/* Kill Chain Exposure Card (Master-Detail) */}
-         <div className="glass-panel hover-lift" style={{ padding: '30px', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', height: '380px' }}>
+         <div className="glass-panel hover-lift" style={{ padding: '30px', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', height: '500px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', marginBottom: '15px', zIndex: 2 }}>
                 <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     Kill Chain Exposure
@@ -905,7 +905,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Detail View (HUD Console) */}
-                <div style={{ flex: 1, background: 'rgba(10,11,16,0.6)', borderRadius: '12px', border: '1px solid var(--glass-border)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                <div style={{ flex: 1, background: 'rgba(10,11,16,0.6)', borderRadius: '12px', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', overflow: 'hidden', marginTop: '10px' }}>
                     {(() => {
                         const activeData = radarData && radarData.find(d => d.subject === activePhaseSubject) || (radarData && radarData[0]);
                         if (!activeData) return null;
@@ -913,81 +913,69 @@ export default function Dashboard() {
                         const tested = activeData.tested;
                         let color = 'var(--success)';
                         let statusText = 'SECURED';
-                        const ttpText = tested === 1 ? 'tested technique' : 'tested techniques';
-                        let desc = `Defenses successfully prevented the ${ttpText} in this phase.`;
                         
                         if (tested === 0) { 
                             color = 'var(--text-muted)'; 
-                            statusText = 'UNTESTED / NO DATA';
-                            desc = `No empirical test data exists for ${activeData.subject}. Run simulations targeting this phase to establish a baseline.`;
+                            statusText = 'UNTESTED';
                         }
                         else if (risk >= 70) { 
                             color = '#ef4444'; 
                             statusText = 'Critical Risk';
-                            desc = `High exposure rate for the ${ttpText} in ${activeData.subject}. Significant defense gaps observed.`;
                         }
                         else if (risk >= 50) { 
                             color = '#f97316'; 
                             statusText = 'High Risk';
-                            desc = `Elevated exposure for the ${ttpText} in ${activeData.subject}. Frequent defense misses observed.`;
                         }
                         else if (risk >= 30) { 
                             color = '#eab308'; 
                             statusText = 'Moderate Risk';
-                            desc = `Moderate exposure for the ${ttpText} in this phase. Defenses were partially bypassed.`;
                         }
                         else if (risk >= 10) { 
                             color = '#84cc16'; 
                             statusText = 'Low Risk';
-                            desc = `Low exposure for the ${ttpText} in this phase. Defenses prevented most activity.`;
                         }
                         else if (risk > 0) {
                             color = '#10b981'; 
                             statusText = 'Minimal Risk';
-                            desc = `Minimal exposure for the ${ttpText} in this phase. Defenses were largely effective.`;
                         }
 
+                        const tacticsInPhase = KILL_CHAIN_PHASES[activePhaseSubject] || [];
+                        
+                        const filteredEvents = (metrics.allExercises || []).filter(ex => {
+                            if (!mitreData || !ex.ttp) return false;
+                            const ttpList = ex.ttp.split(',').map(t => t.trim());
+                            return ttpList.some(ttp => {
+                                const tacticName = Object.keys(mitreData).find(t => mitreData[t].techniques.find(tech => tech.id === ttp || (tech.subTechniques && tech.subTechniques.find(sub => sub.id === ttp))));
+                                return tacticName && tacticsInPhase.includes(tacticName);
+                            });
+                        });
+
                         return (
-                            <div className="animate-fade-in" key={activeData.subject} style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
-                                <div>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
-                                        <div>
-                                            <h4 style={{ margin: '0 0 5px 0', fontSize: '1.2rem', color: 'var(--text-primary)', fontFamily: 'monospace' }}>[{activeData.subject.toUpperCase()}]</h4>
-                                            <div style={{ color: color, fontSize: '0.9rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>{statusText}</div>
-                                        </div>
-                                        <div style={{ textAlign: 'right' }}>
-                                            <div style={{ fontSize: '2rem', fontWeight: 900, color: color, lineHeight: '1' }}>{tested > 0 ? `${risk}%` : '--'}</div>
-                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>EXPOSURE</div>
-                                        </div>
+                            <div className="animate-fade-in" key={activeData.subject} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
+                                {/* Header */}
+                                <div style={{ padding: '15px 20px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)' }}>
+                                    <div>
+                                        <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', color: 'var(--text-primary)', fontFamily: 'monospace' }}>[{activeData.subject.toUpperCase()}]</h4>
+                                        <div style={{ color: color, fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>{statusText}</div>
                                     </div>
-                                    <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                                        {desc}
-                                    </p>
-                                    
-                                    {tested > 0 && (
-                                        <button 
-                                            onClick={() => setIsKillChainModalOpen(true)}
-                                            style={{ 
-                                                marginTop: '15px', padding: '6px 12px', background: 'transparent', border: `1px solid ${color}`, 
-                                                color: color, borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'monospace', width: 'fit-content',
-                                                transition: 'all 0.2s'
-                                            }}
-                                            onMouseOver={e => e.currentTarget.style.background = `${color}20`}
-                                            onMouseOut={e => e.currentTarget.style.background = 'transparent'}
-                                        >
-                                            VIEW ASSOCIATED EVENTS
-                                        </button>
-                                    )}
+                                    <div style={{ textAlign: 'right', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                                        <div style={{ fontSize: '1.8rem', fontWeight: 900, color: color, lineHeight: '1' }}>{tested > 0 ? `${risk}%` : '--'}</div>
+                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>EXPOSURE</div>
+                                    </div>
                                 </div>
                                 
-                                <div style={{ marginTop: '15px', opacity: tested > 0 ? 1 : 0.2, pointerEvents: tested > 0 ? 'auto' : 'none' }}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '5px' }}>
-                                        <span>Secure</span>
-                                        <span>Exposed</span>
-                                    </div>
-                                    <div style={{ width: '100%', height: '8px', background: 'var(--glass-bg)', borderRadius: '4px', overflow: 'hidden' }}>
-                                        <div style={{ width: `${risk}%`, height: '100%', background: color, transition: 'width 0.5s cubic-bezier(0.16, 1, 0.3, 1)' }} />
-                                    </div>
+                                {/* Scrollable Events List */}
+                                <div style={{ flex: 1, overflowY: 'auto', padding: '15px 20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                                    {filteredEvents.length === 0 ? (
+                                        <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', marginTop: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                                            <Activity size={24} style={{ opacity: 0.5 }} />
+                                            No simulated events mapped to this phase.
+                                        </div>
+                                    ) : (
+                                        filteredEvents.map((ex, i) => (
+                                            <EventCard key={i} ex={ex} isReadOnly={true} />
+                                        ))
+                                    )}
                                 </div>
                             </div>
                         );
@@ -997,7 +985,7 @@ export default function Dashboard() {
          </div>
 
          {/* Risk Trend Over Time (Area Chart) */}
-         <div className="glass-panel hover-lift" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '380px' }}>
+         <div className="glass-panel hover-lift" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '500px' }}>
             <h3 style={{ margin: '0 0 25px 0', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Readiness Score Trend
                 <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>Historical tracking of your Global Readiness Score over time, plotting the outcomes of past adversary simulations against your current baseline.</div>}>
@@ -1043,7 +1031,7 @@ export default function Dashboard() {
          </div>
 
          {/* Top Security Controls */}
-         <div className="glass-panel hover-lift" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '380px' }}>
+         <div className="glass-panel hover-lift" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '500px' }}>
             <h3 style={{ margin: '0 0 25px 0', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Top Security Controls
                 <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>Performance metrics for your deployed security tools. Efficacy is calculated based on successful defenses against tested techniques.</div>}>
@@ -1103,48 +1091,7 @@ export default function Dashboard() {
          </div>
       </div>
 
-      {/* Kill Chain Events Overlay Modal */}
-      {isKillChainModalOpen && (
-          <div className="modal-overlay animate-fade-in" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }} onClick={() => setIsKillChainModalOpen(false)}>
-              <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--glass-border)', borderRadius: '12px', width: '100%', maxWidth: '800px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }} onClick={e => e.stopPropagation()}>
-                  <div style={{ padding: '20px 25px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <h2 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <Target size={20} color="var(--accent-primary)" />
-                          {activePhaseSubject.toUpperCase()} EVENTS
-                      </h2>
-                      <button onClick={() => setIsKillChainModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={24} /></button>
-                  </div>
-                  <div style={{ padding: '25px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                      {(() => {
-                          const tacticsInPhase = KILL_CHAIN_PHASES[activePhaseSubject] || [];
-                          
-                          // Filter metrics.allExercises by checking if their mapped tactic is inside tacticsInPhase
-                          const filtered = (metrics.allExercises || []).filter(ex => {
-                              if (!mitreData || !ex.ttp) return false;
-                              const ttpList = ex.ttp.split(',').map(t => t.trim());
-                              return ttpList.some(ttp => {
-                                  const tacticName = Object.keys(mitreData).find(t => mitreData[t].techniques.find(tech => tech.id === ttp || (tech.subTechniques && tech.subTechniques.find(sub => sub.id === ttp))));
-                                  return tacticName && tacticsInPhase.includes(tacticName);
-                              });
-                          });
 
-                          if (filtered.length === 0) {
-                              return (
-                                  <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
-                                      <Activity size={32} style={{ opacity: 0.5, marginBottom: '15px' }} />
-                                      <div>No events have been recorded for the {activePhaseSubject} phase.</div>
-                                  </div>
-                              );
-                          }
-
-                          return filtered.map((ex, i) => (
-                              <EventCard key={i} ex={ex} isReadOnly={true} />
-                          ));
-                      })()}
-                  </div>
-              </div>
-          </div>
-      )}
     </div>
   );
 }
