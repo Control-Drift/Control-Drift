@@ -16,10 +16,11 @@
 
 import React from 'react';
 import { useAppContext } from '../../AppContext';
-import { Activity, Target, ShieldAlert, Shield, ArrowRight, Info, Key, Terminal, Ghost, Network, Clock, ShieldCheck, Database, Globe } from 'lucide-react';
+import { Activity, Target, ShieldAlert, Shield, ArrowRight, Info, Key, Terminal, Ghost, Network, Clock, ShieldCheck, Database, Globe, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import UnifiedPosturePill from '../ui/UnifiedPosturePill';
 import TagDropdown from '../dropdowns/TagDropdown';
+import EventCard from '../ui/EventCard';
 
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 
@@ -29,6 +30,14 @@ const PHASE_ICONS = {
   "Evasion": Ghost,
   "Movement": Network,
   "Action on Objective": Target
+};
+
+const KILL_CHAIN_PHASES = {
+    "Initial Access": ["Initial Access"],
+    "Execution": ["Execution", "Persistence", "Privilege Escalation"],
+    "Evasion": ["Defense Evasion", "Defense Impairment", "Stealth"],
+    "Movement": ["Discovery", "Lateral Movement", "Credential Access"],
+    "Action on Objective": ["Collection", "Command and Control", "Exfiltration", "Impact"]
 };
 
 // Custom Cyber Metric Icons - Minimalist & Sleek
@@ -175,11 +184,13 @@ export default function Dashboard() {
       mttrText: 'N/A',
       radarData: [],
       areaData: [],
-      mitreCoveragePercentage: 0
+      mitreCoveragePercentage: 0,
+      allExercises: []
   });
   const [topSecurityControls, setTopSecurityControls] = React.useState([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [activePhaseSubject, setActivePhaseSubject] = React.useState("Pre-Attack");
+  const [isKillChainModalOpen, setIsKillChainModalOpen] = React.useState(false);
 
   React.useEffect(() => {
     setActiveAiContext({
@@ -399,7 +410,7 @@ export default function Dashboard() {
                    if (!isNaN(meanSeconds)) {
                        const days = Math.floor(meanSeconds / (3600 * 24));
                        const hours = Math.floor((meanSeconds % (3600 * 24)) / 3600);
-                       const minutes = Math.floor((meanSeconds % 3600) / 60);
+                       const minutes = Math.floor((meanSeconds % (3600) / 60));
                        
                        if (days > 0) {
                            mttrText = `${days}d ${hours}h`;
@@ -448,15 +459,7 @@ export default function Dashboard() {
                 trackExposure(allExercises, false);
                 trackExposure(allGaps, true);
                 
-                const killChainPhases = {
-                    "Initial Access": ["Initial Access"],
-                    "Execution": ["Execution", "Persistence", "Privilege Escalation"],
-                    "Evasion": ["Defense Evasion", "Defense Impairment", "Stealth"],
-                    "Movement": ["Discovery", "Lateral Movement", "Credential Access"],
-                    "Action on Objective": ["Collection", "Command and Control", "Exfiltration", "Impact"]
-                };
-
-                const radarData = Object.entries(killChainPhases).map(([phase, tactics]) => {
+                const radarData = Object.entries(KILL_CHAIN_PHASES).map(([phase, tactics]) => {
                     const missedSet = new Set();
                     const testedSet = new Set();
                     tactics.forEach(t => {
@@ -564,19 +567,20 @@ export default function Dashboard() {
                    }
                }
 
-               setMetrics({
-                   grsScore,
-                   totalValidated,
-                   totalGaps,
-                   closedGaps,
-                   openGapsCount,
-                   resolutionRate,
-                   residualRisk,
-                   mttrText,
-                   radarData,
-                   areaData,
-                   mitreCoveragePercentage
-               });
+                   setMetrics({
+                       grsScore,
+                       totalValidated,
+                       totalGaps,
+                       closedGaps,
+                       openGapsCount,
+                       resolutionRate,
+                       residualRisk,
+                       mttrText,
+                       radarData,
+                       areaData,
+                       mitreCoveragePercentage,
+                       allExercises
+                   });
                 const resolvedTTPs = new Set();
                 allGaps.forEach(g => {
                     if (g.status === 'Resolved' || g.status === 'Risk Accepted') {
@@ -959,6 +963,21 @@ export default function Dashboard() {
                                     <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
                                         {desc}
                                     </p>
+                                    
+                                    {tested > 0 && (
+                                        <button 
+                                            onClick={() => setIsKillChainModalOpen(true)}
+                                            style={{ 
+                                                marginTop: '15px', padding: '6px 12px', background: 'transparent', border: `1px solid ${color}`, 
+                                                color: color, borderRadius: '4px', fontSize: '0.8rem', cursor: 'pointer', fontFamily: 'monospace', width: 'fit-content',
+                                                transition: 'all 0.2s'
+                                            }}
+                                            onMouseOver={e => e.currentTarget.style.background = `${color}20`}
+                                            onMouseOut={e => e.currentTarget.style.background = 'transparent'}
+                                        >
+                                            VIEW ASSOCIATED EVENTS
+                                        </button>
+                                    )}
                                 </div>
                                 
                                 <div style={{ marginTop: '15px', opacity: tested > 0 ? 1 : 0.2, pointerEvents: tested > 0 ? 'auto' : 'none' }}>
@@ -1083,6 +1102,49 @@ export default function Dashboard() {
             )}
          </div>
       </div>
+
+      {/* Kill Chain Events Overlay Modal */}
+      {isKillChainModalOpen && (
+          <div className="modal-overlay animate-fade-in" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(10px)', zIndex: 9999, display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '20px' }} onClick={() => setIsKillChainModalOpen(false)}>
+              <div style={{ background: 'var(--bg-secondary)', border: '1px solid var(--glass-border)', borderRadius: '12px', width: '100%', maxWidth: '800px', maxHeight: '85vh', display: 'flex', flexDirection: 'column', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)' }} onClick={e => e.stopPropagation()}>
+                  <div style={{ padding: '20px 25px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <h2 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <Target size={20} color="var(--accent-primary)" />
+                          {activePhaseSubject.toUpperCase()} EVENTS
+                      </h2>
+                      <button onClick={() => setIsKillChainModalOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer' }}><X size={24} /></button>
+                  </div>
+                  <div style={{ padding: '25px', overflowY: 'auto', flex: 1, display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                      {(() => {
+                          const tacticsInPhase = KILL_CHAIN_PHASES[activePhaseSubject] || [];
+                          
+                          // Filter metrics.allExercises by checking if their mapped tactic is inside tacticsInPhase
+                          const filtered = (metrics.allExercises || []).filter(ex => {
+                              if (!mitreData || !ex.ttp) return false;
+                              const ttpList = ex.ttp.split(',').map(t => t.trim());
+                              return ttpList.some(ttp => {
+                                  const tacticName = Object.keys(mitreData).find(t => mitreData[t].techniques.find(tech => tech.id === ttp || (tech.subTechniques && tech.subTechniques.find(sub => sub.id === ttp))));
+                                  return tacticName && tacticsInPhase.includes(tacticName);
+                              });
+                          });
+
+                          if (filtered.length === 0) {
+                              return (
+                                  <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+                                      <Activity size={32} style={{ opacity: 0.5, marginBottom: '15px' }} />
+                                      <div>No events have been recorded for the {activePhaseSubject} phase.</div>
+                                  </div>
+                              );
+                          }
+
+                          return filtered.map((ex, i) => (
+                              <EventCard key={i} ex={ex} isReadOnly={true} />
+                          ));
+                      })()}
+                  </div>
+              </div>
+          </div>
+      )}
     </div>
   );
 }
