@@ -840,7 +840,6 @@ export default function Dashboard() {
             
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '300px' }}>
                 {/* Master View (The Chain) */}
-                {!activePhaseSubject && (
                 <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', padding: '10px 10px 25px 10px', overflowX: 'auto' }}>
                     {/* The glowing track line */}
                     <div style={{ position: 'absolute', top: '50%', left: '40px', right: '40px', height: '4px', background: 'rgba(255,255,255,0.05)', transform: 'translateY(-50%)', borderRadius: '2px', zIndex: 0 }}>
@@ -901,7 +900,6 @@ export default function Dashboard() {
                         })}
                     </div>
                 </div>
-                )}
 
                 {/* Detail View (HUD Console) */}
                 {activePhaseSubject && (
@@ -978,14 +976,15 @@ export default function Dashboard() {
                                         </div>
                                     ) : (
                                         filteredEvents.map((ex, i) => {
+                                            const actualOutcome = ex.outcome || 'Unknown';
                                             let outcomeStyle = { color: 'var(--text-primary)', bg: 'rgba(255,255,255,0.1)', border: 'rgba(255,255,255,0.2)' };
-                                            if (ex.status === 'Prevented & Alerted') outcomeStyle = { color: 'var(--success)', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)' };
-                                            else if (ex.status === 'Prevented') outcomeStyle = { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.3)' };
-                                            else if (ex.status === 'Alerted') outcomeStyle = { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.3)' };
-                                            else if (ex.status === 'Logged') outcomeStyle = { color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)' };
-                                            else if (ex.status === 'Missed') outcomeStyle = { color: 'var(--danger)', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.3)' };
+                                            if (actualOutcome === 'Prevented & Alerted') outcomeStyle = { color: 'var(--success)', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)' };
+                                            else if (actualOutcome === 'Prevented') outcomeStyle = { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.3)' };
+                                            else if (actualOutcome === 'Alerted') outcomeStyle = { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.3)' };
+                                            else if (actualOutcome === 'Logged') outcomeStyle = { color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)' };
+                                            else if (actualOutcome === 'Missed') outcomeStyle = { color: 'var(--danger)', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.3)' };
 
-                                            const eventName = ex.finding || ex.name || 'Simulated Event';
+                                            const eventName = ex.finding || 'Simulated Event';
                                             const ttp = ex.ttp || 'Unknown TTP';
 
                                             return (
@@ -1027,7 +1026,7 @@ export default function Dashboard() {
                                                         letterSpacing: '0.5px',
                                                         boxShadow: `0 0 10px ${outcomeStyle.bg}`
                                                     }}>
-                                                        {ex.status || 'Unknown'}
+                                                        {actualOutcome}
                                                     </div>
                                                 </div>
                                             );
