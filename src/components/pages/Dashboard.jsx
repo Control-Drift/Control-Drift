@@ -872,9 +872,7 @@ export default function Dashboard() {
                                 <div key={phase.subject} 
                                      style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', position: 'relative', width: '80px', cursor: 'pointer' }}
                                      onMouseEnter={() => setActivePhaseSubject(phase.subject)}
-                                     onClick={() => setActivePhaseSubject(phase.subject)}
-                                     onMouseOver={e => { e.currentTarget.children[1].style.transform = 'scale(1.2)'; }}
-                                     onMouseOut={e => { e.currentTarget.children[1].style.transform = isActive ? 'scale(1.15)' : 'scale(1)'; }}>
+                                     onClick={() => setActivePhaseSubject(phase.subject)}>
                                     
                                     {/* Label above */}
                                     <div style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: isActive ? 800 : 600, fontFamily: 'monospace', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.5px', height: '40px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', textShadow: isActive ? '0 2px 4px rgba(0,0,0,0.8)' : 'none', transition: 'all 0.3s' }}>
@@ -973,7 +971,9 @@ export default function Dashboard() {
                                         </div>
                                     ) : (
                                         filteredEvents.map((ex, i) => (
-                                            <EventCard key={i} ex={ex} isReadOnly={true} />
+                                            <div key={i} style={{ pointerEvents: 'none' }}>
+                                                <EventCard proc={ex} isCollapsed={true} isReadOnly={true} />
+                                            </div>
                                         ))
                                     )}
                                 </div>
