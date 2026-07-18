@@ -1,6 +1,6 @@
 <div align="center">
   <br />
-  <img src="public/favicon.svg" alt="Control Drift Logo" width="120" />
+  <img src="public/drift_emblem.png" alt="Control Drift Logo" width="120" />
   <h1>Control Drift</h1>
   <p><strong>A modern platform for empowering cybersecurity professionals to actively assess security control effectiveness, measure defense capability, and increase readiness against real-world cyber threats.</strong></p>
 
