@@ -16,7 +16,7 @@
 
 ## The Problem: Security Control Drift
 
-"Control Drift" occurs when the *expectation* of a security control's effectiveness does not meet the *reality* of its performance. This can happen when an established control (such as an EDR/AV policy, firewall rule, or endpoint configuration) silently degrades or breaks over time due to environment changes, misconfigurations, or software updates. 
+"Control Drift" occurs when the *expectation* of a security control's effectiveness does not meet the *reality* of its performance. This can happen when an established control (such as an EDR/AV policy, firewall rule, or endpoint configuration) silently degrades or breaks over time due to environment changes, misconfigurations, or software updates. However, it is not just about regressions—Control Drift is equally about proactively identifying inherent security shortcomings and evaluating where your current controls fundamentally fail to meet defensive expectations.
 
 Traditional Breach and Attack Simulation (BAS) tools and purple-teaming platforms are often weighed down by massive infrastructure requirements, clunky user interfaces, and bloated feature sets that make discovering and tracking these specific, day-to-day regressions a chore.
 
