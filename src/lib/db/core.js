@@ -33,9 +33,9 @@ export class DatabaseAdapter {
     async saveData(key, data) { throw new Error('Not implemented'); }
     
     // Granular Data methods
-    async fetchExercises(page = 1, limit = 50, simulation = '') { throw new Error('Not implemented'); }
+    async fetchEvents(page = 1, limit = 50, simulation = '') { throw new Error('Not implemented'); }
     async fetchSimulations() { throw new Error('Not implemented'); }
-    async createExercise(exercise) { throw new Error('Not implemented'); }
+    async createEvent(event) { throw new Error('Not implemented'); }
     async fetchGaps() { throw new Error('Not implemented'); }
     async createGap(gap) { throw new Error('Not implemented'); }
     async updateGap(id, gap) { throw new Error('Not implemented'); }

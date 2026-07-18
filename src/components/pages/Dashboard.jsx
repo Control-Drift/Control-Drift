@@ -16,11 +16,10 @@
 
 import React from 'react';
 import { useAppContext } from '../../AppContext';
-import { Activity, Target, ShieldAlert, Shield, ArrowRight, Info, Key, Terminal, Ghost, Network, Clock, ShieldCheck, Database, Globe, X } from 'lucide-react';
+import { Activity, Target, ShieldAlert, Shield, ArrowRight, ArrowLeft, Info, Key, Terminal, Ghost, Network, Clock, ShieldCheck, Database, Globe, BrainCircuit } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import UnifiedPosturePill from '../ui/UnifiedPosturePill';
 import TagDropdown from '../dropdowns/TagDropdown';
-import EventCard from '../ui/EventCard';
 
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 
@@ -30,14 +29,6 @@ const PHASE_ICONS = {
   "Evasion": Ghost,
   "Movement": Network,
   "Action on Objective": Target
-};
-
-const KILL_CHAIN_PHASES = {
-    "Initial Access": ["Initial Access"],
-    "Execution": ["Execution", "Persistence", "Privilege Escalation"],
-    "Evasion": ["Defense Evasion", "Defense Impairment", "Stealth"],
-    "Movement": ["Discovery", "Lateral Movement", "Credential Access"],
-    "Action on Objective": ["Collection", "Command and Control", "Exfiltration", "Impact"]
 };
 
 // Custom Cyber Metric Icons - Minimalist & Sleek
@@ -170,7 +161,7 @@ const getNormalizedPosture = (ex) => {
 };
 
 export default function Dashboard() {
-  const { exercises: contextExercises, allExercisesData, gaps: contextGaps, mitreData, dbAdapter, dbConfig, isDbLoading, aiSettings, setActiveAiContext, activeTagFilter, isAiActive, setActiveSecurityControlFilter, simulationSummaries } = useAppContext();
+  const { events: contextExercises, allEventsData, gaps: contextGaps, mitreData, dbAdapter, dbConfig, isDbLoading, aiSettings, setActiveAiContext, activeTagFilter, isAiActive, setActiveSecurityControlFilter, simulationSummaries } = useAppContext();
   const navigate = useNavigate();
   
   const [metrics, setMetrics] = React.useState({
@@ -184,14 +175,12 @@ export default function Dashboard() {
       mttrText: 'N/A',
       radarData: [],
       areaData: [],
-      mitreCoveragePercentage: 0,
-      allExercises: []
+      mitreCoveragePercentage: 0
   });
   const [topSecurityControls, setTopSecurityControls] = React.useState([]);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [activePhaseSubject, setActivePhaseSubject] = React.useState(null);
-  const [selectedPhaseSubject, setSelectedPhaseSubject] = React.useState(null);
-  const [isKillChainModalOpen, setIsKillChainModalOpen] = React.useState(false);
+  const [activePhaseSubject, setActivePhaseSubject] = React.useState("Pre-Attack");
+  const [expandedPhaseSubject, setExpandedPhaseSubject] = React.useState(null);
 
   React.useEffect(() => {
     setActiveAiContext({
@@ -232,7 +221,7 @@ export default function Dashboard() {
                        fetchedMetrics = await metricsRes.json();
                    }
                    
-                   const exercisesRes = await dbAdapter.fetchWithTimeout(`${dbAdapter.endpoint}/api/exercises?page=1&limit=4`, { headers: dbAdapter.getHeaders() });
+                   const exercisesRes = await dbAdapter.fetchWithTimeout(`${dbAdapter.endpoint}/api/events?page=1&limit=4`, { headers: dbAdapter.getHeaders() });
                    if (exercisesRes.ok) {
                        const pageData = await exercisesRes.json();
                        fetchedRecent = pageData.data || [];
@@ -246,10 +235,10 @@ export default function Dashboard() {
                setMetrics(fetchedMetrics);
                setRecentExercises(fetchedRecent || []);
            } else {
-               let allExercises = Object.values(allExercisesData || {});
+               let allExercises = Object.values(allEventsData || {});
                
                if (dbAdapter && typeof dbAdapter.fetchData === 'function' && dbAdapter.type === 'local') {
-                   const fetchedAll = await dbAdapter.fetchData('exercises');
+                   const fetchedAll = await dbAdapter.fetchData('events');
                    if (fetchedAll && fetchedAll.length > 0) allExercises = fetchedAll;
                }
 
@@ -261,9 +250,9 @@ export default function Dashboard() {
                            const simEnvironment = sim.details?.environment || sim.details?.environmentCategory || [];
                            
                            sim.testResults.forEach(tr => {
-                               if (allExercises.some(ex => (tr.id && ex.id === tr.id) || (ex.ttp === tr.ttp && ex.date === tr.date))) {
-                                   return;
-                               }
+                                if (allExercises.some(ex => ex && tr && ((tr.id && ex.id === tr.id) || (ex.ttp && tr.ttp && ex.ttp === tr.ttp && ex.date === tr.date)))) {
+                                    return;
+                                }
                                
                                allExercises.push({
                                    ...tr,
@@ -293,7 +282,7 @@ export default function Dashboard() {
                    allGaps = allGaps.filter(g => Array.isArray(g.tags) ? g.tags.includes(activeTagFilter) : g.tags === activeTagFilter);
                }
 
-               // Filter out historical exercises that map entirely to globally de-scoped TTPs
+               // Filter out historical events that map entirely to globally de-scoped TTPs
                if (mitreData && Object.keys(mitreData).length > 0) {
                    const outOfScopeTTPs = new Set();
                    Object.values(mitreData).forEach(tactic => {
@@ -409,20 +398,17 @@ export default function Dashboard() {
                    const totalSeconds = validResolved.reduce((acc, g) => acc + (new Date(g.resolvedDate) - new Date(g.createdDate)) / 1000, 0);
                    const meanSeconds = totalSeconds / validResolved.length;
                    if (!isNaN(meanSeconds)) {
-                       const days = Math.floor(meanSeconds / (3600 * 24));
-                       const hours = Math.floor((meanSeconds % (3600 * 24)) / 3600);
-                       const minutes = Math.floor((meanSeconds % (3600) / 60));
-                       
-                       if (days > 0) {
-                           mttrText = `${days}d ${hours}h`;
-                       } else if (hours > 0) {
-                           mttrText = `${hours}h ${minutes}m`;
-                       } else if (minutes > 0) {
-                           mttrText = `${minutes}m`;
-                       } else {
-                           mttrText = '< 1m';
-                       }
-                   }
+                        let roundedHours = Math.round(meanSeconds / 3600);
+                        if (roundedHours > 0) {
+                            const d = Math.floor(roundedHours / 24);
+                            const h = roundedHours % 24;
+                            if (d > 0 && h > 0) mttrText = `${d}d ${h}h`;
+                            else if (d > 0) mttrText = `${d}d`;
+                            else mttrText = `${h}h`;
+                        } else {
+                            mttrText = '< 1h';
+                        }
+                    }
                }
                
                const tacticExposure = {};
@@ -458,9 +444,18 @@ export default function Dashboard() {
                 };
                 
                 trackExposure(allExercises, false);
-                trackExposure(allGaps, true);
+                trackExposure(allGaps.filter(g => g.status === 'Resolved'), true);
+                trackExposure(allGaps.filter(g => g.status === 'Open' || g.status === 'In Progress'), true);
                 
-                const radarData = Object.entries(KILL_CHAIN_PHASES).map(([phase, tactics]) => {
+                const killChainPhases = {
+                    "Initial Access": ["Initial Access"],
+                    "Execution": ["Execution", "Persistence", "Privilege Escalation"],
+                    "Evasion": ["Defense Evasion", "Defense Impairment", "Stealth"],
+                    "Movement": ["Discovery", "Lateral Movement", "Credential Access"],
+                    "Action on Objective": ["Collection", "Command and Control", "Exfiltration", "Impact"]
+                };
+
+                const radarData = Object.entries(killChainPhases).map(([phase, tactics]) => {
                     const missedSet = new Set();
                     const testedSet = new Set();
                     tactics.forEach(t => {
@@ -568,20 +563,19 @@ export default function Dashboard() {
                    }
                }
 
-                   setMetrics({
-                       grsScore,
-                       totalValidated,
-                       totalGaps,
-                       closedGaps,
-                       openGapsCount,
-                       resolutionRate,
-                       residualRisk,
-                       mttrText,
-                       radarData,
-                       areaData,
-                       mitreCoveragePercentage,
-                       allExercises
-                   });
+               setMetrics({
+                   grsScore,
+                   totalValidated,
+                   totalGaps,
+                   closedGaps,
+                   openGapsCount,
+                   resolutionRate,
+                   residualRisk,
+                   mttrText,
+                   radarData,
+                   areaData,
+                   mitreCoveragePercentage
+               });
                 const resolvedTTPs = new Set();
                 allGaps.forEach(g => {
                     if (g.status === 'Resolved' || g.status === 'Risk Accepted') {
@@ -590,7 +584,17 @@ export default function Dashboard() {
                 });
 
                 const controlStats = {};
+                const processedEventKeys = new Set();
+                
                 allExercises.forEach(ex => {
+                    if (ex.status === 'unknown' || ex.status === 'na' || ex.status === 'Pending') return;
+                    if (ex.remediation && typeof ex.remediation === 'string' && ex.remediation.includes('No specific execution or detection notes')) return;
+                    
+                    // Deduplicate events that originate from the same procedure execution (mapped to multiple TTPs)
+                    const dedupeKey = `${ex.simulation || ex.simId || 'unknown'}-${ex.date || ''}-${ex.remediation || ''}`;
+                    if (processedEventKeys.has(dedupeKey)) return;
+                    processedEventKeys.add(dedupeKey);
+
                     const { outcome } = getNormalizedPosture(ex);
                     let isPositive = outcome === 'Prevented' || outcome === 'Alerted';
                     
@@ -625,12 +629,11 @@ export default function Dashboard() {
        } finally {
            setIsLoading(false);
        }
-  }, [dbAdapter, allExercisesData, contextGaps, mitreData, activeTagFilter]);
+  }, [dbAdapter, allEventsData, contextGaps, mitreData, activeTagFilter]);
 
   React.useEffect(() => {
       loadDashboardData();
   }, [loadDashboardData]);
-
 
   const {
       grsScore,
@@ -645,13 +648,6 @@ export default function Dashboard() {
       areaData,
       mitreCoveragePercentage
   } = metrics;
-
-  // Set initial active phase once data is loaded
-  React.useEffect(() => {
-      if (radarData && radarData.length > 0 && !activePhaseSubject) {
-          setActivePhaseSubject(radarData[0].subject);
-      }
-  }, [radarData, activePhaseSubject]);
 
   const isRemoteConnected = !!dbAdapter && !isDbLoading && dbConfig?.provider !== 'local';
 
@@ -673,7 +669,7 @@ export default function Dashboard() {
            </div>
            
            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(10,11,16,0.6)', border: `1px solid ${isAiActive ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '24px', boxShadow: isAiActive ? '0 0 10px rgba(16,185,129,0.2)' : 'none' }}>
-              <Activity size={16} color={isAiActive ? 'var(--success)' : 'var(--text-muted)'} />
+              <BrainCircuit size={16} color={isAiActive ? 'var(--success)' : 'var(--text-muted)'} />
               <span style={{ fontSize: '0.85rem', color: isAiActive ? 'var(--success)' : 'var(--text-muted)', fontWeight: 'bold' }}>{isAiActive ? 'AI: ONLINE' : 'AI: OFFLINE'}</span>
            </div>
         </div>
@@ -837,229 +833,349 @@ export default function Dashboard() {
 
       <div className="slide-in-staggered dashboard-grid" style={{ marginBottom: '40px' }}>
          {/* Kill Chain Exposure Card (Master-Detail) */}
-         <div className="glass-panel hover-lift" style={{ padding: '30px', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', height: '500px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', marginBottom: '15px', zIndex: 2 }}>
-                <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    Kill Chain Exposure
-                    <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>A breakdown of your defensive posture across the Lockheed Martin Cyber Kill Chain. Highlights which stages of an attack are most vulnerable.</div>}>
-                       <span style={{ cursor: 'help', color: 'var(--text-muted)', display: 'flex' }}><Info size={14} /></span>
-                    </Tooltip>
-                </h3>
-            </div>
-            
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '300px' }}>
-                {/* Master View (The Chain) */}
-                {!selectedPhaseSubject && (
-                <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', padding: '10px 10px 25px 10px', overflowX: 'auto' }}>
-                    {/* The glowing track line */}
-                    <div style={{ position: 'absolute', top: '50%', left: '40px', right: '40px', height: '4px', background: 'rgba(255,255,255,0.05)', transform: 'translateY(-50%)', borderRadius: '2px', zIndex: 0 }}>
-                        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(59, 130, 246, 0.4), rgba(156, 39, 176, 0.4))', borderRadius: 'inherit', boxShadow: '0 0 10px rgba(156, 39, 176, 0.5)' }} />
+         <div className="glass-panel hover-lift" style={{ padding: '30px', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', minHeight: '380px', height: expandedPhaseSubject ? 'auto' : '380px' }}>
+            {!expandedPhaseSubject ? (
+                <>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', marginBottom: '15px', zIndex: 2 }}>
+                        <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            Kill Chain Exposure
+                            <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>A breakdown of your defensive posture across the Lockheed Martin Cyber Kill Chain. Highlights which stages of an attack are most vulnerable.</div>}>
+                               <span style={{ cursor: 'help', color: 'var(--text-muted)', display: 'flex' }}><Info size={14} /></span>
+                            </Tooltip>
+                        </h3>
                     </div>
                     
-                    <div style={{ display: 'flex', justifyContent: 'space-between', zIndex: 1, position: 'relative', minWidth: 'max-content', gap: '20px' }}>
-                        {radarData && radarData.map((phase, i) => {
-                            const risk = phase.risk;
-                            const tested = phase.tested;
-                            const isActive = activePhaseSubject === phase.subject;
-                            const IconComponent = PHASE_ICONS[phase.subject] || Target;
-                            let color = 'var(--success)';
-                            let glow = 'rgba(16, 185, 129, 0.4)';
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '300px' }}>
+                        {/* Master View (The Chain) */}
+                        <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', padding: '10px 10px 25px 10px', overflowX: 'auto' }}>
+                            {/* The glowing track line */}
+                            <div style={{ position: 'absolute', top: '50%', left: '40px', right: '40px', height: '4px', background: 'rgba(255,255,255,0.05)', transform: 'translateY(-50%)', borderRadius: '2px', zIndex: 0 }}>
+                                <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(59, 130, 246, 0.4), rgba(156, 39, 176, 0.4))', borderRadius: 'inherit', boxShadow: '0 0 10px rgba(156, 39, 176, 0.5)' }} />
+                            </div>
                             
-                            if (tested === 0) { 
-                                color = 'var(--text-muted)'; 
-                                glow = 'rgba(255, 255, 255, 0.1)'; 
-                            }
-                            else if (risk >= 50) { 
-                                color = 'var(--danger)'; 
-                                glow = 'rgba(239, 68, 68, 0.4)'; 
-                            }
-                            else if (risk >= 20) { 
-                                color = 'var(--warning)'; 
-                                glow = 'rgba(245, 158, 11, 0.4)'; 
-                            }
-                            
-                            return (
-                                <div key={phase.subject} 
-                                     style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', position: 'relative', width: '80px', cursor: 'pointer' }}
-                                     onMouseEnter={() => setActivePhaseSubject(phase.subject)}
-                                     onClick={() => setSelectedPhaseSubject(phase.subject)}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', zIndex: 1, position: 'relative', minWidth: 'max-content', gap: '20px' }}>
+                                {radarData && radarData.map((phase, i) => {
+                                    const risk = phase.risk;
+                                    const tested = phase.tested;
+                                    const isActive = activePhaseSubject === phase.subject;
+                                    const IconComponent = PHASE_ICONS[phase.subject] || Target;
+                                    let color = 'var(--success)';
+                                    let glow = 'rgba(16, 185, 129, 0.4)';
                                     
-                                    {/* Label above */}
-                                    <div style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: isActive ? 800 : 600, fontFamily: 'monospace', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.5px', height: '40px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', textShadow: isActive ? '0 2px 4px rgba(0,0,0,0.8)' : 'none', transition: 'all 0.3s' }}>
-                                        {phase.subject}
-                                    </div>
+                                    if (tested === 0) { 
+                                        color = 'var(--text-muted)'; 
+                                        glow = 'rgba(255, 255, 255, 0.1)'; 
+                                    }
+                                    else if (risk >= 50) { 
+                                        color = 'var(--danger)'; 
+                                        glow = 'rgba(239, 68, 68, 0.4)'; 
+                                    }
+                                    else if (risk >= 20) { 
+                                        color = 'var(--warning)'; 
+                                        glow = 'rgba(245, 158, 11, 0.4)'; 
+                                    }
                                     
-                                    {/* The Node with Icon */}
-                                    <div style={{ 
-                                        width: '36px', height: '36px', borderRadius: '50%', 
-                                        background: isActive ? 'rgba(31,40,51,0.9)' : 'var(--bg-secondary)', 
-                                        border: `2px solid ${color}`,
-                                        boxShadow: isActive ? `0 0 25px ${color}` : `0 0 15px ${glow}`,
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
-                                        position: 'relative',
-                                        color: color,
-                                        transform: isActive ? 'scale(1.15)' : 'scale(1)'
-                                    }}>
-                                        <IconComponent size={16} />
-                                    </div>
-                                    
-                                    {/* Selection indicator below */}
-                                    <div style={{ height: '6px', width: '6px', borderRadius: '50%', background: isActive ? 'var(--text-primary)' : 'transparent', transition: 'background 0.3s', marginTop: '10px' }} />
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-                )}
-
-                {/* Detail View (HUD Console) */}
-                {(activePhaseSubject || selectedPhaseSubject) && (
-                <div style={{ flex: selectedPhaseSubject ? 1 : '0 0 auto', background: 'rgba(10,11,16,0.6)', borderRadius: '12px', border: '1px solid var(--glass-border)', display: 'flex', flexDirection: 'column', overflow: 'hidden', marginTop: '10px' }}>
-                    {(() => {
-                        const currentSubject = selectedPhaseSubject || activePhaseSubject;
-                        const activeData = radarData && radarData.find(d => d.subject === currentSubject) || (radarData && radarData[0]);
-                        if (!activeData) return null;
-                        const risk = activeData.risk;
-                        const tested = activeData.tested;
-                        let color = 'var(--success)';
-                        let statusText = 'SECURED';
-                        
-                        if (tested === 0) { 
-                            color = 'var(--text-muted)'; 
-                            statusText = 'UNTESTED';
-                        }
-                        else if (risk >= 70) { 
-                            color = '#ef4444'; 
-                            statusText = 'Critical Risk';
-                        }
-                        else if (risk >= 50) { 
-                            color = '#f97316'; 
-                            statusText = 'High Risk';
-                        }
-                        else if (risk >= 30) { 
-                            color = '#eab308'; 
-                            statusText = 'Moderate Risk';
-                        }
-                        else if (risk >= 10) { 
-                            color = '#84cc16'; 
-                            statusText = 'Low Risk';
-                        }
-                        else if (risk > 0) {
-                            color = '#10b981'; 
-                            statusText = 'Minimal Risk';
-                        }
-
-                        const tacticsInPhase = KILL_CHAIN_PHASES[activePhaseSubject] || [];
-                        
-                        const filteredEvents = (metrics.allExercises || []).filter(ex => {
-                            if (!mitreData || !ex.ttp) return false;
-                            const ttpList = ex.ttp.split(',').map(t => t.trim());
-                            return ttpList.some(ttp => {
-                                const tacticName = Object.keys(mitreData).find(t => mitreData[t].techniques.find(tech => tech.id === ttp || (tech.subTechniques && tech.subTechniques.find(sub => sub.id === ttp))));
-                                return tacticName && tacticsInPhase.includes(tacticName);
-                            });
-                        });
-
-                        return (
-                            <div className="animate-fade-in" key={activeData.subject} style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-                                {/* Header */}
-                                <div style={{ padding: '15px 20px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(255,255,255,0.02)' }}>
-                                    <div>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                                            {selectedPhaseSubject && (
-                                                <button onClick={() => setSelectedPhaseSubject(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '4px' }} onMouseOver={e => e.currentTarget.style.color = 'var(--text-primary)'} onMouseOut={e => e.currentTarget.style.color = 'var(--text-muted)'}>
-                                                    <X size={18} />
-                                                </button>
-                                            )}
-                                            <h4 style={{ margin: '0 0 4px 0', fontSize: '1.1rem', color: 'var(--text-primary)', fontFamily: 'monospace' }}>[{activeData.subject.toUpperCase()}]</h4>
+                                    return (
+                                        <div key={phase.subject} 
+                                             style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '15px', position: 'relative', width: '80px', cursor: 'pointer' }}
+                                             onMouseEnter={() => setActivePhaseSubject(phase.subject)}
+                                             onClick={() => setExpandedPhaseSubject(phase.subject)}
+                                             onMouseOver={e => { e.currentTarget.children[1].style.transform = 'scale(1.2)'; }}
+                                             onMouseOut={e => { e.currentTarget.children[1].style.transform = isActive ? 'scale(1.15)' : 'scale(1)'; }}>
+                                            
+                                            {/* Label above */}
+                                            <div style={{ color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)', fontSize: '0.65rem', fontWeight: isActive ? 800 : 600, fontFamily: 'monospace', textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.5px', height: '40px', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', textShadow: isActive ? '0 2px 4px rgba(0,0,0,0.8)' : 'none', transition: 'all 0.3s' }}>
+                                                {phase.subject}
+                                            </div>
+                                            
+                                            {/* The Node with Icon */}
+                                            <div style={{ 
+                                                width: '36px', height: '36px', borderRadius: '50%', 
+                                                background: isActive ? 'rgba(31,40,51,0.9)' : 'var(--bg-secondary)', 
+                                                border: `2px solid ${color}`,
+                                                boxShadow: isActive ? `0 0 25px ${color}` : `0 0 15px ${glow}`,
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+                                                position: 'relative',
+                                                color: color,
+                                                transform: isActive ? 'scale(1.15)' : 'scale(1)'
+                                            }}>
+                                                <IconComponent size={16} />
+                                            </div>
+                                            
+                                            {/* Selection indicator below */}
+                                            <div style={{ height: '6px', width: '6px', borderRadius: '50%', background: isActive ? 'var(--text-primary)' : 'transparent', transition: 'background 0.3s', marginTop: '10px' }} />
                                         </div>
-                                        <div style={{ color: color, fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginLeft: '33px' }}>{statusText}</div>
-                                    </div>
-                                    <div style={{ textAlign: 'right', display: 'flex', alignItems: 'baseline', gap: '8px' }}>
-                                        <div style={{ fontSize: '1.8rem', fontWeight: 900, color: color, lineHeight: '1' }}>{tested > 0 ? `${risk}%` : '--'}</div>
-                                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>EXPOSURE</div>
-                                    </div>
-                                </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Detail View (HUD Console) */}
+                        <div style={{ flex: 1, background: 'rgba(10,11,16,0.6)', borderRadius: '12px', border: '1px solid var(--glass-border)', padding: '20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                            {(() => {
+                                const activeData = radarData && radarData.find(d => d.subject === activePhaseSubject) || (radarData && radarData[0]);
+                                if (!activeData) return null;
+                                const risk = activeData.risk;
+                                const tested = activeData.tested;
+                                let color = 'var(--success)';
+                                let statusText = 'SECURED';
+                                const ttpText = tested === 1 ? 'tested technique' : 'tested techniques';
+                                let desc = `Defenses successfully prevented the ${ttpText} in this phase.`;
                                 
-                                {/* Scrollable Events List */}
-                                {selectedPhaseSubject && (
-                                <div style={{ flex: 1, overflowY: 'auto', padding: '15px 20px', display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                                    {filteredEvents.length === 0 ? (
-                                        <div style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', marginTop: '20px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
-                                            <Activity size={24} style={{ opacity: 0.5 }} />
-                                            No simulated events mapped to this phase.
+                                if (tested === 0) { 
+                                    color = 'var(--text-muted)'; 
+                                    statusText = 'UNTESTED / NO DATA';
+                                    desc = `No empirical test data exists for ${activeData.subject}. Run simulations targeting this phase to establish a baseline.`;
+                                }
+                                else if (risk >= 70) { 
+                                    color = '#ef4444'; 
+                                    statusText = 'Critical Risk';
+                                    desc = `High exposure rate for the ${ttpText} in ${activeData.subject}. Significant defense gaps observed.`;
+                                }
+                                else if (risk >= 50) { 
+                                    color = '#f97316'; 
+                                    statusText = 'High Risk';
+                                    desc = `Elevated exposure for the ${ttpText} in ${activeData.subject}. Frequent defense misses observed.`;
+                                }
+                                else if (risk >= 30) { 
+                                    color = '#eab308'; 
+                                    statusText = 'Moderate Risk';
+                                    desc = `Moderate exposure for the ${ttpText} in this phase. Defenses were partially bypassed.`;
+                                }
+                                else if (risk >= 10) { 
+                                    color = '#84cc16'; 
+                                    statusText = 'Low Risk';
+                                    desc = `Low exposure for the ${ttpText} in this phase. Defenses prevented most activity.`;
+                                }
+                                else if (risk > 0) {
+                                    color = '#10b981'; 
+                                    statusText = 'Minimal Risk';
+                                    desc = `Minimal exposure for the ${ttpText} in this phase. Defenses were largely effective.`;
+                                }
+
+                                return (
+                                    <div className="animate-fade-in" key={activeData.subject} style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
+                                        <div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
+                                                <div>
+                                                    <h4 style={{ margin: '0 0 5px 0', fontSize: '1.2rem', color: 'var(--text-primary)', fontFamily: 'monospace' }}>[{activeData.subject.toUpperCase()}]</h4>
+                                                    <div style={{ color: color, fontSize: '0.9rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px' }}>{statusText}</div>
+                                                </div>
+                                                <div style={{ textAlign: 'right' }}>
+                                                    <div style={{ fontSize: '2rem', fontWeight: 900, color: color, lineHeight: '1' }}>{tested > 0 ? `${risk}%` : '--'}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>EXPOSURE</div>
+                                                </div>
+                                            </div>
+                                            <p style={{ margin: 0, fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                                                {desc}
+                                            </p>
                                         </div>
-                                    ) : (
-                                        filteredEvents.map((ex, i) => {
-                                            const actualOutcome = ex.outcome || 'Unknown';
-                                            let outcomeStyle = { color: 'var(--text-primary)', bg: 'rgba(255,255,255,0.1)', border: 'rgba(255,255,255,0.2)' };
-                                            if (actualOutcome === 'Prevented & Alerted') outcomeStyle = { color: 'var(--success)', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)' };
-                                            else if (actualOutcome === 'Prevented') outcomeStyle = { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.3)' };
-                                            else if (actualOutcome === 'Alerted') outcomeStyle = { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.3)' };
-                                            else if (actualOutcome === 'Logged') outcomeStyle = { color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)' };
-                                            else if (actualOutcome === 'Missed') outcomeStyle = { color: 'var(--danger)', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.3)' };
+                                        
+                                        <div style={{ marginTop: '15px', opacity: tested > 0 ? 1 : 0.2, pointerEvents: tested > 0 ? 'auto' : 'none' }}>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '5px' }}>
+                                                <span>Secure</span>
+                                                <span>Exposed</span>
+                                            </div>
+                                            <div style={{ width: '100%', height: '8px', background: 'var(--glass-bg)', borderRadius: '4px', overflow: 'hidden' }}>
+                                                <div style={{ width: `${risk}%`, height: '100%', background: color, transition: 'width 0.5s cubic-bezier(0.16, 1, 0.3, 1)' }} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                );
+                            })()}
+                        </div>
+                    </div>
+                </>
+            ) : (
+                (() => {
+                    const activeData = radarData && radarData.find(d => d.subject === expandedPhaseSubject);
+                    if (!activeData) return null;
+                    const risk = activeData.risk;
+                    const tested = activeData.tested;
+                    let color = 'var(--success)';
+                    let statusText = 'SECURED';
+                    
+                    if (tested === 0) { 
+                        color = 'var(--text-muted)'; 
+                        statusText = 'UNTESTED';
+                    } else if (risk >= 70) { 
+                        color = '#ef4444'; 
+                        statusText = 'Critical Risk';
+                    } else if (risk >= 50) { 
+                        color = '#f97316'; 
+                        statusText = 'High Risk';
+                    } else if (risk >= 30) { 
+                        color = '#eab308'; 
+                        statusText = 'Moderate Risk';
+                    } else if (risk >= 10) { 
+                        color = '#84cc16'; 
+                        statusText = 'Low Risk';
+                    } else if (risk > 0) {
+                        color = '#10b981'; 
+                        statusText = 'Minimal Risk';
+                    }
 
-                                            const eventName = ex.finding || 'Simulated Event';
-                                            const ttp = ex.ttp || 'Unknown TTP';
+                    // Compute relevant events
+                    const getTTPName = (id) => {
+                        if (!mitreData || !id) return '';
+                        for (const tactic in mitreData) {
+                            const tech = mitreData[tactic].techniques.find(t => t.id === id);
+                            if (tech) return tech.name;
+                            for (const t2 of mitreData[tactic].techniques) {
+                                if (t2.subTechniques) {
+                                    const sub = t2.subTechniques.find(s => s.id === id);
+                                    if (sub) return sub.name;
+                                }
+                            }
+                        }
+                        return '';
+                    };
+                    const killChainPhases = {
+                        "Initial Access": ["Initial Access"],
+                        "Execution": ["Execution", "Persistence", "Privilege Escalation"],
+                        "Evasion": ["Defense Evasion", "Defense Impairment", "Stealth"],
+                        "Movement": ["Discovery", "Lateral Movement", "Credential Access"],
+                        "Action on Objective": ["Collection", "Command and Control", "Exfiltration", "Impact"]
+                    };
+                    const activeTactics = killChainPhases[expandedPhaseSubject] || [];
+                    const relevantEvents = [];
+                    if (simulationSummaries) {
+                        Object.entries(simulationSummaries).forEach(([simName, sim]) => {
+                            if (sim.testResults && Array.isArray(sim.testResults)) {
+                                sim.testResults.forEach(evt => {
+                                    if (!evt.ttps || evt.ttps.length === 0) return;
+                                    const match = evt.ttps.some(ttp => {
+                                        const tacticName = Object.keys(mitreData || {}).find(t => 
+                                             mitreData[t].techniques.find(tech => tech.id === ttp || (tech.subTechniques && tech.subTechniques.find(sub => sub.id === ttp)))
+                                        );
+                                        return activeTactics.includes(tacticName);
+                                    });
+                                    if (match) {
+                                        relevantEvents.push({ ...evt, simulationName: simName });
+                                    }
+                                });
+                            }
+                        });
+                    }
 
-                                            return (
-                                                <div key={i} className="hover-lift" style={{ 
-                                                    background: 'linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)', 
-                                                    border: '1px solid var(--glass-border)', 
-                                                    borderLeft: `4px solid ${outcomeStyle.color}`,
-                                                    borderRadius: '8px', 
-                                                    padding: '12px 16px', 
-                                                    display: 'flex', 
-                                                    justifyContent: 'space-between', 
-                                                    alignItems: 'center',
-                                                    transition: 'all 0.2s ease',
-                                                    cursor: 'default'
-                                                }}>
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                            <Shield size={14} color={outcomeStyle.color} />
-                                                            <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '0.3px' }}>
-                                                                {eventName}
-                                                            </span>
-                                                        </div>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                                                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontFamily: 'monospace' }}>
-                                                                <Target size={12} /> {ttp}
-                                                            </span>
-                                                        </div>
+                    return (
+                        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: '300px' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', marginBottom: '15px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                    <button 
+                                        onClick={() => setExpandedPhaseSubject(null)}
+                                        className="hover-lift"
+                                        style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '50%', width: '36px', height: '36px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-primary)', cursor: 'pointer' }}
+                                    >
+                                        <ArrowLeft size={18} />
+                                    </button>
+                                    <div>
+                                        <h3 style={{ margin: 0, fontSize: '1.4rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            {expandedPhaseSubject}
+                                        </h3>
+                                        <div style={{ color: color, fontSize: '0.8rem', fontWeight: 'bold', textTransform: 'uppercase', letterSpacing: '1px', marginTop: '4px' }}>
+                                            {statusText}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style={{ textAlign: 'right' }}>
+                                    <div style={{ fontSize: '2.2rem', fontWeight: 900, color: color, lineHeight: '1' }}>{tested > 0 ? `${risk}%` : '--'}</div>
+                                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>EXPOSURE</div>
+                                </div>
+                            </div>
+
+                            <div style={{ flex: 1, overflowY: 'auto', paddingRight: '5px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                {relevantEvents.length === 0 ? (
+                                    <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
+                                        No event data found for {expandedPhaseSubject}.
+                                    </div>
+                                ) : (
+                                    relevantEvents.map((evt, i) => {
+                                        const actualOutcome = evt.outcome || 'Unknown';
+                                        const lowerOutcome = actualOutcome.toLowerCase();
+
+                                        let outcomeStyle = { color: 'var(--text-primary)', bg: 'rgba(255,255,255,0.1)', border: 'rgba(255,255,255,0.2)' };
+                                        
+                                        if (lowerOutcome.includes('prevented & alerted') || (lowerOutcome.includes('prevented') && lowerOutcome.includes('alerted'))) {
+                                            outcomeStyle = { color: 'var(--success)', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)' };
+                                        } else if (lowerOutcome.includes('prevented')) {
+                                            outcomeStyle = { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.3)' };
+                                        } else if (lowerOutcome.includes('alerted') || lowerOutcome.includes('logged')) {
+                                            outcomeStyle = { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.3)' };
+                                        } else if (lowerOutcome.includes('missed')) {
+                                            outcomeStyle = { color: 'var(--danger)', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.3)' };
+                                        } else if (lowerOutcome.includes('accepted')) {
+                                            outcomeStyle = { color: 'var(--text-muted)', bg: 'rgba(255, 255, 255, 0.05)', border: 'rgba(255, 255, 255, 0.1)' };
+                                        }
+
+                                        const ttps = (evt.ttps || []).join(', ') || 'Unknown TTP';
+                                        const eventName = evt.name || 'Simulated Event';
+
+                                        return (
+                                            <div key={i} className="hover-lift" onClick={() => navigate('/reports', { state: { simulation: evt.simulationName, fromDashboard: true } })} style={{ 
+                                                background: 'linear-gradient(90deg, rgba(255,255,255,0.03) 0%, rgba(255,255,255,0.01) 100%)', 
+                                                border: '1px solid var(--glass-border)', 
+                                                borderLeft: `4px solid ${outcomeStyle.color}`,
+                                                borderRadius: '8px', 
+                                                padding: '12px 16px', 
+                                                display: 'flex', 
+                                                justifyContent: 'space-between', 
+                                                alignItems: 'center',
+                                                transition: 'all 0.2s ease',
+                                                cursor: 'pointer'
+                                            }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <Shield size={14} color={outcomeStyle.color} />
+                                                        <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '0.3px' }}>
+                                                            {eventName}
+                                                        </span>
                                                     </div>
-                                                    
-                                                    <div style={{ 
-                                                        background: outcomeStyle.bg, 
-                                                        border: `1px solid ${outcomeStyle.border}`, 
-                                                        color: outcomeStyle.color, 
-                                                        padding: '4px 10px', 
-                                                        borderRadius: '20px', 
-                                                        fontSize: '0.7rem', 
-                                                        fontWeight: 800, 
-                                                        textTransform: 'uppercase',
-                                                        letterSpacing: '0.5px',
-                                                        boxShadow: `0 0 10px ${outcomeStyle.bg}`
-                                                    }}>
-                                                        {actualOutcome}
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                                                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontFamily: 'monospace' }}>
+                                                            <Target size={12} /> {ttps}
+                                                        </span>
                                                     </div>
                                                 </div>
-                                            );
-                                        })
-                                    )}
-                                </div>
+                                                
+                                                <div style={{ 
+                                                    background: outcomeStyle.bg, 
+                                                    border: `1px solid ${outcomeStyle.border}`, 
+                                                    color: outcomeStyle.color, 
+                                                    padding: '4px 10px', 
+                                                    borderRadius: '20px', 
+                                                    fontSize: '0.7rem', 
+                                                    fontWeight: 800, 
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '0.5px',
+                                                    boxShadow: `0 0 10px ${outcomeStyle.bg}`
+                                                }}>
+                                                    {actualOutcome}
+                                                </div>
+                                            </div>
+                                        );
+                                    })
                                 )}
                             </div>
-                        );
-                    })()}
-                </div>
-                )}
-            </div>
+                            
+                            <div style={{ marginTop: '15px', opacity: tested > 0 ? 1 : 0.2, pointerEvents: tested > 0 ? 'auto' : 'none', flex: '0 0 auto' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '5px' }}>
+                                    <span>Secure</span>
+                                    <span>Exposed</span>
+                                </div>
+                                <div style={{ width: '100%', height: '8px', background: 'var(--glass-bg)', borderRadius: '4px', overflow: 'hidden' }}>
+                                    <div style={{ width: `${risk}%`, height: '100%', background: color, transition: 'width 0.5s cubic-bezier(0.16, 1, 0.3, 1)' }} />
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })()
+            )}
          </div>
 
          {/* Risk Trend Over Time (Area Chart) */}
-         <div className="glass-panel hover-lift" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '500px' }}>
+         <div className="glass-panel hover-lift" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '380px' }}>
             <h3 style={{ margin: '0 0 25px 0', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Readiness Score Trend
                 <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>Historical tracking of your Global Readiness Score over time, plotting the outcomes of past adversary simulations against your current baseline.</div>}>
@@ -1105,7 +1221,7 @@ export default function Dashboard() {
          </div>
 
          {/* Top Security Controls */}
-         <div className="glass-panel hover-lift" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '500px' }}>
+         <div className="glass-panel hover-lift" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '380px' }}>
             <h3 style={{ margin: '0 0 25px 0', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Top Security Controls
                 <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>Performance metrics for your deployed security tools. Efficacy is calculated based on successful defenses against tested techniques.</div>}>
@@ -1164,8 +1280,6 @@ export default function Dashboard() {
             )}
          </div>
       </div>
-
-
     </div>
   );
 }

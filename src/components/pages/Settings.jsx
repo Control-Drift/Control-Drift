@@ -18,18 +18,18 @@ import React, { useState, useRef } from 'react';
 import DOMPurify from 'dompurify';
 import { encryptData, decryptData } from '../../lib/cryptoUtils';
 import { useAppContext } from '../../AppContext';
-import { Settings as SettingsIcon, Save, Key, Cpu, Globe, Trash2, ChevronDown, Upload, Eye, EyeOff, CheckCircle, XCircle, Loader, Activity, Tag, BrainCircuit, Shield, Sparkles, Server, Layers } from 'lucide-react';
+import { Settings as SettingsIcon, Save, Key, Cpu, Globe, Trash2, ChevronDown, Upload, Eye, EyeOff, CheckCircle, XCircle, Loader, Activity, Tag, BrainCircuit, Shield, Sparkles, Server, Layers, Terminal, Database } from 'lucide-react';
 import { validateBulkData, GapSchema, ExerciseSchema, SimulationSummarySchema } from '../../lib/schemas';
 import { useToast } from '../ui/Toast';
 
-import { Database as DatabaseIcon } from 'lucide-react';
+
 import { useNavigate } from 'react-router-dom';
 
 export default function Settings() {
   const navigate = useNavigate();
   const { addToast } = useToast();
   const { aiSettings, setAiSettings, targetEnvironments, deleteEnvironment, targetTags, deleteTag, targetSecurityControls, deleteSecurityControl, addSecurityControl, confirmAction, dbConfig, setDbConfig, dbAdapter, testDbConnection: pingDb } = useAppContext();
-  const [localSettings, setLocalSettings] = useState(aiSettings || { endpointUrl: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o', apiKey: '', customHeaders: '' });
+  const [localSettings, setLocalSettings] = useState(aiSettings || { endpointUrl: '', model: '', apiKey: '', customHeaders: '' });
   const [localDbConfig, setLocalDbConfig] = useState(dbConfig || { provider: 'local', endpoint: '', apiKey: '' });
   const [saveStatus, setSaveStatus] = useState('');
   const [targetEnvDropdownOpen, setTargetEnvDropdownOpen] = useState(false);
@@ -64,9 +64,9 @@ export default function Settings() {
   const [pendingImportFile, setPendingImportFile] = useState(null);
   const [backupLoading, setBackupLoading] = useState(false);
 
-  const { gaps, exercises, simulationSummaries, simulationEvidence, setGaps, setExercises, setSimulationSummaries, setSimulationEvidence, setActiveAiContext, injectTestData } = useAppContext();
+  const { gaps, events, simulationSummaries, simulationEvidence, setGaps, setExercises, setSimulationSummaries, setSimulationEvidence, setActiveAiContext, injectTestData } = useAppContext();
 
-  const defaultAi = { endpointUrl: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o', apiKey: '', customHeaders: '' };
+  const defaultAi = { endpointUrl: '', model: '', apiKey: '', customHeaders: '' };
   const aiSettingsModified = JSON.stringify(localSettings) !== JSON.stringify(aiSettings || defaultAi);
   const dbSettingsModified = JSON.stringify(localDbConfig) !== JSON.stringify(dbConfig || { provider: 'local', endpoint: '', apiKey: '' });
   const hasUnsavedChanges = aiSettingsModified || dbSettingsModified;
@@ -126,7 +126,7 @@ export default function Settings() {
       let exerciseCount = 0;
       let gapCount = 0;
       
-      exercises.forEach(ex => {
+      events.forEach(ex => {
           if (type === 'environment') {
               if (Array.isArray(ex.environment) ? ex.environment.includes(name) : ex.environment === name) exerciseCount++;
           } else if (type === 'tag') {
@@ -159,7 +159,7 @@ export default function Settings() {
       });
       
       if (exerciseCount > 0 || gapCount > 0 || simCount > 0) {
-          addToast(`Cannot delete ${name}: It is currently referenced by ${exerciseCount} exercise(s), ${simCount} simulation(s), and ${gapCount} gap(s). Please remove these references first.`, 'error');
+          addToast(`Cannot delete ${name}: It is currently referenced by ${exerciseCount} event(s), ${simCount} simulation(s), and ${gapCount} gap(s). Please remove these references first.`, 'error');
           return;
       }
       
@@ -172,7 +172,7 @@ export default function Settings() {
   const validateSchema = (data) => {
      if (!data || typeof data !== 'object') throw new Error("Invalid format: Must be a JSON object");
      if (data.gaps && !Array.isArray(data.gaps)) throw new Error("Schema error: gaps must be an array");
-     if (data.exercises && !Array.isArray(data.exercises)) throw new Error("Schema error: exercises must be an array");
+     if (data.events && !Array.isArray(data.events)) throw new Error("Schema error: events must be an array");
      return true;
   };
 
@@ -193,7 +193,7 @@ export default function Settings() {
       if (!backupPassword) return alert("Password is required to encrypt the backup.");
       setBackupLoading(true);
       try {
-          const data = { gaps, exercises, simulationSummaries, simulationEvidence };
+          const data = { gaps, events, simulationSummaries, simulationEvidence };
           const jsonString = JSON.stringify(data);
           const encrypted = await encryptData(jsonString, backupPassword);
           
@@ -218,8 +218,8 @@ export default function Settings() {
       validateSchema(data);
       const sanitizedData = sanitizeData(data);
 
-      if (sanitizedData.exercises) {
-          sanitizedData.exercises = validateBulkData(ExerciseSchema, sanitizedData.exercises, "Imported Exercise");
+      if (sanitizedData.events) {
+          sanitizedData.events = validateBulkData(ExerciseSchema, sanitizedData.events, "Imported Event");
       }
       if (sanitizedData.gaps) {
           sanitizedData.gaps = validateBulkData(GapSchema, sanitizedData.gaps, "Imported Gap");
@@ -248,7 +248,7 @@ export default function Settings() {
                   await dbAdapter.bulkImport(sanitizedData);
               }
               if (sanitizedData.gaps) setGaps(sanitizedData.gaps);
-              if (sanitizedData.exercises) setExercises(sanitizedData.exercises);
+              if (sanitizedData.events) setExercises(sanitizedData.events);
               if (sanitizedData.simulationSummaries) setSimulationSummaries(sanitizedData.simulationSummaries);
               if (sanitizedData.simulationEvidence) setSimulationEvidence(sanitizedData.simulationEvidence);
               setSaveStatus(isEncrypted ? 'Encrypted backup restored securely.' : 'JSON data imported successfully.');
@@ -320,7 +320,7 @@ export default function Settings() {
       setAiTestMsg('');
       try {
           const { endpointUrl, apiKey } = localSettings;
-          if (!apiKey && (!endpointUrl || endpointUrl.includes('api.openai.com'))) throw new Error('API Key is required for default OpenAI endpoint');
+          if (!apiKey && (!endpointUrl || endpointUrl.includes('api.openai.com') || endpointUrl === '')) throw new Error('API Key is required for default OpenAI endpoint');
           
           const { aiManager } = await import('../../lib/ai/core.js');
           const adapter = await aiManager.initialize(localSettings);
@@ -343,7 +343,7 @@ export default function Settings() {
 
   const handleSave = async () => {
       const isConfiguringPrimary = !!localSettings.endpointUrl || !!localSettings.apiKey;
-      const defaultAi = { endpointUrl: 'https://api.openai.com/v1/chat/completions', model: 'gpt-4o', apiKey: '', customHeaders: '' };
+      const defaultAi = { endpointUrl: '', model: '', apiKey: '', customHeaders: '' };
       const aiSettingsModified = JSON.stringify(localSettings) !== JSON.stringify(aiSettings || defaultAi);
   
       if (isConfiguringPrimary && aiSettingsModified) {
@@ -458,7 +458,7 @@ const testDbConnection = async () => {
                    setLocalSettings({...localSettings, model: e.target.value});
                    setAiTestStatus('idle');
                }}
-               placeholder="e.g. gpt-4o or llama-3-8b-instruct"
+               placeholder={localDbConfig.provider === 'local' ? '' : "e.g. gpt-4 or llama-3-8b-instruct"}
              />
           </div>
 
@@ -545,7 +545,7 @@ const testDbConnection = async () => {
            style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', marginBottom: expandedPanels.db ? '15px' : '0', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', justifyContent: 'space-between' }}
         >
            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-               <DatabaseIcon size={24} color="var(--accent-primary)" /> Database & Sync
+               <Database size={24} color="var(--accent-primary)" /> Database & Sync
            </div>
            <ChevronDown size={20} style={{ transform: expandedPanels.db ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }} />
         </h2>
@@ -569,7 +569,7 @@ const testDbConnection = async () => {
             ) : (
               <div style={{ padding: '20px', background: 'rgba(0, 0, 0, 0.3)', border: '1px solid var(--glass-border)', borderRadius: '8px' }}>
                 <h4 style={{ margin: '0 0 10px 0', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <DatabaseIcon size={18} color="var(--text-muted)" /> Local Storage Mode
+                  <Database size={18} color="var(--text-muted)" /> Local Storage Mode
                 </h4>
                 <p style={{ margin: '0', color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.5' }}>
                   No remote database configuration found. The application is running securely offline using your browser's local storage.
@@ -617,13 +617,13 @@ const testDbConnection = async () => {
                     <Globe size={20} /> Environments
                 </h3>
                 <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>
-                   Custom environments are automatically saved when introduced in the Simulation Scope Details. You can manage and delete them here.
+                   Manage your custom environments.
                 </p>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                      {(!targetEnvironments || targetEnvironments.length === 0) && (
                          <div style={{ padding: '15px', color: 'var(--text-muted)', fontStyle: 'italic', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px dashed var(--glass-border)' }}>
-                             No environments have been created yet. Launch a new simulation to create one!
+                             No environments found.
                          </div>
                      )}
                      {targetEnvironments?.map(env => (
@@ -652,13 +652,13 @@ const testDbConnection = async () => {
                     <Tag size={20} /> Tags
                 </h3>
                 <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>
-                   Custom tags are automatically saved when introduced in the Simulation Scope Details. You can manage and delete them here.
+                   Manage your custom tags.
                 </p>
                 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                      {(!targetTags || targetTags.length === 0) && (
                          <div style={{ padding: '15px', color: 'var(--text-muted)', fontStyle: 'italic', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px dashed var(--glass-border)' }}>
-                             No tags have been created yet. Launch a new simulation to create one!
+                             No tags found.
                          </div>
                      )}
                      {targetTags?.map(tag => (
@@ -687,7 +687,7 @@ const testDbConnection = async () => {
                     <Shield size={20} /> Security Controls
                 </h3>
                 <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>
-                   Custom security controls are automatically saved when introduced in an event's outcome card. You can also manually add, manage, and delete them here.
+                   Manage your custom security controls.
                 </p>
 
                 <div style={{ display: 'flex', gap: '10px', marginBottom: '20px' }}>
@@ -722,7 +722,7 @@ const testDbConnection = async () => {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                      {(!targetSecurityControls || targetSecurityControls.length === 0) && (
                          <div style={{ padding: '15px', color: 'var(--text-muted)', fontStyle: 'italic', background: 'rgba(255,255,255,0.02)', borderRadius: '8px', border: '1px dashed var(--glass-border)' }}>
-                             No security controls have been created yet.
+                             No security controls found.
                          </div>
                      )}
                      {targetSecurityControls?.map(control => (
@@ -746,52 +746,9 @@ const testDbConnection = async () => {
         </div>
         )}
       </div>
-      
-      <div className="glass-panel" style={{ padding: '30px', maxWidth: '800px', marginTop: '30px', border: '1px solid rgba(239, 68, 68, 0.3)', background: 'rgba(239, 68, 68, 0.05)' }}>
-        <h2 
-           onClick={() => togglePanel('data')} 
-           style={{ borderBottom: '1px solid rgba(239, 68, 68, 0.2)', paddingBottom: '15px', marginBottom: expandedPanels.data ? '25px' : '0', display: 'flex', alignItems: 'center', gap: '10px', color: '#ef4444', cursor: 'pointer', justifyContent: 'space-between' }}
-        >
-           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-               <Trash2 size={24} /> Danger Zone
-           </div>
-           <ChevronDown size={20} style={{ transform: expandedPanels.data ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }} />
-        </h2>
-        
-        {expandedPanels.data && (
-        <>
-        <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>This will permanently erase all data across the entire application, including saved reports, metrics, draft simulations, and attached evidence. (Your AI configurations and MITRE ATT&CK database cache will be preserved). This action cannot be undone.</p>
-        
-        <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-            <button 
-               className="btn hover-lift" 
-               onClick={() => confirmAction("Are you ABSOLUTELY sure you want to erase all application data? This cannot be undone.", () => {
-                       const aiSettings = localStorage.getItem('ai_settings');
-                       const mitreCache = localStorage.getItem('mitre_data_v2');
-                       
-                       localStorage.clear();
-                       
-                       if (aiSettings) localStorage.setItem('ai_settings', aiSettings);
-                       if (mitreCache) localStorage.setItem('mitre_data_v2', mitreCache);
-                       
-                       window.location.href = '/';
-               })} 
-               style={{ background: 'rgba(239, 68, 68, 0.2)', border: '1px solid var(--danger)', color: '#ef4444', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px' }}
-            >
-               <Trash2 size={18} /> Erase All Application Data
-            </button>
-            <button 
-               className="btn hover-lift" 
-               onClick={() => confirmAction("This will wipe your database and inject 10 automated simulations for data integrity testing. Proceed?", injectTestData)} 
-               style={{ background: 'rgba(156, 39, 176, 0.2)', border: '1px solid var(--accent-primary)', color: '#c084fc', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px' }}
-            >
-               <DatabaseIcon size={18} /> Run Data Integrity Assessment
-            </button>
-        </div>
-        </>
-        )}
-      </div>
-      
+
+
+
       <div style={{ maxWidth: '800px', marginTop: '30px', display: 'flex', alignItems: 'center', gap: '15px', paddingBottom: '30px' }}>
          <button 
             className={`btn hover-lift ${needsAiTest ? 'disabled' : ''}`} 

@@ -17,6 +17,14 @@
 import { useState, useCallback, useEffect } from 'react';
 import { validateBulkData, GapSchema } from '../lib/schemas';
 
+/**
+ * Custom hook to manage the lifecycle, state, and database synchronization of "Gaps".
+ * Gaps act as remediation tickets for missing security controls discovered during testing.
+ *
+ * @param {Object} dbAdapter - The database adapter used to sync data (local, indexeddb, etc.)
+ * @param {Function} [addToast=() => {}] - Callback to trigger UI toast notifications
+ * @returns {Object} Gap state arrays and CRUD helper functions
+ */
 export function useGapsData(dbAdapter, addToast = () => {}) {
     const [gaps, setGaps] = useState([]);
     const [activeEnvironmentFilter, setActiveEnvironmentFilter] = useState('All');
@@ -45,6 +53,13 @@ export function useGapsData(dbAdapter, addToast = () => {}) {
         setTargetEnvironments(prev => prev.filter(e => e !== name));
     }, []);
 
+    /**
+     * Fetches all gaps from the database adapter, validates them against the GapSchema,
+     * and backfills any missing display IDs (e.g. GAP-1234) before updating state.
+     *
+     * @param {Object} [adapter=dbAdapter] - Optional adapter override
+     * @returns {Promise<void>}
+     */
     const fetchGaps = useCallback(async (adapter = dbAdapter) => {
         if (!adapter || typeof adapter.fetchGaps !== 'function') return;
         try {
@@ -72,6 +87,14 @@ export function useGapsData(dbAdapter, addToast = () => {}) {
         }
     }, [dbAdapter]);
 
+    /**
+     * Creates a new Gap ticket, ensures it has a valid displayId, validates it against
+     * the GapSchema, and persists it to the database adapter.
+     *
+     * @param {Object} gap - The raw gap data object
+     * @param {boolean} [skipFetch=false] - Whether to skip a subsequent full fetch
+     * @returns {Promise<void>}
+     */
     const createGap = useCallback(async (gap, skipFetch = false) => {
         const gapWithId = {
             ...gap,
@@ -109,6 +132,14 @@ export function useGapsData(dbAdapter, addToast = () => {}) {
         }
     }, [dbAdapter, addToast]);
 
+    /**
+     * Updates an existing Gap ticket by ID. Deep merges the new data with existing data,
+     * re-validates against the schema, and saves to the database adapter.
+     *
+     * @param {string} id - The unique UUID of the gap to update
+     * @param {Object} gapData - The partial or complete data to update on the gap
+     * @returns {Promise<void>}
+     */
     const updateGap = useCallback(async (id, gapData) => {
         const gapToUpdate = gaps.find(g => String(g.id) === String(id));
         if (!gapToUpdate) return;

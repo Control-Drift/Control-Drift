@@ -148,7 +148,15 @@ export default function InlineTagDropdown({ value, onChange }) {
                         return (
                             <button
                                 key={tagName}
-                                onClick={(e) => { e.preventDefault(); toggleSelection(tagName); setIsOpen(false); setSearchQuery(''); }}
+                                onClick={(e) => { 
+                                    e.preventDefault(); 
+                                    toggleSelection(tagName); 
+                                    const isDeselecting = selectedArray.includes(tagName);
+                                    if (!(isDeselecting && selectedArray.length > 1)) {
+                                        setIsOpen(false); 
+                                        setSearchQuery(''); 
+                                    }
+                                }}
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'space-between',
                                     background: isActive ? 'rgba(56, 189, 248, 0.15)' : 'transparent',

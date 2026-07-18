@@ -181,17 +181,17 @@ import TagDropdown from '../dropdowns/TagDropdown';
  * A Kanban-style ticketing board for tracking and remediating missing security controls.
  * 
  * CORE WORKFLOW:
- * 1. Automatically generates "Gaps" (tickets) when an Exercise results in a "Missed" outcome.
+ * 1. Automatically generates "Gaps" (tickets) when an Event results in a "Missed" outcome.
  * 2. Allows users to drag-and-drop tickets across status columns (Open -> In Progress -> Resolved).
  * 3. Provides a "Validation" modal workflow to re-test the Gap against the original TTP
- *    and seamlessly updates the historical Simulation metrics via `updateExerciseValidation`.
+ *    and seamlessly updates the historical Simulation metrics via `updateEventValidation`.
  * 
  * NOMENCLATURE MAP:
  * - "Gap": A remediation ticket.
  * - "Validation": Re-executing the original TTP to verify the new security control works.
  */
 export default function GapTracker() {
-  const { gaps, updateGap, createGap, deleteGap, isReadOnly, mitreData, updateExerciseValidation, revertExerciseValidation, aiSettings, setActiveAiContext, activeEnvironmentFilter, activeTagFilter, targetEnvironments, simulationSummaries, setSimulationSummaries, setExercises, allExercisesData, setAllExercisesData, dbAdapter, confirmAction } = useAppContext();
+  const { gaps, updateGap, createGap, deleteGap, isReadOnly, mitreData, updateEventValidation, revertEventValidation, aiSettings, setActiveAiContext, activeEnvironmentFilter, activeTagFilter, targetEnvironments, simulationSummaries, setSimulationSummaries, setExercises, allEventsData, setAllEventsData, dbAdapter, confirmAction } = useAppContext();
   const { addToast } = useToast();
   
   const location = useLocation();
@@ -297,6 +297,18 @@ export default function GapTracker() {
       if (dragOverCol !== col) setDragOverCol(col);
   };
 
+  /**
+   * handleDrop
+   * 
+   * Orchestrates the state transitions when a Gap is dragged between Kanban columns.
+   * Complex interactions handled here include:
+   * - Preventing 'Risk Accepted' tickets from jumping straight to 'Resolved'
+   * - Triggering the Validation Modal when moving to 'Resolved'
+   * - Reverting 'Resolved' statuses back to 'Missed' internally if moved back to 'In Progress'
+   * 
+   * @param {DragEvent} e - The HTML5 drag event payload
+   * @param {string} col - The target column status (Open, In Progress, Resolved, Risk Accepted)
+   */
   const handleDrop = (e, col) => {
       if (isReadOnly) return;
       e.preventDefault();
@@ -339,13 +351,13 @@ export default function GapTracker() {
                       }
                   }
 
-                  // Reset exercises status to 'low'
+                  // Reset events status to 'low'
                   (async () => {
                       let allEx = [];
                       if (dbAdapter && typeof dbAdapter.fetchData === 'function' && dbAdapter.type === 'local') {
-                          allEx = await dbAdapter.fetchData('exercises') || [];
+                          allEx = await dbAdapter.fetchData('events') || [];
                       } else {
-                          allEx = Object.values(allExercisesData);
+                          allEx = Object.values(allEventsData);
                       }
                       
                       let modifiedExercises = [];
@@ -359,10 +371,10 @@ export default function GapTracker() {
                       });
 
                       if (dbAdapter && typeof dbAdapter.saveData === 'function') {
-                          await dbAdapter.saveData('exercises', updatedAllExercises);
+                          await dbAdapter.saveData('events', updatedAllExercises);
                       }
 
-                      setAllExercisesData(prevMap => {
+                      setAllEventsData(prevMap => {
                           const nextMap = { ...prevMap };
                           updatedAllExercises.forEach(ex => {
                               nextMap[ex.id] = ex;
@@ -375,9 +387,9 @@ export default function GapTracker() {
                           return found ? found : ex;
                       }));
 
-                      if (dbAdapter && typeof dbAdapter.updateExercise === 'function') {
+                      if (dbAdapter && typeof dbAdapter.updateEvent === 'function') {
                           for (const ex of modifiedExercises) {
-                              if (ex.id) await dbAdapter.updateExercise(ex.id, ex);
+                              if (ex.id) await dbAdapter.updateEvent(ex.id, ex);
                           }
                       }
                   })();
@@ -431,8 +443,8 @@ export default function GapTracker() {
         updates.resolvedDate = new Date().toISOString();
     } else {
         updates.resolvedDate = null;
-        if (gap && gap.status === 'Resolved' && revertExerciseValidation) {
-            await revertExerciseValidation(gap);
+        if (gap && gap.status === 'Resolved' && revertEventValidation) {
+            await revertEventValidation(gap);
         }
     }
     if (newStatus !== 'Risk Accepted') {
@@ -537,7 +549,7 @@ export default function GapTracker() {
                    </div>
                )}
            </div>
-           <p style={{  color: 'var(--text-secondary)', margin: 0  }}>Manage action items generated from your Purple Team simulations.</p>
+           <p style={{  color: 'var(--text-secondary)', margin: 0  }}>Track and remediate coverage gaps generated from simulations.</p>
          </div>
          <div style={{  display: 'flex', gap: '15px', alignItems: 'center', flexWrap: 'wrap'  }}>
             <TagDropdown />
@@ -872,12 +884,12 @@ export default function GapTracker() {
                    try {
                        const finalNotes = validationNotes + (validationFiles.length > 0 ? `\n\n[Attached Evidence: ${validationFiles.map(f => f.name).join(', ')}]` : '');
                        let resolved = false;
-                       if (updateExerciseValidation) {
-                           console.log("Calling updateExerciseValidation...");
-                           resolved = await updateExerciseValidation(activeValidationGap, validationOutcome, finalNotes, validationDate ? new Date(validationDate).toISOString() : null);
-                           console.log("updateExerciseValidation returned resolved:", resolved);
+                       if (updateEventValidation) {
+                           console.log("Calling updateEventValidation...");
+                           resolved = await updateEventValidation(activeValidationGap, validationOutcome, finalNotes, validationDate ? new Date(validationDate).toISOString() : null);
+                           console.log("updateEventValidation returned resolved:", resolved);
                        } else {
-                           console.log("updateExerciseValidation is undefined!");
+                           console.log("updateEventValidation is undefined!");
                        }
                        
                        setActiveValidationGap(null);
@@ -948,9 +960,9 @@ export default function GapTracker() {
                        (async () => {
                             let allEx = [];
                             if (dbAdapter && typeof dbAdapter.fetchData === 'function' && dbAdapter.type === 'local') {
-                                allEx = await dbAdapter.fetchData('exercises') || [];
+                                allEx = await dbAdapter.fetchData('events') || [];
                             } else {
-                                allEx = Object.values(allExercisesData);
+                                allEx = Object.values(allEventsData);
                             }
                             
                             let modifiedExercises = [];
@@ -964,10 +976,10 @@ export default function GapTracker() {
                             });
 
                             if (dbAdapter && typeof dbAdapter.saveData === 'function') {
-                                await dbAdapter.saveData('exercises', updatedAllExercises);
+                                await dbAdapter.saveData('events', updatedAllExercises);
                             }
 
-                            setAllExercisesData(prevMap => {
+                            setAllEventsData(prevMap => {
                                 const nextMap = { ...prevMap };
                                 updatedAllExercises.forEach(ex => {
                                     nextMap[ex.id] = ex;
@@ -980,9 +992,9 @@ export default function GapTracker() {
                                 return found ? found : ex;
                             }));
 
-                            if (dbAdapter && typeof dbAdapter.updateExercise === 'function') {
+                            if (dbAdapter && typeof dbAdapter.updateEvent === 'function') {
                                 for (const ex of modifiedExercises) {
-                                    if (ex.id) await dbAdapter.updateExercise(ex.id, ex);
+                                    if (ex.id) await dbAdapter.updateEvent(ex.id, ex);
                                 }
                             }
                         })();

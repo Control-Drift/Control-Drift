@@ -73,7 +73,7 @@ With your configuration saved, you can now start the web application.
 
 The application is now running! 
 
-To use Control Drift, simply open a web browser on any device on your network and navigate to your server's IP address (e.g., `http://10.0.0.210`). The app will load and connect directly to your newly deployed Supabase database and AI proxy.
+To use Control Drift, simply open a web browser on any device on your network and navigate to your server's IP address. The app will load and connect directly to your newly deployed Supabase database and AI proxy.
 
 ---
 

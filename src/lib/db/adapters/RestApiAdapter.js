@@ -155,15 +155,15 @@ export class RestApiAdapter extends DatabaseAdapter {
     }
 
     // Granular API methods
-    async fetchExercises(page = 1, limit = 50, simulation = '') {
-        let url = `${this.endpoint}/api/exercises?page=${page}&limit=${limit}`;
+    async fetchEvents(page = 1, limit = 50, simulation = '') {
+        let url = `${this.endpoint}/api/events?page=${page}&limit=${limit}`;
         if (simulation) {
             url += `&simulation=${encodeURIComponent(simulation)}`;
         }
         url += `&sort=date&order=desc`;
         
         const res = await this.fetchWithTimeout(url, { headers: this.getHeaders() });
-        if (!res.ok) throw new Error('Failed to fetch exercises');
+        if (!res.ok) throw new Error('Failed to fetch events');
         return await res.json();
     }
 
@@ -173,13 +173,13 @@ export class RestApiAdapter extends DatabaseAdapter {
         return await res.json();
     }
 
-    async createExercise(exercise) {
-        const res = await this.fetchWithTimeout(`${this.endpoint}/api/exercises`, {
+    async createEvent(event) {
+        const res = await this.fetchWithTimeout(`${this.endpoint}/api/events`, {
             method: 'POST',
             headers: this.getHeaders(),
-            body: JSON.stringify(exercise)
+            body: JSON.stringify(event)
         });
-        if (!res.ok) throw new Error('Failed to create exercise');
+        if (!res.ok) throw new Error('Failed to create event');
         return await res.json();
     }
 

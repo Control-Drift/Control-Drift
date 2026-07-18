@@ -21,7 +21,7 @@ export class GenericAPIAdapter extends AiAdapter {
     async generateContent(prompt, systemInstruction, maxTokens, options = {}) {
         const { endpointUrl, apiKey, model, customHeaders } = this.config;
         
-        const url = endpointUrl || 'https://api.openai.com/v1/chat/completions';
+        const url = endpointUrl;
         const targetModel = model || 'gpt-4o';
 
         const headers = { 'Content-Type': 'application/json' };
@@ -68,7 +68,7 @@ export class GenericAPIAdapter extends AiAdapter {
         const { maxTokens, imageData } = options;
         const { endpointUrl, apiKey, model, customHeaders } = this.config;
         
-        const url = endpointUrl || 'https://api.openai.com/v1/chat/completions';
+        const url = endpointUrl;
         const targetModel = model || 'gpt-4o';
 
         const headers = { 'Content-Type': 'application/json' };

@@ -41,7 +41,10 @@ const convertMarkdownToQuillHtml = (markdown) => {
     // ReactQuill expects code blocks to have the ql-syntax class.
     // marked outputs <pre><code>...</code></pre>.
     // This regex removes the inner <code> tags and injects Quill's required class.
-    return cleanHtml.replace(/<pre><code[^>]*>/gi, '<pre class="ql-syntax" spellcheck="false">').replace(/<\/code><\/pre>/gi, '</pre>');
+    return cleanHtml
+        .replace(/<pre><code[^>]*>/gi, '<pre class="ql-syntax" spellcheck="false">')
+        .replace(/<\/code><\/pre>/gi, '</pre>')
+        .replace(/<ol[^>]*>\s*<li>\s*(<br\s*\/?>)?\s*<\/li>\s*<\/ol>/gi, '');
 };
 
 export default function RichMarkdownEditor({ value, onChange, placeholder, minHeight = '100px', readOnly = false, style = {} }) {
@@ -96,7 +99,7 @@ export default function RichMarkdownEditor({ value, onChange, placeholder, minHe
   if (readOnly) {
       return (
           <div className="rich-markdown-editor read-only" style={{ ...style }}>
-              <div className="ql-editor" style={{ minHeight, color: 'var(--text-primary)', padding: '12px 15px' }} dangerouslySetInnerHTML={{ __html: internalHtml }} />
+              <div className="markdown-preview" style={{ minHeight, color: 'var(--text-primary)', padding: '12px 15px' }} dangerouslySetInnerHTML={{ __html: internalHtml }} />
           </div>
       );
   }

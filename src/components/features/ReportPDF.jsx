@@ -223,7 +223,7 @@ const getCoverageColor = (coverage) => {
     return { bg: '#f1f5f9', text: '#475569' };
 };
 
-const ReportPDF = ({ simulationName, date, summary, exercises, testResults, participants, blocked, medium, minimal, missed, total, evidence, tags = [] }) => {
+const ReportPDF = ({ simulationName, date, summary, events, testResults, participants, blocked, medium, minimal, missed, total, evidence, tags = [] }) => {
   const renderSummary = (text) => {
     if (!text) return <Text style={styles.summaryText}>No executive summary provided.</Text>;
     
@@ -426,7 +426,7 @@ const ReportPDF = ({ simulationName, date, summary, exercises, testResults, part
                   );
                })
             ) : (
-               exercises.map((ex, i) => {
+               events.map((ex, i) => {
                  const badgeStyle = ex.status === 'high' ? styles.badgeHigh : ex.status === 'medium' ? styles.badgeMedium : styles.badgeLow;
                  return (
                    <View key={i} style={{ borderBottomWidth: 1, borderBottomColor: '#e2e8f0', paddingBottom: 15, marginBottom: 15 }} wrap={false}>

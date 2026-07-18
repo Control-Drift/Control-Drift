@@ -43,7 +43,7 @@ const lazyWithRetry = (componentImport) =>
   });
 
 const Dashboard = lazyWithRetry(() => import('./components/pages/Dashboard'));
-const ExerciseWizard = lazyWithRetry(() => import('./components/pages/ExerciseWizard'));
+const SimulationWizard = lazyWithRetry(() => import('./components/pages/SimulationWizard'));
 const GapTracker = lazyWithRetry(() => import('./components/pages/GapTracker'));
 const GapDetails = lazyWithRetry(() => import('./components/features/GapDetails'));
 const Reports = lazyWithRetry(() => import('./components/pages/Reports'));
@@ -61,18 +61,26 @@ function AppContent() {
    const { isDbLoading, isAuthenticated, dbAdapter, setIsAuthenticated, loadData, dbConfig } = useAppContext();
    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
    const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+
+   useEffect(() => {
+     const handleResize = () => setIsMobile(window.innerWidth <= 768);
+     window.addEventListener('resize', handleResize);
+     return () => window.removeEventListener('resize', handleResize);
+   }, []);
    
+   const effectiveIsSidebarCollapsed = isSidebarCollapsed && !isMobile;
    
    useEffect(() => {
-    if (isSidebarCollapsed) {
+    if (effectiveIsSidebarCollapsed) {
       document.body.classList.add('sidebar-collapsed');
     } else {
       document.body.classList.remove('sidebar-collapsed');
     }
-  }, [isSidebarCollapsed]);
+  }, [effectiveIsSidebarCollapsed]);
 
    const handleNavClick = () => {
-     if (window.innerWidth <= 768) {
+     if (isMobile) {
        setIsMobileMenuOpen(false);
      }
    };
@@ -99,11 +107,11 @@ function AppContent() {
            
            {!isDbLoading && (isAuthenticated || dbConfig?.provider === 'local') && (
              <Router>
-               <div className={`app-container ${isSidebarCollapsed ? 'collapsed' : ''}`} style={{ display: isDbLoading ? 'none' : 'flex' }}>
-               <aside className={`sidebar ${isMobileMenuOpen ? 'mobile-open' : ''} ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+               <div className={`app-container ${effectiveIsSidebarCollapsed ? 'collapsed' : ''}`} style={{ display: isDbLoading ? 'none' : 'flex' }}>
+               <aside className={`sidebar ${isMobileMenuOpen ? 'mobile-open' : ''} ${effectiveIsSidebarCollapsed ? 'collapsed' : ''}`}>
                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '0', overflow: 'hidden', width: '100%', justifyContent: isSidebarCollapsed ? 'center' : 'flex-start', paddingLeft: isSidebarCollapsed ? '0' : '10px' }}>
-                     {isSidebarCollapsed ? <CustomLogo iconOnly={true} style={{ width: '28px', height: '28px' }} /> : <CustomLogo style={{ gap: '6px' }} />}
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '0', overflow: 'hidden', width: '100%', justifyContent: effectiveIsSidebarCollapsed ? 'center' : 'flex-start', paddingLeft: effectiveIsSidebarCollapsed ? '0' : '10px' }}>
+                     {effectiveIsSidebarCollapsed ? <CustomLogo iconOnly={true} style={{ width: '28px', height: '28px' }} /> : <CustomLogo style={{ gap: '6px' }} />}
                    </div>
                    
                    <button className="mobile-only" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', padding: '8px', borderRadius: '8px', cursor: 'pointer', alignItems: 'center', justifyContent: 'center' }}>
@@ -116,7 +124,7 @@ function AppContent() {
                         <NavLink to="/" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={handleNavClick}>
                          <LayoutDashboard size={20} /><span className="nav-label">Dashboard</span>
                        </NavLink>
-                       <NavLink to="/exercise" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={handleNavClick}>
+                       <NavLink to="/simulation" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={handleNavClick}>
                          <Target size={20} /><span className="nav-label">Simulation Launcher</span>
                        </NavLink>
                        <NavLink to="/posture" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={handleNavClick}>
@@ -165,7 +173,7 @@ function AppContent() {
                   }>
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
-                      <Route path="/exercise" element={<ExerciseWizard />} />
+                      <Route path="/simulation" element={<SimulationWizard />} />
                       <Route path="/posture" element={<MitreHeatmap />} />
                       <Route path="/gaps" element={<GapTracker />} />
                       <Route path="/gaps/:id" element={<GapDetails />} />

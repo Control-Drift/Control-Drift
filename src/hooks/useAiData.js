@@ -31,8 +31,8 @@ export function useAiData(addToast, globalAiConfig) {
             return parsed;
         }
         return {
-           endpointUrl: 'https://api.openai.com/v1/chat/completions',
-           model: 'gpt-4o',
+           endpointUrl: '',
+           model: '',
            apiKey: '',
            customHeaders: '',
            isValidated: false
@@ -68,7 +68,7 @@ export function useAiData(addToast, globalAiConfig) {
 
     const generateAIContent = useCallback(async (prompt, systemInstruction, maxTokens = null, options = {}) => {
         const { apiKey, endpointUrl } = aiSettings;
-        if (!apiKey && (!endpointUrl || endpointUrl.includes('api.openai.com'))) {
+        if (!apiKey && (!endpointUrl || endpointUrl.includes('api.openai.com') || endpointUrl === '')) {
             throw new Error(`API Key is missing. Please configure it in Settings.`);
         }
         
@@ -94,7 +94,7 @@ export function useAiData(addToast, globalAiConfig) {
 
     const generateAIContentStream = useCallback(async (prompt, systemInstruction, onChunk, options = {}) => {
         const { apiKey, endpointUrl } = aiSettings;
-        if (!apiKey && (!endpointUrl || endpointUrl.includes('api.openai.com'))) {
+        if (!apiKey && (!endpointUrl || endpointUrl.includes('api.openai.com') || endpointUrl === '')) {
             throw new Error(`API Key is missing. Please configure it in Settings.`);
         }
         

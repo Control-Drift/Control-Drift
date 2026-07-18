@@ -40,14 +40,14 @@ import RichMarkdownEditor from '../ui/RichMarkdownEditor';
  * 
  * CORE WORKFLOW:
  * 1. Displays all simulations (campaigns) pulled from the `simulations` database table.
- * 2. Allows drilling down into the specific `exercises` (TTP tests) that made up the simulation.
+ * 2. Allows drilling down into the specific `events` (TTP tests) that made up the simulation.
  * 3. Provides an "Unlock Report" workflow (`handleConfirmUnlock`) that requires
  *    a textual justification to edit finalized markdown summaries for audit logging.
  * 
  * @returns {JSX.Element} The Reports dashboard view.
  */
 export default function Reports() {
-  const { dbAdapter, exercises, completeExercise, simulationSummaries, saveSimulationSummary, simulationEvidence, addSimulationEvidence, compressImage, mitreData, aiSettings, generateAIContent, gaps, setActiveAiContext, isAuthenticated, isAiActive, activeTagFilter, activeEnvironmentFilter, deleteSimulation, confirmAction } = useAppContext();
+  const { dbAdapter, events, completeExercise, simulationSummaries, saveSimulationSummary, simulationEvidence, addSimulationEvidence, compressImage, mitreData, aiSettings, generateAIContent, gaps, setActiveAiContext, isAuthenticated, isAiActive, activeTagFilter, activeEnvironmentFilter, deleteSimulation, confirmAction, createGap } = useAppContext();
   const { addToast } = useToast();
   
   const isMounted = React.useRef(true);
@@ -78,7 +78,7 @@ export default function Reports() {
   const [activeManualProcedureId, setActiveManualProcedureId] = useState(1);
   const [collapsedCards, setCollapsedCards] = useState({});
 
-  // Paginated exercises list for the selected simulation
+  // Paginated events list for the selected simulation
   const [simulationExercises, setSimulationExercises] = useState([]);
   const [simulationPage, setSimulationPage] = useState(1);
   const [simulationLimit] = useState(10);
@@ -140,28 +140,28 @@ export default function Reports() {
               const names = await dbAdapter.fetchSimulations();
               const listObj = {};
               for (const name of names) {
-                  const res = await dbAdapter.fetchExercises(1, 1000, name);
+                  const res = await dbAdapter.fetchEvents(1, 1000, name);
                   listObj[name] = {
                       date: res.data[0]?.date || new Date().toISOString(),
-                      exercises: res.data || []
+                      events: res.data || []
                   };
               }
               setSimulationList(listObj);
           } else {
               // Legacy fallback
-              const accSimulations = exercises.reduce((acc, ex) => {
+              const accSimulations = events.reduce((acc, ex) => {
                   if (ex.simulation === 'Admin Config') return acc;
-                  if (!acc[ex.simulation]) acc[ex.simulation] = { date: ex.date, exercises: [] };
-                  acc[ex.simulation].exercises.push(ex);
+                  if (!acc[ex.simulation]) acc[ex.simulation] = { date: ex.date, events: [] };
+                  acc[ex.simulation].events.push(ex);
                   return acc;
               }, {});
               
               gaps.forEach(g => {
                   if (!g.simulation || g.simulation === 'Manual Entry' || (!accSimulations[g.simulation] && g.id && g.id.startsWith('GAP-'))) {
                       const cName = g.simulation && g.simulation !== 'Manual Entry' ? g.simulation : 'Manual Entry';
-                      if (!accSimulations[cName]) accSimulations[cName] = { date: g.createdDate || new Date().toISOString(), exercises: [] };
-                      if (!accSimulations[cName].exercises.find(ex => ex.id === g.id)) {
-                          accSimulations[cName].exercises.push({
+                      if (!accSimulations[cName]) accSimulations[cName] = { date: g.createdDate || new Date().toISOString(), events: [] };
+                      if (!accSimulations[cName].events.find(ex => ex.id === g.id)) {
+                          accSimulations[cName].events.push({
                               id: g.id,
                               simulation: cName,
                               ttp: g.ttp || 'Unknown',
@@ -176,7 +176,7 @@ export default function Reports() {
               });
 
               Object.keys(accSimulations).forEach(k => {
-                  accSimulations[k].exercises.sort((a, b) => new Date(b.date) - new Date(a.date));
+                  accSimulations[k].events.sort((a, b) => new Date(b.date) - new Date(a.date));
               });
               setSimulationList(accSimulations);
           }
@@ -185,7 +185,7 @@ export default function Reports() {
       } finally {
           setIsSimulationsLoading(false);
       }
-  }, [dbAdapter, exercises, gaps]);
+  }, [dbAdapter, events, gaps]);
 
   useEffect(() => {
       if (isAuthenticated) {
@@ -195,14 +195,14 @@ export default function Reports() {
 
   const loadSimulationExercises = useCallback(async (simulationName, page) => {
       try {
-          if (dbAdapter && typeof dbAdapter.fetchExercises === 'function') {
-              const res = await dbAdapter.fetchExercises(page, simulationLimit, simulationName);
+          if (dbAdapter && typeof dbAdapter.fetchEvents === 'function') {
+              const res = await dbAdapter.fetchEvents(page, simulationLimit, simulationName);
               setSimulationExercises(res.data || []);
               setSimulationTotal(res.total || 0);
               setSimulationPage(res.page || page);
           } else {
               // Legacy fallback
-              const filtered = exercises.filter(ex => ex.simulation === simulationName);
+              const filtered = events.filter(ex => ex.simulation === simulationName);
               filtered.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
               
               const startIndex = (page - 1) * simulationLimit;
@@ -214,7 +214,7 @@ export default function Reports() {
       } catch (err) {
           console.error("loadSimulationExercises error:", err);
       }
-  }, [dbAdapter, simulationLimit, exercises]);
+  }, [dbAdapter, simulationLimit, events]);
 
   useEffect(() => {
       if (selectedSimulation) {
@@ -230,7 +230,7 @@ export default function Reports() {
       if (!selectedSimulation) return;
       async function computeCounts() {
           const simData = simulationList[selectedSimulation];
-          if (!simData || !simData.exercises) return;
+          if (!simData || !simData.events) return;
 
           let blocked = 0;
           let medium = 0;
@@ -251,7 +251,7 @@ export default function Reports() {
               total = testResults.length;
           } else {
               const ttpSet = new Set();
-              simData.exercises.forEach(e => {
+              simData.events.forEach(e => {
                   if (e.status === 'na') return;
                   if (!ttpSet.has(e.ttp)) {
                       ttpSet.add(e.ttp);
@@ -426,7 +426,7 @@ export default function Reports() {
                  manualTags || []
              );
          } catch (e) {
-             addToast(`Error saving exercise: ${e.message}`, 'error');
+             addToast(`Error saving event: ${e.message}`, 'error');
              return;
          }
      }
@@ -442,6 +442,37 @@ export default function Reports() {
              })),
              timestamp: new Date().toISOString()
          };
+         
+         for (const p of manualProcedures) {
+             const covStr = String(p.coverageRating || 'None');
+             if (covStr === 'Partial' || covStr === 'Minimal' || covStr === 'None') {
+                 const severity = p.severity || 'Medium';
+                 const baseScore = severity === 'Critical' ? 100 : severity === 'High' ? 80 : severity === 'Medium' ? 50 : 20;
+                 const visibilityMultiplier = (covStr === 'None') ? 1.0 : (covStr === 'Minimal' ? 0.9 : (covStr === 'Partial' ? 0.75 : 0.0));
+                 const priorityScore = Math.round(baseScore * visibilityMultiplier);
+                 
+                 const newGap = {
+                     id: Date.now() + Math.random().toString(),
+                     displayId: 'GAP-' + Math.floor(1000 + Math.random() * 9000),
+                     ttp: (p.ttps || []).join(', ') || 'Unmapped',
+                     simulation: manualSimulation,
+                     finding: p.name || 'Unnamed Event',
+                     outcome: p.outcome || 'Missed',
+                     coverageRating: covStr,
+                     details: `Execution: ${p.execNotes || 'N/A'}\nDetection: ${p.detNotes || 'N/A'}`,
+                     severity: severity,
+                     priorityScore: priorityScore,
+                     status: 'Open',
+                     actionItems: 'Review telemetry and develop detection logic.',
+                     stakeholders: [],
+                     remediationNotes: "",
+                     environment: manualEnvironment.length > 0 ? manualEnvironment : ['Unknown Environment'],
+                     tags: manualTags || [],
+                     createdDate: new Date().toISOString()
+                 };
+                 if (createGap) await createGap(newGap, true);
+             }
+         }
          
          await saveSimulationSummary(manualSimulation, summaryPayload);
          await loadSimulations();
@@ -798,7 +829,7 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                      )}
 
                      {(() => {
-                          const manualGaps = simulationList[selectedSimulation]?.exercises || [];
+                          const manualGaps = simulationList[selectedSimulation]?.events || [];
                           const baseResults = (activeSimulationDrilldown.testResults && Array.isArray(activeSimulationDrilldown.testResults)) ? activeSimulationDrilldown.testResults : [];
                           const ttpSet = new Set(baseResults.flatMap(r => r.ttps || []));
                           
@@ -926,7 +957,7 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
   };
 
   if (selectedSimulation && simulationList[selectedSimulation]) {
-      const simulationData = simulationList[selectedSimulation] || { exercises: [], date: new Date().toISOString() };
+      const simulationData = simulationList[selectedSimulation] || { events: [], date: new Date().toISOString() };
       const hasTestResults = typeof simulationSummaries[selectedSimulation] === 'object' && Array.isArray(simulationSummaries[selectedSimulation].testResults) && simulationSummaries[selectedSimulation].testResults.length > 0;
       
       const { blocked, medium, minimal, missed, total } = simulationCounts;
@@ -956,6 +987,11 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                         confirmAction(`Are you sure you want to permanently delete the simulation "${selectedSimulation}"? This action cannot be undone.`, async () => {
                             await deleteSimulation(selectedSimulation);
                             setSelectedSimulation(null);
+                            setSimulationList(prev => {
+                                const next = { ...prev };
+                                delete next[selectedSimulation];
+                                return next;
+                            });
                             addToast('Simulation successfully deleted.', 'success');
                         });
                     }}
@@ -969,7 +1005,7 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                         simulationName={selectedSimulation}
                         date={simulationData.date}
                         summary={typeof simulationSummaries[selectedSimulation] === 'string' ? simulationSummaries[selectedSimulation] : simulationSummaries[selectedSimulation]?.summary || ''}
-                        exercises={simulationData.exercises}
+                        events={simulationData.events}
                         testResults={simulationSummaries[selectedSimulation]?.testResults || []}
                         participants={
                            Array.isArray(simulationSummaries[selectedSimulation]?.details?.participants) 
@@ -1359,7 +1395,7 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
       <div style={{  display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px'  }}>
         <div>
           <h1 className="iridescent-text" style={{  fontSize: '2.5rem', marginBottom: '10px', marginTop: 0  }}>Reports</h1>
-          <p style={{  color: 'var(--text-secondary)', margin: 0, fontSize: '1.1rem'  }}>Historical archive of past adversary simulations.</p>
+          <p style={{  color: 'var(--text-secondary)', margin: 0, fontSize: '1.1rem'  }}>Historical archive of past simulations.</p>
         </div>
         
         <div style={{  display: 'flex', alignItems: 'center', gap: '15px'  }}>
@@ -1400,8 +1436,8 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                 const d = new Date(data.date);
                 const dateStr = isNaN(d.getTime()) ? new Date().toLocaleDateString() : d.toLocaleDateString();
                 const matchesSearch = name.toLowerCase().includes(search) || dateStr.includes(search);
-                const matchesTag = !activeTagFilter || activeTagFilter === 'All' || data.exercises.some(e => Array.isArray(e.tags) ? e.tags.includes(activeTagFilter) : e.tags === activeTagFilter);
-                const matchesEnv = !activeEnvironmentFilter || activeEnvironmentFilter === 'All' || data.exercises.some(e => Array.isArray(e.environment) ? e.environment.includes(activeEnvironmentFilter) : e.environment === activeEnvironmentFilter);
+                const matchesTag = !activeTagFilter || activeTagFilter === 'All' || data.events.some(e => Array.isArray(e.tags) ? e.tags.includes(activeTagFilter) : e.tags === activeTagFilter);
+                const matchesEnv = !activeEnvironmentFilter || activeEnvironmentFilter === 'All' || data.events.some(e => Array.isArray(e.environment) ? e.environment.includes(activeEnvironmentFilter) : e.environment === activeEnvironmentFilter);
                 return matchesSearch && matchesTag && matchesEnv;
              })
              .map(([name, data]) => (
@@ -1449,7 +1485,7 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                          outcomesMap[cat].count++;
                       });
                   } else {
-                      data.exercises.forEach(e => {
+                      data.events.forEach(e => {
                          const fallback = (e.status === 'high' ? 'Prevented' : e.status === 'medium' ? 'Logged' : e.status === 'minimal' ? 'Logged' : 'Missed');
                          const cat = processOutcome(e.outcome || e.finding || fallback);
                          outcomesMap[cat].count++;
@@ -1485,7 +1521,7 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
         </div>
       )}
 
-      {/* Manual Exercise Log Modal */}
+      {/* Manual Event Log Modal */}
       {showLogModal && (
         <div className="animate-fade-in fixed-overlay" style={{  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(5px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px'  }}>
            <div className="glass-panel" style={{  width: '90vw', maxWidth: '1400px', height: '85vh', background: 'var(--bg-secondary)', border: '1px solid var(--accent-primary)', padding: '0', display: 'flex', flexDirection: 'column', overflow: 'hidden'  }}>

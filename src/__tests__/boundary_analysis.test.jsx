@@ -19,7 +19,7 @@ import { renderHook, act } from '@testing-library/react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useMitreData } from '../hooks/useMitreData';
-import ExerciseWizard from '../components/pages/ExerciseWizard';
+import SimulationWizard from '../components/pages/SimulationWizard';
 import { AppProvider, useAppContext } from '../AppContext';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -54,7 +54,7 @@ vi.mock('@react-pdf/renderer', () => ({
     PDFDownloadLink: ({ children }) => children({ loading: false })
 }));
 
-// Mock child components of ExerciseWizard
+// Mock child components of SimulationWizard
 vi.mock('../components/dropdowns/InlineEnvironmentDropdown', () => ({ default: () => null }));
 vi.mock('../components/dropdowns/InlineTagDropdown', () => ({ default: () => null }));
 vi.mock('../components/dropdowns/EventTypeDropdown', () => ({ default: () => null }));
@@ -80,7 +80,7 @@ vi.mock('../components/ui/RichMarkdownEditor', () => ({
     )
 }));
 
-// Mock useAppContext for ExerciseWizard testing
+// Mock useAppContext for SimulationWizard testing
 const mockAppContextValues = {
     completeExercise: vi.fn(),
     mitreData: {
@@ -131,7 +131,7 @@ describe('useMitreData Boundary Analysis & Crash Verification', () => {
         }
     };
 
-    it('should crash when allExercisesData is null', () => {
+    it('should crash when allEventsData is null', () => {
         expect(() => {
             const { result } = renderHook(() => useMitreData(mockDbAdapter, null));
             act(() => {
@@ -142,7 +142,7 @@ describe('useMitreData Boundary Analysis & Crash Verification', () => {
         }).toThrow();
     });
 
-    it('should crash when allExercisesData is undefined', () => {
+    it('should crash when allEventsData is undefined', () => {
         expect(() => {
             const { result } = renderHook(() => useMitreData(mockDbAdapter, undefined));
             act(() => {
@@ -152,7 +152,7 @@ describe('useMitreData Boundary Analysis & Crash Verification', () => {
         }).toThrow();
     });
 
-    it('should handle empty object allExercisesData safely', () => {
+    it('should handle empty object allEventsData safely', () => {
         const { result } = renderHook(() => useMitreData(mockDbAdapter, {}));
         act(() => {
             result.current.setBaseMitreData(mockSkeleton);
@@ -162,7 +162,7 @@ describe('useMitreData Boundary Analysis & Crash Verification', () => {
         expect(data['Initial Access'].status).toBe('unknown');
     });
 
-    it('should crash when allExercisesData contains null exercise', () => {
+    it('should crash when allEventsData contains null event', () => {
         expect(() => {
             const { result } = renderHook(() => useMitreData(mockDbAdapter, { e1: null }));
             act(() => {
@@ -172,7 +172,7 @@ describe('useMitreData Boundary Analysis & Crash Verification', () => {
         }).toThrow();
     });
 
-    it('should crash when allExercisesData contains undefined exercise', () => {
+    it('should crash when allEventsData contains undefined event', () => {
         expect(() => {
             const { result } = renderHook(() => useMitreData(mockDbAdapter, { e1: undefined }));
             act(() => {
@@ -182,7 +182,7 @@ describe('useMitreData Boundary Analysis & Crash Verification', () => {
         }).toThrow();
     });
 
-    it('should crash when an exercise outcome is a number (non-string)', () => {
+    it('should crash when an event outcome is a number (non-string)', () => {
         const mockExercises = {
             e1: {
                 ttp: 'T1190.001',
@@ -203,7 +203,7 @@ describe('useMitreData Boundary Analysis & Crash Verification', () => {
         }).toThrow();
     });
 
-    it('should crash when an exercise remediation is a number (non-string)', () => {
+    it('should crash when an event remediation is a number (non-string)', () => {
         const mockExercises = {
             e1: {
                 ttp: 'T1190.001',
@@ -225,7 +225,7 @@ describe('useMitreData Boundary Analysis & Crash Verification', () => {
         }).toThrow();
     });
 
-    it('should handle exercise with null environment by defaulting to Windows Workstation', () => {
+    it('should handle event with null environment by defaulting to Windows Workstation', () => {
         const mockExercises = {
             e1: {
                 ttp: 'T1190.001',
@@ -248,7 +248,7 @@ describe('useMitreData Boundary Analysis & Crash Verification', () => {
         expect(tech.environments['Windows Workstation']).toBe('high');
     });
 
-    it('should handle exercise with empty/invalid coverageRating safely', () => {
+    it('should handle event with empty/invalid coverageRating safely', () => {
         const mockExercises = {
             e1: {
                 ttp: 'T1190.001',
@@ -272,7 +272,7 @@ describe('useMitreData Boundary Analysis & Crash Verification', () => {
     });
 });
 
-describe('ExerciseWizard Boundary Analysis & Crash Verification', () => {
+describe('SimulationWizard Boundary Analysis & Crash Verification', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         sessionStorage.clear();
@@ -304,7 +304,7 @@ describe('ExerciseWizard Boundary Analysis & Crash Verification', () => {
             render(
                 <MemoryRouter>
                     <ToastProvider>
-                        <ExerciseWizard />
+                        <SimulationWizard />
                     </ToastProvider>
                 </MemoryRouter>
             );
@@ -339,7 +339,7 @@ describe('ExerciseWizard Boundary Analysis & Crash Verification', () => {
             }
         ]));
 
-        // Wait! In ExerciseWizard.jsx:
+        // Wait! In SimulationWizard.jsx:
         // let out = p.outcome || '';
         // if (out.includes(' ➔ ')) out = out.split(' ➔ ')[1];
         // So p.outcome = null results in out = '', which has .includes.
@@ -373,7 +373,7 @@ describe('ExerciseWizard Boundary Analysis & Crash Verification', () => {
             render(
                 <MemoryRouter>
                     <ToastProvider>
-                        <ExerciseWizard />
+                        <SimulationWizard />
                     </ToastProvider>
                 </MemoryRouter>
             );

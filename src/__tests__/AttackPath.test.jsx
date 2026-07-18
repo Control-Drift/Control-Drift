@@ -77,7 +77,7 @@ const mockMitreData = {
 
 const mockAppContextValues = {
   gaps: mockGaps,
-  exercises: [],
+  events: [],
   mitreData: mockMitreData,
   setActiveAiContext: mockSetActiveAiContext,
   generateAIContent: mockGenerateAIContent,

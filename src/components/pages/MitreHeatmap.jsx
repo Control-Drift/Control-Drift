@@ -588,7 +588,7 @@ function RotatingStars() {
   );
 }
 
-function Scene({ mitreData, activeTactic, setActiveTactic, handleTechClick, quickFilter, exercises, simulationSummaries, exercisesByTtp }) {
+function Scene({ mitreData, activeTactic, setActiveTactic, handleTechClick, quickFilter, events, simulationSummaries, exercisesByTtp }) {
   const radius = 7;
   const { camera } = useThree();
   const controlsRef = useRef();
@@ -1022,28 +1022,26 @@ const TechnicalDetails = ({ remediationStr, testResults = [], selectedTechId, fa
                 let subTechBadge = null;
                 if (tr?.ttps) {
                     const subId = tr.ttps.find(id => {
-                        if (Array.isArray(selectedTechId)) return !selectedTechId.includes(id);
-                        return id !== selectedTechId;
+                        if (Array.isArray(selectedTechId)) {
+                            return selectedTechId.some(sel => id !== sel && id.startsWith(`${sel}.`));
+                        }
+                        return selectedTechId && id !== selectedTechId && id.startsWith(`${selectedTechId}.`);
                     });
                     
                     if (subId) {
                         let subName = 'Sub-Technique';
-                        if (subId.includes('.')) {
-                            const parentId = subId.split('.')[0];
-                            if (mitreData) {
-                                for (const tactic of Object.values(mitreData)) {
-                                    const parentTech = tactic.techniques?.find(t => t.id === parentId);
-                                    if (parentTech) {
-                                        const sub = parentTech.subTechniques?.find(s => s.id === subId);
-                                        if (sub) {
-                                            subName = sub.name;
-                                            break;
-                                        }
+                        if (mitreData) {
+                            for (const tactic of Object.values(mitreData)) {
+                                const parentId = subId.split('.')[0];
+                                const parentTech = tactic.techniques?.find(t => t.id === parentId);
+                                if (parentTech) {
+                                    const sub = parentTech.subTechniques?.find(s => s.id === subId);
+                                    if (sub) {
+                                        subName = sub.name;
+                                        break;
                                     }
                                 }
                             }
-                        } else {
-                            subName = 'Custom TTP';
                         }
                         subTechBadge = `${subId} - ${subName}`;
                     }
@@ -1123,7 +1121,7 @@ const TechnicalDetails = ({ remediationStr, testResults = [], selectedTechId, fa
 
             {expandedCodeData && (
                 <div className="absolute-overlay" style={{  position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.2)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: '12px'  }} onClick={() => setExpandedCodeData(null)}>
-                     <div className="glass-panel animate-fade-in responsive-modal" style={{  display: 'flex', flexDirection: 'column', background: 'rgba(10, 11, 16, 0.75)', backdropFilter: 'blur(16px)', border: '1px solid var(--accent-primary)', borderRadius: '8px'  }} onClick={e => e.stopPropagation()}>
+                     <div className="glass-panel animate-fade-in responsive-modal" style={{  display: 'flex', flexDirection: 'column', background: 'rgba(10, 11, 16, 0.75)', backdropFilter: 'blur(16px)', border: '1px solid var(--accent-primary)', borderRadius: '8px', maxHeight: '95%', maxWidth: '95%', overflow: 'hidden'  }} onClick={e => e.stopPropagation()}>
                          <div style={{  padding: '15px 20px', borderBottom: '1px solid rgba(255,255,255,0.1)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.2)'  }}>
                              <h3 style={{  margin: 0, display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-primary)'  }}>
                                  <Terminal size={20} color="var(--accent-primary)" /> {expandedCodeData.type === 'Payload' ? 'Raw Payload' : 'Procedure Steps'}
@@ -1132,7 +1130,7 @@ const TechnicalDetails = ({ remediationStr, testResults = [], selectedTechId, fa
                                  <X size={20} />
                              </button>
                          </div>
-                         <div style={{  padding: '20px', overflowY: 'auto'  }}>
+                         <div style={{  padding: '20px', overflowY: 'auto', flex: 1  }}>
                              <PayloadDisplay code={expandedCodeData.content} />
                          </div>
                      </div>
@@ -1157,13 +1155,13 @@ import TagDropdown from '../dropdowns/TagDropdown';
  * 
  * CORE LOGIC:
  * 1. Fetches raw STIX data from Mitre (via `useMitreData` hook).
- * 2. Joins the current state of `exercises` to determine coverage status.
+ * 2. Joins the current state of `events` to determine coverage status.
  * 3. Renders a 3D grid of cubes, color-coded by the aggregated `status` of each technique.
  * 4. Includes a `WebGLFallbackBoundary` to prevent app crashes on unsupported devices.
  * 
  * NOMENCLATURE MAP:
- * - "Exercise": A single technique test.
- * - "Simulation": A campaign of exercises.
+ * - "Event": A single technique test.
+ * - "Simulation": A campaign of events.
  */
 const ResponsiveScale = ({ children }) => {
   const [scale, setScale] = useState(1);
@@ -1196,7 +1194,7 @@ const ResponsiveScale = ({ children }) => {
 };
 
 export default function MitreHeatmap() {
-  const { mitreData, isMitreLoading, mitreProgress, exercises, gaps, completeExercise, toggleTacticScope, toggleTechniqueScope, activeEnvironmentFilter, setActiveEnvironmentFilter, activeTagFilter, activeSecurityControlFilter, simulationSummaries, setActiveAiContext } = useAppContext();
+  const { mitreData, isMitreLoading, mitreProgress, events, gaps, completeExercise, toggleTacticScope, toggleTechniqueScope, activeEnvironmentFilter, setActiveEnvironmentFilter, activeTagFilter, activeSecurityControlFilter, simulationSummaries, setActiveAiContext } = useAppContext();
   
   React.useLayoutEffect(() => {
     const mainContent = document.querySelector('.main-content');
@@ -1212,13 +1210,13 @@ export default function MitreHeatmap() {
   
   const exercisesByTtp = useMemo(() => {
      const map = {};
-     Object.values(exercises || {}).forEach(e => {
+     Object.values(events || {}).forEach(e => {
         if (activeTagFilter !== 'All' && !(Array.isArray(e.tags) ? e.tags.includes(activeTagFilter) : e.tags === activeTagFilter)) return;
         if (!map[e.ttp]) map[e.ttp] = [];
         map[e.ttp].push(e);
      });
      return map;
-  }, [exercises, activeTagFilter]);
+  }, [events, activeTagFilter]);
 
   const [activeTactic, setActiveTactic] = useState(null);
   const [selectedTech, setSelectedTech] = useState(null);
@@ -1507,7 +1505,7 @@ export default function MitreHeatmap() {
             <RotatingStars />
             
             <ResponsiveScale>
-              <Scene mitreData={resolvedMitreData} activeTactic={activeTactic} setActiveTactic={setActiveTactic} handleTechClick={handleTechClick} quickFilter={quickFilter} exercises={exercises} simulationSummaries={simulationSummaries} exercisesByTtp={exercisesByTtp} />
+              <Scene mitreData={resolvedMitreData} activeTactic={activeTactic} setActiveTactic={setActiveTactic} handleTechClick={handleTechClick} quickFilter={quickFilter} events={events} simulationSummaries={simulationSummaries} exercisesByTtp={exercisesByTtp} />
             </ResponsiveScale>
             
             <EffectComposer disableNormalPass>
@@ -1532,7 +1530,7 @@ export default function MitreHeatmap() {
         toggleDescope={toggleDescope}
       />
 
-      {/* Historical Exercise Modal */}
+      {/* Historical Event Modal */}
       {selectedTech && (
         <div className="animate-fade-in ttp-modal-container" style={{  background: 'rgba(0,0,0,0.2)', zIndex: 3000  }}>
           <div className="glass-panel ttp-modal" style={{ pointerEvents: 'auto', display: 'flex', flexDirection: 'column', background: 'var(--bg-secondary)', border: '1px solid var(--accent-primary)', boxShadow: '0 0 40px rgba(156, 39, 176, 0.2)', boxSizing: 'border-box'  }}>
@@ -1563,7 +1561,7 @@ export default function MitreHeatmap() {
 
 
             
-            <div style={{  padding: '25px', overflowY: 'auto', flex: 1  }}>
+            <div style={{  padding: '25px', overflowY: 'auto', flex: 1, minHeight: 0  }}>
                 <div className="animate-fade-in">
                     {selectedTech.status === 'na' ? (
                         <div style={{  padding: '40px 20px', textAlign: 'center', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.3)', borderRadius: '8px', border: '1px dashed var(--glass-border)'  }}>

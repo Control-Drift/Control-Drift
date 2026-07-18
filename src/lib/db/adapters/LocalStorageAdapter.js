@@ -17,7 +17,7 @@
 export default class LocalStorageAdapter {
     constructor() {
         this.type = 'local';
-        this.STORAGE_KEY_EXERCISES = 'exercises';
+        this.STORAGE_KEY_EVENTS = 'events';
         this.STORAGE_KEY_GAPS = 'gaps';
         this.STORAGE_KEY_MITRE = 'mitre_coverage';
     }
@@ -46,8 +46,8 @@ export default class LocalStorageAdapter {
     async saveMitreCoverage(coverage) { return await this.saveData(this.STORAGE_KEY_MITRE, coverage); }
 
     // --- Relational Simulations Methods ---
-    async fetchExercises(page = 1, limit = 50, simulation = '') {
-        let all = await this.fetchData(this.STORAGE_KEY_EXERCISES) || [];
+    async fetchEvents(page = 1, limit = 50, simulation = '') {
+        let all = await this.fetchData(this.STORAGE_KEY_EVENTS) || [];
         if (simulation) {
             all = all.filter(e => e.simulation === simulation);
         }
@@ -67,7 +67,7 @@ export default class LocalStorageAdapter {
     }
 
     async fetchSimulations() {
-        const all = await this.fetchData(this.STORAGE_KEY_EXERCISES) || [];
+        const all = await this.fetchData(this.STORAGE_KEY_EVENTS) || [];
         const simulations = new Set();
         all.forEach(e => { if (e.simulation) simulations.add(e.simulation); });
         return Array.from(simulations);
@@ -100,9 +100,21 @@ export default class LocalStorageAdapter {
 
     async deleteSimulation(id) {
         const current = await this.fetchSimulationsData();
-        const filtered = current.filter(s => s.id !== id);
+        const cleanId = (id || '').toString().trim().toLowerCase();
+        const filtered = current.filter(s => (s.id || '').toString().trim().toLowerCase() !== cleanId);
         try {
             localStorage.setItem('simulations_table', JSON.stringify(filtered));
+            
+            // Clean up all related events
+            const events = await this.fetchData(this.STORAGE_KEY_EVENTS) || [];
+            const remainingEvents = events.filter(e => (e.simulation || '').toString().trim().toLowerCase() !== cleanId);
+            await this.saveData(this.STORAGE_KEY_EVENTS, remainingEvents);
+            
+            // Clean up all related gaps
+            const gaps = await this.fetchData(this.STORAGE_KEY_GAPS) || [];
+            const remainingGaps = gaps.filter(g => (g.simulation || '').toString().trim().toLowerCase() !== cleanId);
+            await this.saveData(this.STORAGE_KEY_GAPS, remainingGaps);
+            
             return true;
         } catch (e) {
             if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
@@ -116,7 +128,7 @@ export default class LocalStorageAdapter {
     async bulkImport(backupData) {
         try {
             if (backupData.gaps) localStorage.setItem(this.STORAGE_KEY_GAPS, JSON.stringify(backupData.gaps));
-            if (backupData.exercises) localStorage.setItem(this.STORAGE_KEY_EXERCISES, JSON.stringify(backupData.exercises));
+            if (backupData.events) localStorage.setItem(this.STORAGE_KEY_EVENTS, JSON.stringify(backupData.events));
             
             const simulationRows = [];
             const summaries = backupData.simulationSummaries || {};

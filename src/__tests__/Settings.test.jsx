@@ -24,7 +24,7 @@ vi.mock('../lib/cryptoUtils', () => ({
   encryptData: vi.fn().mockResolvedValue('encrypted_mock_data'),
   decryptData: vi.fn().mockResolvedValue(JSON.stringify({
     gaps: [{ id: 'GAP-1', title: 'Test Gap', severity: 'Critical' }],
-    exercises: [{ id: 'EX-1', ttp: 'T1059', outcome: 'Logged' }],
+    events: [{ id: 'EX-1', ttp: 'T1059', outcome: 'Logged' }],
     simulationSummaries: { 'sim-1': 'Simulation Summary' },
     simulationEvidence: {}
   })),
@@ -61,7 +61,7 @@ const mockAppContextValues = {
   dbAdapter: { bulkImport: vi.fn().mockResolvedValue() },
   testDbConnection: mockPingDb,
   gaps: [],
-  exercises: [],
+  events: [],
   simulationSummaries: {},
   simulationEvidence: {},
   setGaps: mockSetGaps,
@@ -250,7 +250,7 @@ describe('Settings component', () => {
   });
 
   it('triggers export backup flow', async () => {
-    // Fill gaps/exercises to ensure data exports
+    // Fill gaps/events to ensure data exports
     mockAppContextValues.gaps = [{ id: 'GAP-1' }];
     
     render(<Settings />);

@@ -30,7 +30,7 @@ export function useDbConnection() {
     // Fetch deployment configuration globally (if provided by IT Admin)
     useEffect(() => {
         let isMounted = true;
-        fetch('/config.json')
+        fetch('/config.json?v=' + new Date().getTime())
             .then(res => {
                 if (!res.ok) throw new Error('config.json not found');
                 return res.json();

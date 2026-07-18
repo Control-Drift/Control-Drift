@@ -117,9 +117,9 @@ export class SupabaseAdapter extends DatabaseAdapter {
 
     // --- Granular Data Methods mapped to Supabase PostgreSQL Tables ---
 
-    async fetchExercises(page = 1, limit = 50, simulation = '') {
+    async fetchEvents(page = 1, limit = 50, simulation = '') {
         let query = this.supabase
-            .from('exercises')
+            .from('events')
             .select('*', { count: 'exact' });
             
         if (simulation) {
@@ -149,7 +149,7 @@ export class SupabaseAdapter extends DatabaseAdapter {
         const { data, error } = await this.supabase.rpc('get_distinct_simulations');
         if (error) {
             // Fallback: fetch all and extract (not efficient for large datasets)
-            const { data: allData } = await this.supabase.from('exercises').select('simulation');
+            const { data: allData } = await this.supabase.from('events').select('simulation');
             const simulations = new Set();
             allData?.forEach(e => { if (e.simulation) simulations.add(e.simulation); });
             return Array.from(simulations);
@@ -157,10 +157,10 @@ export class SupabaseAdapter extends DatabaseAdapter {
         return Array.isArray(data) ? data.map(d => d.simulation || d) : data;
     }
 
-    async createExercise(exercise) {
+    async createEvent(eventObj) {
         const { data, error } = await this.supabase
-            .from('exercises')
-            .insert([exercise])
+            .from('events')
+            .insert([eventObj])
             .select()
             .single();
             
@@ -168,10 +168,10 @@ export class SupabaseAdapter extends DatabaseAdapter {
         return data;
     }
 
-    async updateExercise(id, exerciseData) {
+    async updateEvent(id, eventData) {
         const { data, error } = await this.supabase
-            .from('exercises')
-            .update(exerciseData)
+            .from('events')
+            .update(eventData)
             .eq('id', id)
             .select()
             .single();
@@ -223,7 +223,7 @@ export class SupabaseAdapter extends DatabaseAdapter {
     }
 
     // fetchMitreCoverage is omitted. The application will use client-side mitreDataCalculated
-    // which accurately computes coverage locally from fetched exercises.
+    // which accurately computes coverage locally from fetched events.
 
     // --- Relational Simulations Methods ---
     
@@ -247,6 +247,34 @@ export class SupabaseAdapter extends DatabaseAdapter {
         return data;
     }
 
+    async deleteSimulation(id) {
+        // First delete associated events
+        const { error: eventsError } = await this.supabase
+            .from('events')
+            .delete()
+            .eq('simulation', id);
+        if (eventsError) throw new Error(`Events deletion failed: ${eventsError.message}`);
+        
+        // Then delete associated gaps
+        const { error: gapsError } = await this.supabase
+            .from('gaps')
+            .delete()
+            .eq('simulation', id);
+        if (gapsError) throw new Error(`Gaps deletion failed: ${gapsError.message}`);
+        
+        // Finally delete the simulation record itself
+        const { error: simError } = await this.supabase
+            .from('simulations')
+            .delete()
+            .eq('id', id);
+        // It's possible the simulations table doesn't exist yet for some users, so we won't hard-fail if it doesn't
+        if (simError && simError.code !== '42P01') { 
+            console.warn(`Simulation record deletion failed: ${simError.message}`);
+        }
+        
+        return true;
+    }
+
     async bulkImport(backupData) {
         // Run sequential bulk upserts for all 3 core entities
         if (backupData.gaps && backupData.gaps.length > 0) {
@@ -254,9 +282,9 @@ export class SupabaseAdapter extends DatabaseAdapter {
             if (gapsErr) throw new Error(`Gaps Import Error: ${gapsErr.message}`);
         }
         
-        if (backupData.exercises && backupData.exercises.length > 0) {
-            const { error: exercisesErr } = await this.supabase.from('exercises').upsert(backupData.exercises);
-            if (exercisesErr) throw new Error(`Exercises Import Error: ${exercisesErr.message}`);
+        if (backupData.events && backupData.events.length > 0) {
+            const { error: eventsErr } = await this.supabase.from('events').upsert(backupData.events);
+            if (eventsErr) throw new Error(`Events Import Error: ${eventsErr.message}`);
         }
         
         // Convert the dictionaries into relational rows

@@ -19,13 +19,13 @@ import { calculateAverageStatus } from '../lib/mitreUtils';
 
 /**
  * Custom React hook that loads, caches, and calculates MITRE ATT&CK framework data 
- * against the provided simulation exercises to generate unified security posture metrics.
+ * against the provided simulation events to generate unified security posture metrics.
  *
  * @param {Object} dbAdapter - Database connection adapter for syncing state.
- * @param {Object} allExercisesData - A dictionary of all recorded exercises and simulations.
+ * @param {Object} allEventsData - A dictionary of all recorded events and simulations.
  * @returns {Object} An object containing the calculated MITRE data, loading state, and helper functions.
  */
-export function useMitreData(dbAdapter, allExercisesData) {
+export function useMitreData(dbAdapter, allEventsData) {
     const [baseMitreData, setBaseMitreData] = useState({});
     const [isMitreLoading, setIsMitreLoading] = useState(true);
     const [mitreProgress, setMitreProgress] = useState(0);
@@ -51,9 +51,9 @@ export function useMitreData(dbAdapter, allExercisesData) {
 
     /**
      * Determines the unified coverage status ('high', 'medium', 'minimal', 'low', 'unknown') 
-     * for a single exercise based on its explicit rating or parsed simulation outcome.
+     * for a single event based on its explicit rating or parsed simulation outcome.
      * 
-     * @param {Object} ex - The exercise object containing coverageRating, outcome, and status.
+     * @param {Object} ex - The event object containing coverageRating, outcome, and status.
      * @returns {string} The resolved status rating for heatmap calculation.
      */
     const getResolvedStatusFromExercise = useCallback((ex) => {
@@ -126,14 +126,14 @@ export function useMitreData(dbAdapter, allExercisesData) {
     /**
      * Recalculates the coverage status (high, medium, minimal, low, na, unknown) 
      * for all MITRE ATT&CK techniques and sub-techniques in the provided matrix, 
-     * based on the provided array of exercise data.
+     * based on the provided array of event data.
      * 
      * The scoring logic strictly distinguishes between objective 'Outcome' (Prevented, Alerted, Logged, Missed)
      * and subjective 'Coverage Rating' (Optimal, Partial, Minimal, None), mapping them into a unified status.
      * Parent techniques are rolled up automatically based on their sub-techniques.
      *
      * @param {Object} matrix - The MITRE matrix object keyed by Tactic name.
-     * @param {Array} exArray - Array of historical simulation and gap tracker exercises.
+     * @param {Array} exArray - Array of historical simulation and gap tracker events.
      */
     const recalculateMitreStatuses = (matrix, exArray) => {
         for (const tactic in matrix) {
@@ -180,7 +180,7 @@ export function useMitreData(dbAdapter, allExercisesData) {
     };
 
     /**
-     * Memoized calculation that merges raw historical exercise data into the MITRE ATT&CK skeleton.
+     * Memoized calculation that merges raw historical event data into the MITRE ATT&CK skeleton.
      * It maps environment-specific test history, tracks prevention percentages, 
      * dynamically adds unmapped TTPs, and runs recalculateMitreStatuses to produce the final dataset.
      */
@@ -222,7 +222,7 @@ export function useMitreData(dbAdapter, allExercisesData) {
             'T1485': 'Impact', 'T1486': 'Impact'
         };
 
-        const rawExArray = Object.values(allExercisesData);
+        const rawExArray = Object.values(allEventsData);
         const latestExMap = new Map();
         rawExArray.forEach(ex => {
             if (ex.status === 'pending' || ex.status === 'error') return;
@@ -520,7 +520,7 @@ export function useMitreData(dbAdapter, allExercisesData) {
 
         recalculateMitreStatuses(next, exArray);
         return next;
-    }, [baseMitreData, allExercisesData, getResolvedStatusFromExercise]);
+    }, [baseMitreData, allEventsData, getResolvedStatusFromExercise]);
 
     /**
      * Fetches the official Enterprise MITRE ATT&CK framework from MITRE's raw STIX JSON.

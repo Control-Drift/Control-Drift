@@ -15,24 +15,27 @@
  */
 
 import React from 'react';
-import driftEmblem from '../../assets/drift_emblem.png';
+
+import emblem from '../../assets/drift_emblem.png';
+
+const LogoMark = ({ size = 32 }) => (
+  <div style={{ width: size, height: size, flexShrink: 0, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <img 
+      src={emblem} 
+      alt="Control Drift" 
+      width="100%" 
+      height="100%" 
+      style={{ objectFit: 'cover' }} 
+    />
+  </div>
+);
 
 export default function CustomLogo({ className = "", style = {}, iconOnly = false }) {
   if (iconOnly) {
       return (
-          <img 
-            className={className}
-            src={driftEmblem} 
-            alt="Control Drift Emblem" 
-            style={{ 
-              width: '32px', 
-              height: '32px', 
-              objectFit: 'contain',
-              mixBlendMode: 'screen',
-              flexShrink: 0,
-              ...style
-            }} 
-          />
+        <div className={className} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', ...style }}>
+          <LogoMark size={32} />
+        </div>
       );
   }
 
@@ -46,28 +49,16 @@ export default function CustomLogo({ className = "", style = {}, iconOnly = fals
         ...style,
       }}
     >
-      {/* The Drift Emblem (AI Generated Image) */}
-      <img 
-        src={driftEmblem} 
-        alt="Control Drift Emblem" 
-        style={{ 
-          width: '32px', 
-          height: '32px', 
-          objectFit: 'contain',
-          mixBlendMode: 'screen', // Drops the black background cleanly against dark navs
-          flexShrink: 0 
-        }} 
-      />
-
+      <LogoMark size={34} />
+      
       {/* The Typography */}
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
         gap: '6px',
         fontFamily: '"Orbitron", sans-serif',
-        fontSize: '17px',
+        fontSize: '18px',
         lineHeight: 1,
-        marginTop: '1px', // Visual baseline alignment
       }}>
         {/* Heavy, rigid control */}
         <span style={{ 

@@ -492,6 +492,12 @@ select.ai-input option {
   line-height: 1.6;
   color: var(--text-primary);
 }
+.ql-editor li p {
+  margin: 0;
+}
+.ql-editor li:empty {
+  display: none;
+}
 .ql-editor blockquote {
   border-left: 4px solid var(--accent-secondary) !important;
   margin: 20px 0 !important;
@@ -527,6 +533,85 @@ select.ai-input option {
   color: inherit !important;
   padding: 0 !important;
   border-radius: 0 !important;
+}
+
+/* Custom Markdown Preview (ReadOnly Mode) */
+.markdown-preview {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  counter-reset: step-counter; /* Initialize continuous counter */
+}
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3 {
+  color: var(--accent-primary);
+  margin-top: 1.5em;
+  margin-bottom: 0.75em;
+  font-weight: 600;
+}
+.markdown-preview h1 { font-size: 1.5rem; }
+.markdown-preview h2 { font-size: 1.25rem; }
+.markdown-preview h3 { font-size: 1.1rem; }
+.markdown-preview p {
+  margin-bottom: 1em;
+}
+.markdown-preview ul {
+  list-style-type: disc;
+  padding-left: 1.5em;
+  margin-bottom: 1em;
+}
+.markdown-preview > ol {
+  list-style-type: none;
+  padding-left: 1.5em;
+  margin-bottom: 1em;
+}
+.markdown-preview > ol > li {
+  position: relative;
+  margin-bottom: 0.5em;
+}
+.markdown-preview > ol > li::before {
+  counter-increment: step-counter;
+  content: counter(step-counter) ". ";
+  position: absolute;
+  left: -1.5em;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.markdown-preview ol ol {
+  list-style-type: lower-alpha;
+  padding-left: 1.5em;
+}
+.markdown-preview ul li {
+  margin-bottom: 0.5em;
+}
+.markdown-preview pre {
+  background: rgba(0, 0, 0, 0.4);
+  padding: 12px 15px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin-bottom: 1em;
+  border: 1px solid var(--glass-border);
+}
+.markdown-preview code {
+  font-family: 'Fira Code', monospace;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  color: #a78bfa;
+}
+.markdown-preview pre code {
+  background: transparent;
+  padding: 0;
+  color: #fff;
+}
+.markdown-preview blockquote {
+  border-left: 4px solid var(--accent-secondary);
+  margin: 1.5em 0;
+  background: rgba(192, 132, 252, 0.05);
+  padding: 15px 20px;
+  border-radius: 0 8px 8px 0;
 }
 
 /* Micro-Animations */

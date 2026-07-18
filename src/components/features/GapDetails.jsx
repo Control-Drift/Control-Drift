@@ -215,8 +215,8 @@ const FormattedOutcome = ({ outcome, strikeThrough = false }) => {
  * CORE FEATURES:
  * 1. Provides editable fields for Resolution Notes, Tags, and Status.
  * 2. Allows the user to trigger an inline Validation (re-test) workflow.
- * 3. Integrates with the `updateExerciseValidation` context method to push
- *    successful re-tests back into the historical Exercise metrics.
+ * 3. Integrates with the `updateEventValidation` context method to push
+ *    successful re-tests back into the historical Event metrics.
  * 
  * @param {Object} props
  * @param {string} props.gapIdProp - Optional ID passed in for standalone mode.
@@ -226,7 +226,7 @@ const FormattedOutcome = ({ outcome, strikeThrough = false }) => {
 export default function GapDetails({ gapIdProp, onClose, onValidate }) {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { gaps, setExercises, mitreData, simulationSummaries, generateAIContentStream, aiSettings, updateExerciseValidation, setActiveAiContext, requestSuccessToast, isReadOnly, updateGap, deleteGap, confirmAction } = useAppContext();
+    const { gaps, setExercises, mitreData, simulationSummaries, generateAIContentStream, aiSettings, updateEventValidation, setActiveAiContext, requestSuccessToast, isReadOnly, updateGap, deleteGap, confirmAction } = useAppContext();
     const { addToast } = useToast();
 
     const getTTPName = (id) => {
@@ -1044,8 +1044,8 @@ export default function GapDetails({ gapIdProp, onClose, onValidate }) {
                        <button className="btn" disabled={!validationOutcome || !validationNotes.trim()} style={{  background: (!validationOutcome || !validationNotes.trim()) ? 'var(--bg-tertiary)' : 'var(--success)', color: (!validationOutcome || !validationNotes.trim()) ? 'var(--text-muted)' : '#fff', cursor: (!validationOutcome || !validationNotes.trim()) ? 'not-allowed' : 'pointer'  }} onClick={async () => {
                           const finalNotes = validationNotes + (validationFiles.length > 0 ? `\n\n[Attached Evidence: ${validationFiles.map(f => f.name).join(', ')}]` : '');
                           let resolved = false;
-                          if (updateExerciseValidation) {
-                              resolved = await updateExerciseValidation(gap, validationOutcome, finalNotes, validationDate ? new Date(validationDate).toISOString() : null);
+                          if (updateEventValidation) {
+                              resolved = await updateEventValidation(gap, validationOutcome, finalNotes, validationDate ? new Date(validationDate).toISOString() : null);
                           }
                           
                           setShowValidationModal(false);

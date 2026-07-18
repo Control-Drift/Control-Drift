@@ -69,14 +69,14 @@ const mockAppUI = {
 };
 
 const mockExData = {
-    allExercisesData: {},
+    allEventsData: {},
     loadAllData: vi.fn().mockResolvedValue(),
-    fetchExercisesPage: vi.fn(),
+    fetchEventsPage: vi.fn(),
     setExercises: vi.fn(),
-    setAllExercisesData: vi.fn(),
+    setAllEventsData: vi.fn(),
     exercisesPage: 1,
     exercisesLimit: 10,
-    exercises: []
+    events: []
 };
 
 const mockGapsData = {
@@ -124,7 +124,7 @@ const mockMitreHook = {
 
 const mockActions = {
     completeExercise: vi.fn(),
-    updateExerciseValidation: vi.fn()
+    updateEventValidation: vi.fn()
 };
 
 const mockAiData = {
@@ -136,11 +136,11 @@ const mockUseMitreData = vi.fn(() => mockMitreHook);
 
 vi.mock('../hooks/useDbConnection', () => ({ useDbConnection: () => mockDbConnection }));
 vi.mock('../hooks/useAppUI', () => ({ useAppUI: () => mockAppUI }));
-vi.mock('../hooks/useExercisesData', () => ({ useExercisesData: () => mockExData }));
+vi.mock('../hooks/useEventsData', () => ({ useEventsData: () => mockExData }));
 vi.mock('../hooks/useGapsData', () => ({ useGapsData: () => mockGapsData }));
 vi.mock('../hooks/useMitreData', () => ({ useMitreData: (adapter, filtered) => mockUseMitreData(adapter, filtered) }));
 vi.mock('../hooks/useSimulationsData', () => ({ useSimulationsData: () => mockSimsData }));
-vi.mock('../hooks/useExerciseActions', () => ({ useExerciseActions: () => mockActions }));
+vi.mock('../hooks/useEventActions', () => ({ useEventActions: () => mockActions }));
 vi.mock('../hooks/useAiData', () => ({ useAiData: () => mockAiData }));
 vi.mock('../hooks/useTagsData', () => ({ useTagsData: () => mockTagsData }));
 vi.mock('../hooks/useSecurityControlsData', () => ({ useSecurityControlsData: () => mockSecurityControlsData }));
@@ -465,8 +465,8 @@ describe('AppContext integration tests', () => {
             mockUseMitreData.mockClear();
         });
 
-        it('filters exercises by activeTagFilter and activeSecurityControlFilter', () => {
-            mockExData.allExercisesData = {
+        it('filters events by activeTagFilter and activeSecurityControlFilter', () => {
+            mockExData.allEventsData = {
                 ex1: { id: 'ex1', tags: 'PCI-DSS', securityControls: ['Splunk'] },
                 ex2: { id: 'ex2', tags: ['HIPAA'], securityControls: ['CrowdStrike'] },
                 ex3: { id: 'ex3', tags: ['PCI-DSS', 'GDPR'], securityControls: ['Splunk', 'Firewall'] }

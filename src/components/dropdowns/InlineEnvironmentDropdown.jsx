@@ -148,7 +148,15 @@ export default function InlineEnvironmentDropdown({ value, onChange }) {
                         return (
                             <button
                                 key={envName}
-                                onClick={(e) => { e.preventDefault(); toggleSelection(envName); setIsOpen(false); setSearchQuery(''); }}
+                                onClick={(e) => { 
+                                    e.preventDefault(); 
+                                    toggleSelection(envName); 
+                                    const isDeselecting = selectedArray.includes(envName);
+                                    if (!(isDeselecting && selectedArray.length > 1)) {
+                                        setIsOpen(false); 
+                                        setSearchQuery(''); 
+                                    }
+                                }}
                                 style={{
                                     display: 'flex', alignItems: 'center', gap: '12px', justifyContent: 'space-between',
                                     background: isActive ? 'rgba(56, 189, 248, 0.15)' : 'transparent',

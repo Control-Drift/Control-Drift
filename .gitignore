@@ -10,3 +10,15 @@ test-results/
 deploy/supabase/
 deploy/config.json
 deploy/litellm-config.yaml
+
+supabase/
+
+# OS and IDE
+.DS_Store
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

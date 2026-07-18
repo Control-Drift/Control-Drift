@@ -212,8 +212,25 @@ const ObjectivesIcon = ({ size = 32, color = "currentColor", ...props }) => (
 );
 
 export default function AttackPath() {
-    const { gaps, exercises, mitreData, setActiveAiContext, generateAIContent, aiSettings, isAiActive, simulationSummaries } = useAppContext();
+    const { gaps, events, mitreData, setActiveAiContext, generateAIContent, aiSettings, isAiActive, simulationSummaries } = useAppContext();
     const [selectedGap, setSelectedGap] = useState(null);
+
+    const getTacticTags = (ttpString, fallbackTactic) => {
+        const ttps = (ttpString || '').split(',').map(t => t.trim()).filter(Boolean);
+        const tactics = new Set();
+        if (mitreData) {
+            ttps.forEach(ttp => {
+                const parentId = ttp.includes('.') ? ttp.split('.')[0] : ttp;
+                for (const [tacticName, tactic] of Object.entries(mitreData)) {
+                    if (tactic.techniques?.some(t => t.id === parentId)) {
+                        tactics.add(tacticName);
+                        break;
+                    }
+                }
+            });
+        }
+        return tactics.size > 0 ? Array.from(tactics) : [fallbackTactic || 'Unknown Phase'];
+    };
     const [showGapCode, setShowGapCode] = useState(false);
     useEffect(() => {
         if (selectedGap) setShowGapCode(false);
@@ -688,7 +705,7 @@ Do not include markdown code block wrappers, return ONLY the raw JSON string.\nG
                         </div>
                         <h2 style={{ fontSize: '1.5rem', margin: '0 0 10px 0', color: 'var(--text-primary)', fontWeight: '500' }}>No Active Attack Paths</h2>
                         <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', maxWidth: '500px', lineHeight: '1.6', margin: 0 }}>
-                            There are currently no active coverage gaps plotted across the kill chain. Use the Gap Tracker to log new gaps and visualize potential escalation vectors here.
+                            There are currently no active coverage gaps plotted across the kill chain.
                         </p>
                     </div>
                 )}
@@ -754,7 +771,7 @@ Do not include markdown code block wrappers, return ONLY the raw JSON string.\nG
                                         background: `linear-gradient(90deg, transparent 0%, ${p.color} 70%, #fff 100%)`,
                                         borderRadius: '10px',
                                         boxShadow: `0 0 12px 2px ${p.color}`,
-                                        pointerEvents: 'none', zIndex: 20,
+                                        pointerEvents: 'none', zIndex: 0,
                                         offsetPath: `path('${p.d}')`,
                                         animation: p.isCritical ? 'moveOrb 2s linear infinite' : 'moveOrb 4s linear infinite'
                                     }}
@@ -821,7 +838,7 @@ Do not include markdown code block wrappers, return ONLY the raw JSON string.\nG
                                                             fontFamily: 'monospace',
                                                             opacity: isDimmed ? 0.3 : 1,
                                                             zIndex: isHighlighted ? 10 : 1,
-                                                            height: '145px',
+                                                            minHeight: '145px',
                                                             display: 'flex',
                                                             flexDirection: 'column'
                                                         }}
@@ -836,6 +853,13 @@ Do not include markdown code block wrappers, return ONLY the raw JSON string.\nG
                                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0, flex: 1 }}>
                                                                 <div style={{ fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 'bold', lineHeight: '1.3', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', display: '-webkit-box', overflow: 'hidden', wordBreak: 'break-all' }}>
                                                                     {gap.finding || gap.id}
+                                                                </div>
+                                                                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                                                                    {getTacticTags(gap.ttp, gap.tactic).map(tag => (
+                                                                        <span key={tag} style={{ fontSize: '0.65rem', color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.5px', fontWeight: 'bold', background: 'rgba(255, 255, 255, 0.1)', padding: '2px 6px', borderRadius: '4px', whiteSpace: 'nowrap' }}>
+                                                                            {tag}
+                                                                        </span>
+                                                                    ))}
                                                                 </div>
                                                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                                                     <span style={{ color: 'var(--accent-primary)', fontWeight: 'bold', marginRight: '6px' }}>{gap.ttp}</span>
@@ -934,8 +958,12 @@ Do not include markdown code block wrappers, return ONLY the raw JSON string.\nG
                                         <Fingerprint size={32} color="var(--accent-primary)" />
                                     </div>
                                     <div style={{ flex: 1 }}>
-                                        <div style={{ fontSize: '0.85rem', color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '4px', fontWeight: 'bold' }}>
-                                            {selectedGap.tactic || 'Unknown Phase'}
+                                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                                            {getTacticTags(selectedGap.ttp, selectedGap.tactic).map(tag => (
+                                                <span key={tag} style={{ fontSize: '0.75rem', color: 'var(--accent-primary)', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold', background: 'rgba(156, 39, 176, 0.1)', border: '1px solid rgba(156, 39, 176, 0.3)', padding: '2px 8px', borderRadius: '4px' }}>
+                                                    {tag}
+                                                </span>
+                                            ))}
                                         </div>
                                         <h2 style={{ margin: 0, color: '#fff', fontSize: '1.5rem', fontFamily: 'monospace', letterSpacing: '1px' }}>{selectedGap.ttp}</h2>
                                         <div style={{ fontSize: '1.1rem', color: 'var(--text-secondary)', marginTop: '4px', fontWeight: '500' }}>

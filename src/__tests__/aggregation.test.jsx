@@ -19,7 +19,7 @@ import { renderHook, act } from '@testing-library/react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useMitreData } from '../hooks/useMitreData';
-import ExerciseWizard from '../components/pages/ExerciseWizard';
+import SimulationWizard from '../components/pages/SimulationWizard';
 import { AppProvider, useAppContext } from '../AppContext';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -54,7 +54,7 @@ vi.mock('@react-pdf/renderer', () => ({
     PDFDownloadLink: ({ children }) => children({ loading: false })
 }));
 
-// Mock child components of ExerciseWizard
+// Mock child components of SimulationWizard
 vi.mock('../components/dropdowns/InlineEnvironmentDropdown', () => ({ default: () => null }));
 vi.mock('../components/dropdowns/InlineTagDropdown', () => ({ default: () => null }));
 vi.mock('../components/dropdowns/EventTypeDropdown', () => ({ default: () => null }));
@@ -103,7 +103,7 @@ describe('useMitreData worst-case aggregation', () => {
     };
 
     it('should aggregate statuses using worst-case counterpart in calculateAverageStatus', () => {
-        // Exercise 1 is high (Optimal), Exercise 2 is low (None)
+        // Event 1 is high (Optimal), Event 2 is low (None)
         const mockExercises = [
             {
                 ttp: 'T1190.001',
@@ -127,14 +127,14 @@ describe('useMitreData worst-case aggregation', () => {
             result.current.setBaseMitreData(mockSkeleton);
         });
 
-        // The subtechnique should rollup to 'low' because one of its exercises is 'low'
+        // The subtechnique should rollup to 'low' because one of its events is 'low'
         const initialAccess = result.current.mitreData['Initial Access'];
         const tech = initialAccess.techniques[0];
         expect(tech.subTechniques[0].status).toBe('low');
     });
 
     it('should aggregate environment status rollup for parent techniques based on worst-case score occurrences', () => {
-        // One exercise is Optimal (score 100 -> b=1) and one is None (score 0 -> m=1)
+        // One event is Optimal (score 100 -> b=1) and one is None (score 0 -> m=1)
         const mockExercises = [
             {
                 ttp: 'T1190.001',
@@ -162,7 +162,7 @@ describe('useMitreData worst-case aggregation', () => {
         expect(tech.environments['Windows Workstation']).toBe('low');
     });
 
-    it('should aggregate status to na when all exercises are na', () => {
+    it('should aggregate status to na when all events are na', () => {
         const mockExercises = [
             {
                 ttp: 'T1190.001',
@@ -179,7 +179,7 @@ describe('useMitreData worst-case aggregation', () => {
         expect(tech.subTechniques[0].status).toBe('na');
     });
 
-    it('should aggregate status to unknown when all exercises are unknown', () => {
+    it('should aggregate status to unknown when all events are unknown', () => {
         const mockExercises = [
             {
                 ttp: 'T1190.001',
@@ -282,7 +282,7 @@ describe('useMitreData worst-case aggregation', () => {
     });
 });
 
-// Mock useAppContext for ExerciseWizard testing
+// Mock useAppContext for SimulationWizard testing
 const mockAppContextValues = {
     completeExercise: vi.fn(),
     mitreData: {
@@ -311,14 +311,14 @@ vi.mock('../AppContext', () => ({
     useAppContext: () => mockAppContextValues,
 }));
 
-describe('ExerciseWizard worst-case getAggregatedScore', () => {
+describe('SimulationWizard worst-case getAggregatedScore', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         sessionStorage.clear();
     });
 
     it('should calculate aggregated score using worst-case coverage rating among valid procedures', () => {
-        // Inject state via sessionStorage to place ExerciseWizard at Step 4 with test results
+        // Inject state via sessionStorage to place SimulationWizard at Step 4 with test results
         sessionStorage.setItem('wizard_step', '4');
         sessionStorage.setItem('wizard_details', JSON.stringify({
             name: 'Test campaign',
@@ -351,7 +351,7 @@ describe('ExerciseWizard worst-case getAggregatedScore', () => {
         render(
             <MemoryRouter>
                 <ToastProvider>
-                    <ExerciseWizard />
+                    <SimulationWizard />
                 </ToastProvider>
             </MemoryRouter>
         );

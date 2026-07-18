@@ -68,11 +68,11 @@ export default function EventCard({
                         />
                     </div>
                     <div style={{  flex: 1, position: 'relative', display: 'flex', alignItems: 'center', gap: '15px'  }}>
-                        <input onKeyDown={e => e.stopPropagation()} maxLength={100} className="ai-input" style={{  flex: 1, margin: 0, background: (showNameErrors && (!proc.name || proc.name.trim() === '' || /^Event \d+$/.test(proc.name.trim()))) ? 'rgba(239, 68, 68, 0.1)' : 'transparent', border: 'none', borderBottom: (showNameErrors && (!proc.name || proc.name.trim() === '' || /^Event \d+$/.test(proc.name.trim()))) ? '1px dashed var(--danger)' : '1px dashed var(--glass-border)', fontSize: '1.1rem', color: 'var(--text-primary)', padding: '6px 8px', outline: 'none', fontWeight: 'bold', borderRadius: '4px 4px 0 0', transition: 'all 0.3s ease'  }} 
+                        <input onKeyDown={e => e.stopPropagation()} maxLength={100} className="ai-input" style={{  flex: 1, margin: 0, background: (showNameErrors && (!proc.name || proc.name.trim() === '' || /^Procedure \d+$/.test(proc.name.trim()))) ? 'rgba(239, 68, 68, 0.1)' : 'transparent', border: 'none', borderBottom: (showNameErrors && (!proc.name || proc.name.trim() === '' || /^Procedure \d+$/.test(proc.name.trim()))) ? '1px dashed var(--danger)' : '1px dashed var(--glass-border)', fontSize: '1.1rem', color: 'var(--text-primary)', padding: '6px 8px', outline: 'none', fontWeight: 'bold', borderRadius: '4px 4px 0 0', transition: 'all 0.3s ease'  }} 
                                value={proc.name || ''} 
-                               onChange={e => {
+                               onChange={(e) => {
                                    updateProcedure(proc.id, 'name', e.target.value);
-                                   if (showNameErrors && setShowNameErrors) setShowNameErrors(false);
+                                   if (showNameErrors) setShowNameErrors(false);
                                }} 
                                placeholder={proc.eventType === 'Payload' || !proc.eventType ? "Payload Name" : "Procedure Name"} />
                         
@@ -91,7 +91,7 @@ export default function EventCard({
                     <button onClick={onToggleCollapse} style={{  background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', borderRadius: '6px', transition: 'all 0.2s'  }} onMouseEnter={e => {e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}} onMouseLeave={e => {e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'}} title={isCollapsed ? "Expand" : "Collapse"}>
                         {isCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
                     </button>
-                    <button onClick={() => removeProcedure(proc.id)} style={{  background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', borderRadius: '6px', transition: 'all 0.2s'  }} onMouseEnter={e => {e.currentTarget.style.color = 'var(--danger)'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}} onMouseLeave={e => {e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'}} title="Remove Event">
+                    <button onClick={() => removeProcedure(proc.id)} style={{  background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', borderRadius: '6px', transition: 'all 0.2s'  }} onMouseEnter={e => {e.currentTarget.style.color = 'var(--danger)'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'}} onMouseLeave={e => {e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'}} title="Remove Procedure">
                         <Trash2 size={18} />
                     </button>
                 </div>

@@ -136,13 +136,13 @@ const mockSimulationSummaries = {
 const mockAppContextValues = {
   dbAdapter: {
     fetchSimulations: vi.fn().mockResolvedValue(['APT29 Simulation']),
-    fetchExercises: vi.fn().mockResolvedValue({
+    fetchEvents: vi.fn().mockResolvedValue({
       data: mockExercises,
       total: mockExercises.length,
       page: 1
     })
   },
-  exercises: mockExercises,
+  events: mockExercises,
   completeExercise: mockCompleteExercise,
   simulationSummaries: mockSimulationSummaries,
   saveSimulationSummary: mockSaveSimulationSummary,
