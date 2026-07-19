@@ -104,10 +104,6 @@ For instructions on deploying a self-hosted backend, AI proxy, and the frontend 
 
 ---
 
-## Contributing
-
-Contributions from the community are welcomed! Please feel free to submit a Pull Request.
-
 ## License
 
 This project is licensed under the Apache 2.0 License. See the [LICENSE](LICENSE) file for details.
