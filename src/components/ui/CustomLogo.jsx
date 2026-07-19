@@ -48,7 +48,7 @@ export default function CustomLogo({ className = "", style = {}, iconOnly = fals
         ...style,
       }}
     >
-      <LogoMark size={34} />
+      <LogoMark size={24} />
       
       {/* The Typography */}
       <div style={{ 
