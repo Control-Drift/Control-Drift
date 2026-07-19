@@ -67,8 +67,7 @@ clicks.
 - **Attack Path Mapping**: Visualize attack paths and choke points across your environment. Leverage your AI integration to automatically map viable attack paths based on your active gaps.
   <br/>
   <img src="docs/assets/attack_path.png" alt="Attack Path Screenshot" width="800" style="border-radius: 8px; margin: 10px 0;" />
-- **Automated Reporting**: Instantly generate highly detailed Executive and Technical PDF reports summarizing simulation outcomes, coverage ratings, and actionable gaps.
-- **Integrated AI Copilot**: Plug-and-play AI integration to automate TTP mapping, generate detection rules, synthesize executive summaries, and map viable attack paths.
+- **Integrated AI**: Plug-and-play AI integration to enhance workflows and introduce next generation AI-powered features.
 - **Flexible Data Adapters**: Start with `localStorage`/`IndexedDB` for quick testing, then migrate to a backend database (`Supabase`, `Firebase`) or a custom `REST API` when you're ready to scale.
 
 ---
