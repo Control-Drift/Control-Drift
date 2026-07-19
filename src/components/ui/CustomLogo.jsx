@@ -19,13 +19,12 @@ import React from 'react';
 import emblem from '../../assets/drift_emblem.png';
 
 const LogoMark = ({ size = 32 }) => (
-  <div style={{ width: size, height: size, flexShrink: 0, borderRadius: '50%', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+  <div style={{ height: size, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
     <img 
       src={emblem} 
       alt="Control Drift" 
-      width="100%" 
       height="100%" 
-      style={{ objectFit: 'cover' }} 
+      style={{ objectFit: 'contain', width: 'auto' }} 
     />
   </div>
 );
@@ -33,7 +32,7 @@ const LogoMark = ({ size = 32 }) => (
 export default function CustomLogo({ className = "", style = {}, iconOnly = false }) {
   if (iconOnly) {
       return (
-        <div className={className} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '32px', ...style }}>
+        <div className={className} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '32px', width: 'auto', ...style }}>
           <LogoMark size={32} />
         </div>
       );
