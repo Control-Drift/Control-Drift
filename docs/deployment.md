@@ -78,7 +78,7 @@ Your deployment is now complete! You can access the services at:
 - **LiteLLM Proxy**: `http://<SERVER_IP>:4000`
 
 ### Initial Login
-To access the application when connected to a database, your must provision accounts via the Supabase console.
+To access the application when connected to a database, your must provision accounts via the Supabase API Gateway (Backend/Kong) (http://<SERVER_IP>:8000).
 
 ---
 
@@ -87,19 +87,21 @@ To access the application when connected to a database, your must provision acco
 Control Drift uses a single-tenant workspace architecture. Here is how access and schema initialization work:
 
 ### Schema Initialization
-When you run the automated `setup-enterprise.sh` script (or follow the manual steps), the `deploy/schema.sql` file is injected directly into Supabase's initialization volumes. This means that the first time the database boots up, it automatically creates all required tables (`exercises`, `gaps`, `simulations`, and `user_roles`) and configures Row Level Security (RLS). You do not need to manually run any SQL scripts!
+When you run the automated setup script (or follow the manual steps), the `deploy/schema.sql` file is injected directly into Supabase's initialization volumes. This means that the first time the database boots up, it automatically creates all required tables (`exercises`, `gaps`, `simulations`, and `user_roles`) and configures Row Level Security (RLS). 
 
 ### Provisioning New Users
 For security reasons, access must be manually provisioned by an administrator. Because we set `GOTRUE_MAILER_AUTOCONFIRM=true`, administrators can create accounts without requiring an SMTP server or email verification:
-1. Open Supabase Studio (`http://<SERVER_IP>:3000`).
+1. Open Supabase API Gateway (Backend/Kong)**: `http://<SERVER_IP>:8000`.
 2. Navigate to the **Authentication** tab.
 3. Click **Add User** -> **Create New User**.
-4. Enter the operator's email and a temporary password.
+4. Enter the user's email and a temporary password.
 
-The operator can now use these credentials to log directly into Control Drift. To revoke access, simply delete or suspend the user account from this same tab.
+The user can now use these credentials to log directly into Control Drift. To revoke access, simply delete or suspend the user account from this same tab.
 
-### Role-Based Access Control (RBAC)
-When an administrator provisions a new user, they are granted basic `operator` permissions by default. If you need to assign explicit roles (like `admin` or `readonly`), you can manage this via the `user_roles` table in Supabase Studio:
+### Role-Based Access Control (RBAC) Foundation
+*Note: In this single-tenant open-source setup, Row Level Security (RLS) policies are configured to grant full read/write access to all authenticated users by default. Strict RBAC is not enforced out-of-the-box.*
+
+However, the structural foundation for RBAC is included. If your organization implements strict RLS policies, you can assign explicit roles (like `admin` or `readonly`) via the `user_roles` table in Supabase Studio:
 1. Navigate to the **Table Editor** in Supabase Studio.
 2. Select the `user_roles` table.
-3. Create a new row mapping the user's `uuid` (from the `auth.users` table) to the desired role string. Control Drift will automatically read this role upon their next login.
+3. Create a new row mapping the user's `uuid` (from the `auth.users` table) to the desired role string. This provides the groundwork for scalable, multi-tenant permission models.
