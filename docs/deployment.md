@@ -99,9 +99,9 @@ For security reasons, access must be manually provisioned by an administrator. B
 The user can now use these credentials to log directly into Control Drift. To revoke access, simply delete or suspend the user account from this same tab.
 
 ### Role-Based Access Control (RBAC) Foundation
-*Note: In this single-tenant open-source setup, Row Level Security (RLS) policies are configured to grant full read/write access to all authenticated users by default. Strict RBAC is not enforced out-of-the-box.*
+*Note: In this PoC enterprise setup, Row Level Security (RLS) policies are configured to grant full read/write access to all authenticated users by default. Strict RBAC is not enforced out-of-the-box.*
 
-However, the structural foundation for RBAC is included. If your organization implements strict RLS policies, you can assign explicit roles (like `admin` or `readonly`) via the `user_roles` table in Supabase Studio:
+If your organization implements strict RLS policies, you can assign explicit roles (like `admin` or `readonly`) via the `user_roles` table in Supabase Studio:
 1. Navigate to the **Table Editor** in Supabase Studio.
 2. Select the `user_roles` table.
 3. Create a new row mapping the user's `uuid` (from the `auth.users` table) to the desired role string. This provides the groundwork for scalable, multi-tenant permission models.
