@@ -250,7 +250,14 @@ export default function Dashboard() {
                            const simEnvironment = sim.details?.environment || sim.details?.environmentCategory || [];
                            
                            sim.testResults.forEach(tr => {
-                                if (allExercises.some(ex => ex && tr && ((tr.id && ex.id === tr.id) || (ex.ttp && tr.ttp && ex.ttp === tr.ttp && ex.date === tr.date)))) {
+                                const normalizeDate = (d) => {
+                                    try { return d ? new Date(d).toISOString().split('T')[0] : ''; } catch (e) { return d; }
+                                };
+                                if (allExercises.some(ex => {
+                                    if (!ex || !tr) return false;
+                                    if (tr.id && ex.id === tr.id) return true;
+                                    return ex.ttp && tr.ttp && ex.ttp === tr.ttp && normalizeDate(ex.date) === normalizeDate(tr.date) && (ex.simulation === sim.name || ex.simulation === sim.id || ex.simId === sim.id || !ex.simulation);
+                                })) {
                                     return;
                                 }
                                
@@ -591,7 +598,10 @@ export default function Dashboard() {
                     if (ex.remediation && typeof ex.remediation === 'string' && ex.remediation.includes('No specific execution or detection notes')) return;
                     
                     // Deduplicate events that originate from the same procedure execution (mapped to multiple TTPs)
-                    const dedupeKey = `${ex.simulation || ex.simId || 'unknown'}-${ex.date || ''}-${ex.remediation || ''}`;
+                    const normalizeDate = (d) => { try { return d ? new Date(d).toISOString().split('T')[0] : ''; } catch(e) { return ''; } };
+                    const exDateStr = normalizeDate(ex.date);
+                    const simKey = ex.simulation || ex.simId || 'unknown';
+                    const dedupeKey = ex.id ? `id-${ex.id}` : `${simKey}-${exDateStr}-${ex.ttp || ''}-${ex.remediation || ''}`;
                     if (processedEventKeys.has(dedupeKey)) return;
                     processedEventKeys.add(dedupeKey);
 
