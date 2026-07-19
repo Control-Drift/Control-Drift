@@ -30,7 +30,7 @@ While other purple-teaming frameworks and posture management tools exist, Contro
 Unlike heavy, legacy platforms that require multi-container Docker stacks, databases, and message brokers just to boot up, **Control Drift can run entirely in your browser.** By utilizing IndexedDB for a local-first experience, you can clone the repository, run `npm run dev`, and start logging gaps immediately. An enterprise setup can be deployed by attaching a Supabase or REST API backend with zero code changes.
 
 ### 2. Next-Gen UX/UI
-Security analysts deserve tools that feel as good as they work. Control Drift escapes the era of exhausting enterprise data tables. It features a premium, dark-mode glassmorphic interface, dynamic micro-animations, and intuitive workflows that significantly lower the barrier to entry for analysts beginning their Purple Teaming / gap analysis journey.
+Security analysts deserve tools that feel as good as they work. Control Drift escapes the era of exhausting enterprise data tables. It features a premium, dark-mode glassmorphic interface, dynamic micro-animations, and intuitive workflows designed to eliminate friction and provide a radically enhanced, immersive experience for gap analysis.
 
 ### 3. AI-Augmented Workflows
 Control Drift includes plug-and-play AI-powered features such as a context-aware chatbot, TTP auto-mapping, simulation strategy generation, executive report generation, and payload / detection rule generation. Simply configure an AI integration within the application settings or via an external proxy.
