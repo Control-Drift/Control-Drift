@@ -70,7 +70,16 @@ export default function MarkdownRenderer({ content, style = {}, onOpenStudio }) 
             if (trimmed.startsWith('## ')) return <h2 key={`${index}-${j}`} style={{ color: 'var(--text-primary)', marginTop: '30px', marginBottom: '15px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '10px', fontSize: '1.4rem' }}>{renderBold(trimmed.substring(3))}</h2>;
             if (trimmed.startsWith('# ')) return <h1 key={`${index}-${j}`} style={{ color: 'var(--text-primary)', marginTop: '35px', marginBottom: '15px', fontSize: '1.8rem' }}>{renderBold(trimmed.substring(2))}</h1>;
             if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) return <li key={`${index}-${j}`} style={{ marginLeft: '25px', marginBottom: '8px', lineHeight: '1.6', color: 'var(--text-primary)' }}>{renderBold(trimmed.substring(2))}</li>;
-            if (/^\d+\.\s/.test(trimmed)) return <li key={`${index}-${j}`} style={{ marginLeft: '25px', marginBottom: '8px', lineHeight: '1.6', listStyleType: 'decimal', color: 'var(--text-primary)', paddingLeft: '5px' }}>{renderBold(trimmed.replace(/^\d+\.\s/, ''))}</li>;
+            if (/^\d+\.\s/.test(trimmed)) {
+              const numMatch = trimmed.match(/^(\d+)\.\s/);
+              const num = numMatch ? numMatch[1] : '1';
+              return (
+                <div key={`${index}-${j}`} style={{ marginLeft: '25px', marginBottom: '8px', lineHeight: '1.6', color: 'var(--text-primary)', display: 'flex' }}>
+                  <span style={{ minWidth: '28px' }}>{num}.</span>
+                  <span style={{ flex: 1 }}>{renderBold(trimmed.replace(/^\d+\.\s/, ''))}</span>
+                </div>
+              );
+            }
             if (trimmed.startsWith('> ')) {
               return (
                 <div key={`${index}-${j}`} style={{ borderLeft: '4px solid var(--accent-secondary)', margin: '20px 0', background: 'rgba(192, 132, 252, 0.05)', padding: '15px 20px', borderRadius: '0 8px 8px 0', fontStyle: 'italic', color: 'var(--text-secondary)', lineHeight: '1.6' }}>
