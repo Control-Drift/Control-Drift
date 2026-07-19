@@ -18,7 +18,7 @@ import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
 import { LayoutDashboard, Target, Shield, FileText, Settings as SettingsIcon, Activity, ListTodo, ChevronLeft, ChevronRight, Command, Menu, X, Globe } from 'lucide-react';
 import CustomLogo from './components/ui/CustomLogo';
-import VoidTraceIcon from './components/ui/VoidTraceIcon';
+
 import AIAssistant from './components/features/AIAssistant';
 import CommandPalette from './components/ui/CommandPalette';
 
