@@ -39,8 +39,7 @@ Control Drift includes plug-and-play AI-powered features such as a context-aware
 Many platforms treat technique execution as a rigid 1:1 relationship with a raw outcome. Control Drift utilizes a flexible **event system**. An activity occurring in a simulation is considered an event, which can be tied to one or multiple MITRE TTPs simultaneously. By tracking different procedural variations and how they affect the broader event outcome, Control Drift paints a significantly more accurate picture of your true defensive posture. 
 
 ### 5. Analyst Empowerment over Automation
-While many commercial solutions attempt to completely automate the testing lifecycle in a "black box" manner, Control Drift is designed to empower human analysts. It encourages defenders to get hands-on, practically test against their own unique environments, and build deep intuition about adversary tradecraft rather than relying entirely on obscure, automated 
-clicks.
+While many commercial solutions attempt to completely automate the testing lifecycle in a "black box" manner, Control Drift is designed to empower human analysts. It encourages defenders to get hands-on, test against their own unique environments, and learn exactly how real attacks work instead of just clicking a "Run Simulation" button and blindly trusting the results.
 
 ---
 
