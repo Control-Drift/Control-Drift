@@ -20,7 +20,7 @@
 
 Traditional Breach and Attack Simulation (BAS) tools and purple-teaming platforms are often weighed down by massive infrastructure requirements, clunky user interfaces, and bloated feature sets that make discovering and tracking these gaps a chore, rather than an engaging experience.
 
-Control Drift cuts the enterprise bloat. It’s an agile, practitioner-first platform built to expose silent failures, pressure-test your defenses, and give analysts valuable attack simulation experience.
+Control Drift cuts the enterprise bloat. Stop guessing about your security posture and start proving it with a zero-friction platform that gets straight to the point: finding your gaps before the adversary does.
 
 ## Why Control Drift?
 
