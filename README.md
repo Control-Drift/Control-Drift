@@ -64,7 +64,7 @@ clicks.
   <br/>
   <img src="docs/assets/Gap_Tracker.png" alt="Gap Tracker Screenshot" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
-- **Attack Path Mapping**: Visualize cyber kill chains and choke points across your environment. Leverage the integrated AI Copilot to automatically map and generate viable attack paths based on your simulation data and active gaps.
+- **Attack Path Mapping**: Visualize attack paths and choke points across your environment. Leverage your AI integration to automatically map viable attack paths based on your active gaps.
   <br/>
   <img src="docs/assets/attack_path.png" alt="Attack Path Screenshot" width="800" style="border-radius: 8px; margin: 10px 0;" />
 - **Automated Reporting**: Instantly generate highly detailed Executive and Technical PDF reports summarizing simulation outcomes, coverage ratings, and actionable gaps.
