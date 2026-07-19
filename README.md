@@ -60,7 +60,7 @@ clicks.
 
 - **Code Studio**: An integrated, AI-assisted IDE for writing, editing, and managing detection rules (Sigma, YARA, Splunk SPL, Azure KQL) and emulation payloads directly in the browser.
 
-- **Gap Tracking & Triage**: Track and prioritize gap remediation across your environment using the built-in Gap Tracker. Successfully resolved gaps will positively reflect throughout Control Drift's metrics.
+- **End-to-end Gap Tracking & Remediation**: Track and prioritize gap remediation across your environment using the built-in Gap Tracker. Successfully resolved gaps will positively reflect throughout Control Drift's metrics.
   <br/>
   <img src="docs/assets/Gap_Tracker.png" alt="Gap Tracker Screenshot" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
