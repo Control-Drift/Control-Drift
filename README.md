@@ -50,7 +50,7 @@ clicks.
   <br/>
   <img src="docs/assets/Dashboard.png" alt="Dashboard Screenshot" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
-- **MITRE ATT&CK Heatmap & Battle Globe**: Fully interactive 3D globe providing a visual representation of your security posture across the MITRE ATT&CK framework, dynamically updated based on simulation outcomes.
+- **MITRE ATT&CK Heatmap**: Fully interactive 3D globe providing a visual representation of your security posture across the MITRE ATT&CK framework, dynamically updated based on simulation outcomes.
   <br/>
   <img src="docs/assets/heatmap.png" alt="Heatmap Screenshot" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
