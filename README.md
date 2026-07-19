@@ -58,8 +58,6 @@ clicks.
   <br/>
   <img src="docs/assets/Simulation_Launcher.png" alt="Simulation Launcher Screenshot" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
-- **Code Studio**: An integrated, AI-assisted IDE for writing, editing, and managing detection rules (Sigma, YARA, Splunk SPL, Azure KQL) and emulation payloads directly in the browser.
-
 - **End-to-end Gap Tracking & Remediation**: Track and prioritize gap remediation across your environment using the built-in Gap Tracker. Successfully resolved gaps will positively reflect throughout Control Drift's metrics.
   <br/>
   <img src="docs/assets/Gap_Tracker.png" alt="Gap Tracker Screenshot" width="800" style="border-radius: 8px; margin: 10px 0;" />
@@ -68,6 +66,7 @@ clicks.
   <br/>
   <img src="docs/assets/attack_path.png" alt="Attack Path Screenshot" width="800" style="border-radius: 8px; margin: 10px 0;" />
 - **Integrated AI**: Plug-and-play AI integration to enhance workflows and introduce AI-powered features.
+- **Code Studio**: An integrated, AI-assisted IDE for writing, editing, and managing detection rules (Sigma, YARA, Splunk SPL, Azure KQL) and emulation payloads directly in the browser.
 - **Flexible Data Adapters**: Start with `localStorage`/`IndexedDB` for quick testing, then migrate to a backend database (`Supabase`, `Firebase`) or a custom `REST API` when you're ready to scale.
 
 ---
