@@ -1,9 +1,17 @@
 #!/bin/bash
 # Control Drift - Enterprise Infrastructure Setup Script
 
+if [ "$EUID" -ne 0 ]; then
+  echo "Please run this script as root (sudo)."
+  exit 1
+fi
+
 echo "========================================================="
 echo " Control Drift - Enterprise Setup"
 echo "========================================================="
+
+read -p "Enter the IP address or domain for this server (default: localhost): " SERVER_IP
+SERVER_IP=${SERVER_IP:-localhost}
 
 echo "[*] Fetching official Supabase docker repository (using sparse-checkout for speed)..."
 mkdir -p supabase
@@ -17,15 +25,19 @@ cd docker
 
 echo "[*] Copying default Supabase configuration..."
 cp .env.example .env
+sed -i "s|SUPABASE_PUBLIC_URL=http://localhost:8000|SUPABASE_PUBLIC_URL=http://${SERVER_IP}:8000|g" .env
 echo "GOTRUE_MAILER_AUTOCONFIRM=true" >> .env
 echo "COMPOSE_FILE=docker-compose.yml:docker-compose.override.yml" >> .env
 
-echo "[*] Exposing Supabase Studio on port 3000..."
-cat << 'EOF' > docker-compose.override.yml
+echo "[*] Exposing Supabase Studio and Injecting Schema..."
+cat << EOF > docker-compose.override.yml
 services:
   studio:
     ports:
       - "3000:3000/tcp"
+  db:
+    volumes:
+      - ./volumes/db/init/01-schema.sql:/docker-entrypoint-initdb.d/init-scripts/99-control-drift.sql:Z
 EOF
 
 echo "[*] Injecting Database Schema for Auto-Initialization..."
@@ -57,12 +69,12 @@ cat <<EOF > deploy/config.json
 {
   "database": {
     "provider": "supabase",
-    "endpoint": "http://127.0.0.1:8000",
+    "endpoint": "http://${SERVER_IP}:8000",
     "apiKey": "<YOUR_SUPABASE_ANON_KEY>"
   },
   "ai": {
     "enabled": true,
-    "endpointUrl": "http://127.0.0.1:4000/v1/chat/completions",
+    "endpointUrl": "http://${SERVER_IP}:4000/v1/chat/completions",
     "model": "gpt-4o",
     "proxy": true
   }

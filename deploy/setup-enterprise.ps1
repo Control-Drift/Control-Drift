@@ -1,6 +1,16 @@
+if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+    Write-Warning "Please run this script as Administrator."
+    Exit
+}
+
 Write-Host "========================================================="
 Write-Host " Control Drift - Enterprise Setup"
 Write-Host "========================================================="
+
+$ServerIP = Read-Host "Enter the IP address or domain for this server (default: localhost)"
+if ([string]::IsNullOrWhiteSpace($ServerIP)) {
+    $ServerIP = "localhost"
+}
 
 Write-Host "[*] Fetching official Supabase docker repository (using sparse-checkout for speed)..."
 New-Item -ItemType Directory -Force -Path supabase | Out-Null
@@ -14,15 +24,19 @@ Set-Location docker
 
 Write-Host "[*] Copying default Supabase configuration..."
 Copy-Item .env.example .env
+(Get-Content .env) -replace 'SUPABASE_PUBLIC_URL=http://localhost:8000', "SUPABASE_PUBLIC_URL=http://${ServerIP}:8000" | Set-Content .env
 Add-Content -Path .env -Value "GOTRUE_MAILER_AUTOCONFIRM=true"
 Add-Content -Path .env -Value "COMPOSE_FILE=docker-compose.yml:docker-compose.override.yml"
 
-Write-Host "[*] Exposing Supabase Studio on port 3000..."
+Write-Host "[*] Exposing Supabase Studio and Injecting Schema..."
 $overrideConfig = @"
 services:
   studio:
     ports:
       - `"3000:3000/tcp`"
+  db:
+    volumes:
+      - ./volumes/db/init/01-schema.sql:/docker-entrypoint-initdb.d/init-scripts/99-control-drift.sql:Z
 "@
 Set-Content -Path docker-compose.override.yml -Value $overrideConfig
 
@@ -56,12 +70,12 @@ $appConfig = @"
 {
   "database": {
     "provider": "supabase",
-    "endpoint": "http://127.0.0.1:8000",
+    "endpoint": "http://${ServerIP}:8000",
     "apiKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyAgCiAgICAicm9sZSI6ICJhbm9uIiwKICAgICJpc3MiOiAic3VwYWJhc2UtZGVtbyIsCiAgICAiaWF0IjogMTY0MTc2OTIwMCwKICAgICJleHAiOiAxNzk5NTM1NjAwCn0.dc_X5iR_VP_qT0zsiyj_I_OZ2T9FtRU2BBNWN8Bu4GE"
   },
   "ai": {
     "enabled": true,
-    "endpointUrl": "http://127.0.0.1:4000/v1/chat/completions",
+    "endpointUrl": "http://${ServerIP}:4000/v1/chat/completions",
     "model": "gpt-4o",
     "proxy": true
   }
