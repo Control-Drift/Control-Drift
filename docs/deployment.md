@@ -1,4 +1,4 @@
-# Enterprise Deployment Guide
+# Enterprise Deployment Guide (PoC)
 
 This guide outlines how to deploy Control Drift in an enterprise environment using a single-server Proof of Concept (PoC) architecture. This setup includes:
 
