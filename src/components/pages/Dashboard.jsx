@@ -250,19 +250,28 @@ export default function Dashboard() {
                            const simEnvironment = sim.details?.environment || sim.details?.environmentCategory || [];
                            
                            sim.testResults.forEach(tr => {
-                                const normalizeDate = (d) => {
-                                    try { return d ? new Date(d).toISOString().split('T')[0] : ''; } catch (e) { return d; }
-                                };
-                                if (allExercises.some(ex => {
-                                    if (!ex || !tr) return false;
-                                    if (tr.id && ex.id === tr.id) return true;
-                                    return ex.ttp && tr.ttp && ex.ttp === tr.ttp && normalizeDate(ex.date) === normalizeDate(tr.date) && (ex.simulation === sim.name || ex.simulation === sim.id || ex.simId === sim.id || !ex.simulation);
-                                })) {
-                                    return;
-                                }
-                               
-                               allExercises.push({
-                                   ...tr,
+                                 const normalizeDate = (d) => {
+                                     try { return d ? new Date(d).toISOString().split('T')[0] : ''; } catch (e) { return d; }
+                                 };
+                                 const getTtpString = (obj) => {
+                                     if (obj.ttp) return obj.ttp;
+                                     if (obj.ttps) return Array.isArray(obj.ttps) ? obj.ttps.join(', ') : obj.ttps;
+                                     return '';
+                                 };
+                                 const trTtpStr = getTtpString(tr);
+                                 
+                                 if (allExercises.some(ex => {
+                                     if (!ex || !tr) return false;
+                                     if (tr.id && ex.id === tr.id) return true;
+                                     const exTtpStr = getTtpString(ex);
+                                     return exTtpStr && trTtpStr && exTtpStr === trTtpStr && normalizeDate(ex.date) === normalizeDate(tr.date) && (ex.simulation === sim.name || ex.simulation === sim.id || ex.simId === sim.id || !ex.simulation);
+                                 })) {
+                                     return;
+                                 }
+                                
+                                allExercises.push({
+                                    ...tr,
+                                    ttp: trTtpStr,
                                    tags: Array.isArray(tr.tags) && tr.tags.length > 0 ? tr.tags : simTags,
                                    securityControls: Array.isArray(tr.securityControls) && tr.securityControls.length > 0 ? tr.securityControls : simControls,
                                    environment: Array.isArray(tr.environment) && tr.environment.length > 0 ? tr.environment : simEnvironment,
