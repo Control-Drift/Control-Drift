@@ -264,7 +264,9 @@ export default function Dashboard() {
                                      if (!ex || !tr) return false;
                                      if (tr.id && ex.id === tr.id) return true;
                                      const exTtpStr = getTtpString(ex);
-                                     return exTtpStr && trTtpStr && exTtpStr === trTtpStr && normalizeDate(ex.date) === normalizeDate(tr.date) && (ex.simulation === sim.name || ex.simulation === sim.id || ex.simId === sim.id || !ex.simulation);
+                                     const trTtpsArr = Array.isArray(tr.ttps) ? tr.ttps : trTtpStr.split(',').map(s => s.trim());
+                                     const isTtpMatch = trTtpsArr.some(t => t && exTtpStr.includes(t));
+                                     return isTtpMatch && normalizeDate(ex.date) === normalizeDate(tr.date) && (ex.simulation === sim.name || ex.simulation === sim.id || ex.simId === sim.id || !ex.simulation);
                                  })) {
                                      return;
                                  }
@@ -610,7 +612,7 @@ export default function Dashboard() {
                     const normalizeDate = (d) => { try { return d ? new Date(d).toISOString().split('T')[0] : ''; } catch(e) { return ''; } };
                     const exDateStr = normalizeDate(ex.date);
                     const simKey = ex.simulation || ex.simId || 'unknown';
-                    const dedupeKey = ex.id ? `id-${ex.id}` : `${simKey}-${exDateStr}-${ex.ttp || ''}-${ex.remediation || ''}`;
+                    const dedupeKey = ex.remediation ? `${simKey}-${exDateStr}-${ex.remediation}` : `${simKey}-${exDateStr}-${ex.name || ex.ttp || ex.id || 'unknown'}`;
                     if (processedEventKeys.has(dedupeKey)) return;
                     processedEventKeys.add(dedupeKey);
 
