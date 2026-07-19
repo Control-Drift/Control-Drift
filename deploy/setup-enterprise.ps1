@@ -15,6 +15,16 @@ Set-Location docker
 Write-Host "[*] Copying default Supabase configuration..."
 Copy-Item .env.example .env
 Add-Content -Path .env -Value "GOTRUE_MAILER_AUTOCONFIRM=true"
+Add-Content -Path .env -Value "COMPOSE_FILE=docker-compose.yml:docker-compose.override.yml"
+
+Write-Host "[*] Exposing Supabase Studio on port 3000..."
+$overrideConfig = @"
+services:
+  studio:
+    ports:
+      - `"3000:3000/tcp`"
+"@
+Set-Content -Path docker-compose.override.yml -Value $overrideConfig
 
 Write-Host "[*] Injecting Database Schema for Auto-Initialization..."
 New-Item -ItemType Directory -Force -Path "volumes/db/init" | Out-Null
@@ -67,7 +77,7 @@ docker compose up -d --build
 Write-Host "========================================================="
 Write-Host " Deployment Complete!"
 Write-Host "---------------------------------------------------------"
-Write-Host " Supabase Studio: http://localhost:8000"
+Write-Host " Supabase Studio: http://localhost:3000"
 Write-Host " LiteLLM Proxy:   http://localhost:4000"
 Write-Host " Control Drift:   http://localhost:80"
 Write-Host "========================================================="
