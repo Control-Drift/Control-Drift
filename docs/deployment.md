@@ -61,7 +61,7 @@ bash deploy/setup-enterprise.sh
 ### 5. Link the Database to Control Drift
 Once the script finishes, everything is running! Control Drift just needs the API key for your newly created database.
 
-1. Open your browser and go to **`http://localhost:3000`** (This is your local Supabase Studio).
+1. Open your browser and go to **`http://<SERVER_IP>:3000`** (This is your Supabase Studio).
 2. Look in the project settings for your **API Keys** and copy the `anon` / `public` key.
 3. Open the `deploy/config.json` file in your repository.
 4. Replace `<YOUR_SUPABASE_ANON_KEY>` with the key you just copied.
@@ -74,9 +74,9 @@ Once the script finishes, everything is running! Control Drift just needs the AP
 
 Your deployment is now complete! You can access the services at:
 
-- **Control Drift Frontend**: `http://localhost:80` (or your server's IP address)
-- **Supabase Studio (Database Admin)**: `http://localhost:3000`
-- **LiteLLM Proxy**: `http://localhost:4000`
+- **Control Drift Frontend**: `http://<SERVER_IP>:80`
+- **Supabase Studio (Database Admin)**: `http://<SERVER_IP>:3000`
+- **LiteLLM Proxy**: `http://<SERVER_IP>:4000`
 
 ### Initial Login
 By design, Control Drift does not have a public "Sign Up" page. To log in for the first time, your administrator must provision your account via the Supabase Studio console.
@@ -92,7 +92,7 @@ When you run the automated `setup-enterprise.sh` script (or follow the manual st
 
 ### Provisioning New Users
 For security reasons, access must be manually provisioned by an administrator. Because we set `GOTRUE_MAILER_AUTOCONFIRM=true`, administrators can create accounts without requiring an SMTP server or email verification:
-1. Open Supabase Studio (`http://localhost:3000`).
+1. Open Supabase Studio (`http://<SERVER_IP>:3000`).
 2. Navigate to the **Authentication** tab.
 3. Click **Add User** -> **Create New User**.
 4. Enter the operator's email and a temporary password.
