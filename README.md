@@ -38,6 +38,8 @@ Control Drift includes plug-and-play AI-powered features such as a context-aware
 ### 4. Event-Driven Posture Modeling
 Many platforms treat technique execution as a rigid 1:1 relationship with a raw outcome. Control Drift utilizes a flexible **event system**. An activity occurring in a simulation is considered an event, which can be tied to one or multiple MITRE TTPs simultaneously. By tracking different procedural variations and how they affect the broader event outcome, Control Drift paints a significantly more accurate picture of your true defensive posture. Furthermore, it supports **per-event coverage ratings**—recognizing that a raw outcome like "Alerted" might be considered optimal coverage in one scenario but only partial coverage in another, depending on the specific environmental context and whether that outcome is the most realistically achievable result for that event type.
 
+### 5. Analyst Empowerment over Automation
+While many commercial solutions attempt to completely automate the testing lifecycle in a "black box" manner, Control Drift is designed to empower human analysts. It encourages defenders to get hands-on, practically test against their own unique environments, and build deep intuition about adversary tradecraft rather than relying entirely on opaque, automated clicks.
 ---
 
 ## Features
