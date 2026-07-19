@@ -110,7 +110,7 @@ function AppContent() {
                <div className={`app-container ${effectiveIsSidebarCollapsed ? 'collapsed' : ''}`} style={{ display: isDbLoading ? 'none' : 'flex' }}>
                <aside className={`sidebar ${isMobileMenuOpen ? 'mobile-open' : ''} ${effectiveIsSidebarCollapsed ? 'collapsed' : ''}`}>
                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
-                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '0', overflow: 'hidden', width: '100%', justifyContent: effectiveIsSidebarCollapsed ? 'center' : 'flex-start', paddingLeft: '0' }}>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '0', overflow: 'hidden', width: '100%', justifyContent: effectiveIsSidebarCollapsed ? 'center' : 'flex-start', paddingLeft: effectiveIsSidebarCollapsed ? '0' : '16px' }}>
                      {effectiveIsSidebarCollapsed ? <CustomLogo iconOnly={true} style={{ width: '28px', height: '28px' }} /> : <CustomLogo style={{ gap: '0px' }} />}
                    </div>
                    
