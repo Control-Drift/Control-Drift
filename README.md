@@ -108,7 +108,7 @@ For instructions on deploying a self-hosted backend, AI proxy, and the frontend 
 
 ## Contributing
 
-We welcome contributions from the community! Whether it's adding new database adapters, refining the UI, or extending the MITRE mappings, please feel free to submit a Pull Request.
+Contributions from the community are welcomed! Please feel free to submit a Pull Request.
 
 ## License
 
