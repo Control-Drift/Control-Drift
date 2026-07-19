@@ -2,7 +2,7 @@
   <br />
   <img src="public/drift_emblem.png" alt="Control Drift Logo" width="120" />
   <h1>Control Drift</h1>
-  <p><strong>A modern platform for empowering cybersecurity professionals to actively assess security control effectiveness, measure defense capability, and increase readiness against real-world cyber threats.</strong></p>
+  <p><strong>A modern, practitioner-first platform to pressure-test security controls, expose silent failures, and measure true defensive readiness against real-world threats.</strong></p>
 
   <p>
     <a href="#the-problem-security-control-drift">The Problem</a> •
@@ -16,11 +16,11 @@
 
 ## The Problem: Security Control Drift
 
-"Control Drift" occurs when the *expectation* of a security control's effectiveness does not meet the *reality* of its performance. This can happen when an established control (such as an EDR/AV policy, firewall rule, or endpoint configuration) silently degrades or breaks over time due to environment changes, misconfigurations, or software updates. Apart from detecting security control decay, Control Drift is equally about proactively identifying inherent security shortcomings and evaluating where current controls fundamentally fail to meet defensive expectations.
+"Control Drift" occurs when the *expectation* of a security control's effectiveness does not meet the *reality* of its performance. This can happen when an established control (such as an EDR/AV policy, firewall rule, or endpoint configuration) silently degrades or breaks over time due to environment changes, misconfigurations, or software updates. Beyond just detecting decay, Control Drift proactively exposes inherent architectural shortcomings, highlighting exactly where your current controls fail to meet defensive expectations.
 
 Traditional Breach and Attack Simulation (BAS) tools and purple-teaming platforms are often weighed down by massive infrastructure requirements, clunky user interfaces, and bloated feature sets that make discovering and tracking these gaps a chore, rather than an engaging experience.
 
-**Control Drift is built differently.** It's designed to enable defenders to actively challenge their security stack, discover hidden gaps, and learn more about adversary simulation through practical application.
+Control Drift cuts the enterprise bloat. It’s an agile, practitioner-first platform built to expose silent failures, pressure-test your defenses, and give analysts valuable attack simulation experience.
 
 ## Why Control Drift?
 
@@ -36,7 +36,7 @@ Security analysts deserve tools that feel as good as they work. Control Drift es
 Control Drift includes plug-and-play AI-powered features such as a context-aware chatbot, TTP auto-mapping, simulation strategy generation, executive report generation, and payload / detection rule generation. Simply configure an AI integration within the application settings or via an external proxy.
 
 ### 4. Event-Driven Posture Modeling
-Many platforms treat technique execution as a rigid 1:1 relationship with a raw outcome. Control Drift utilizes a flexible **event system**. An activity occurring in a simulation is considered an event, which can be tied to one or multiple MITRE TTPs simultaneously. By tracking different procedural variations and how they affect the broader event outcome, Control Drift paints a significantly more accurate picture of your true defensive posture. Furthermore, it supports **per-event coverage ratings**—recognizing that a raw outcome like "Alerted" might be considered optimal coverage in one scenario but only partial coverage in another, depending on the specific environmental context and whether that outcome is the most realistically achievable result for that event type.
+Many platforms treat technique execution as a rigid 1:1 relationship with a raw outcome. Control Drift utilizes a flexible **event system**. An activity occurring in a simulation is considered an event, which can be tied to one or multiple MITRE TTPs simultaneously. By tracking different procedural variations and how they affect the broader event outcome, Control Drift paints a significantly more accurate picture of your true defensive posture. 
 
 ### 5. Analyst Empowerment over Automation
 While many commercial solutions attempt to completely automate the testing lifecycle in a "black box" manner, Control Drift is designed to empower human analysts. It encourages defenders to get hands-on, practically test against their own unique environments, and build deep intuition about adversary tradecraft rather than relying entirely on obscure, automated 
