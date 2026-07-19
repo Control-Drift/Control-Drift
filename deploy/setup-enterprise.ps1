@@ -32,6 +32,7 @@ if ([string]::IsNullOrWhiteSpace($ServerIP)) {
 }
 
 Write-Host "[*] Fetching official Supabase docker repository (using sparse-checkout for speed)..."
+if (Test-Path supabase) { Remove-Item -Recurse -Force supabase }
 New-Item -ItemType Directory -Force -Path supabase | Out-Null
 Set-Location supabase
 git init

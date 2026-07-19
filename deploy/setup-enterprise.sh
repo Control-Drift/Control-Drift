@@ -32,6 +32,7 @@ read -p "Enter the IP address or domain for this server (default: localhost): " 
 SERVER_IP=${SERVER_IP:-localhost}
 
 echo "[*] Fetching official Supabase docker repository (using sparse-checkout for speed)..."
+rm -rf supabase
 mkdir -p supabase
 cd supabase
 git init
