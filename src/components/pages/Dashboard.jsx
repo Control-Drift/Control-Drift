@@ -266,7 +266,9 @@ export default function Dashboard() {
                                      const exTtpStr = getTtpString(ex);
                                      const trTtpsArr = Array.isArray(tr.ttps) ? tr.ttps : trTtpStr.split(',').map(s => s.trim());
                                      const isTtpMatch = trTtpsArr.some(t => t && exTtpStr.includes(t));
-                                     return isTtpMatch && normalizeDate(ex.date) === normalizeDate(tr.date) && (ex.simulation === sim.name || ex.simulation === sim.id || ex.simId === sim.id || !ex.simulation);
+                                     const exEffectiveDate = ex.date || ex.created_at || '';
+                                     const trEffectiveDate = tr.date || sim.timestamp || sim.date || sim.created_at || (sim.details && sim.details.date) || '';
+                                     return isTtpMatch && normalizeDate(exEffectiveDate) === normalizeDate(trEffectiveDate) && (ex.simulation === sim.name || ex.simulation === sim.id || ex.simId === sim.id || !ex.simulation);
                                  })) {
                                      return;
                                  }
