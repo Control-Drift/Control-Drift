@@ -44,11 +44,13 @@ export default function CustomLogo({ className = "", style = {}, iconOnly = fals
       style={{ 
         display: 'flex', 
         alignItems: 'center',
-        gap: '10px',
+        gap: '12px',
         ...style,
       }}
     >
-      <LogoMark size={24} />
+      <div style={{ width: '20px', display: 'flex', justifyContent: 'center', flexShrink: 0 }}>
+        <LogoMark size={22} />
+      </div>
       
       {/* The Typography */}
       <div style={{ 
