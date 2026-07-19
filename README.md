@@ -16,11 +16,11 @@
 
 ## The Problem: Security Control Drift
 
-"Control Drift" occurs when the *expectation* of a security control's effectiveness does not meet the *reality* of its performance. This can happen when an established control (such as an EDR/AV policy, firewall rule, or endpoint configuration) silently degrades or breaks over time due to environment changes, misconfigurations, or software updates. Beyond just detecting this degradation, proactively identifying control drift allows security teams to expose inherent architectural shortcomings—highlighting exactly where current controls fail to meet their defensive expectations.
+"Control Drift" occurs when the *expectation* of a security control's effectiveness does not meet the *reality* of its performance. This can happen when an established control (such as an EDR/AV policy, firewall rule, or endpoint configuration) silently degrades or breaks over time due to environment changes, misconfigurations, or software updates. Beyond just detecting this degradation, proactively identifying control drift allows security teams to expose inherent architectural shortcomings and highlight exactly where current controls fail to meet their defensive expectations.
 
 Traditional Breach and Attack Simulation (BAS) tools and purple-teaming platforms are often weighed down by massive infrastructure requirements, clunky user interfaces, and bloated feature sets that make discovering and tracking these gaps a chore, rather than an engaging experience.
 
-Control Drift cuts the enterprise bloat. Stop guessing about your security posture and start proving it with a zero-friction platform that gets straight to the point: finding your gaps before the adversary does.
+Control Drift is built as a lightweight, open-source alternative. It strips away the friction of heavy infrastructure, giving security teams an accessible and visually intuitive environment to get hands-on with threat emulation and track their defensive gaps.
 
 ## Why Control Drift?
 
