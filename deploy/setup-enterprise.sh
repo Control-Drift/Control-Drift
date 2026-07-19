@@ -43,7 +43,8 @@ cd docker
 
 echo "[*] Copying default Supabase configuration..."
 cp .env.example .env
-sed -i "s|SUPABASE_PUBLIC_URL=http://localhost:8000|SUPABASE_PUBLIC_URL=http://${SERVER_IP}:8000|g" .env
+sed -i "s|http://localhost:8000|http://${SERVER_IP}:8000|g" .env
+sed -i "s|http://localhost:3000|http://${SERVER_IP}:3000|g" .env
 echo "GOTRUE_MAILER_AUTOCONFIRM=true" >> .env
 echo "COMPOSE_FILE=docker-compose.yml:docker-compose.override.yml" >> .env
 
@@ -107,7 +108,7 @@ docker compose up -d --build
 echo "[*] Waiting for Supabase API to initialize (this may take a minute)..."
 max_retries=30
 retry_count=0
-until curl -s http://${SERVER_IP}:8000/rest/v1/ > /dev/null || curl -s -o /dev/null -w "%{http_code}" http://${SERVER_IP}:8000/rest/v1/ | grep -q "404\|200"; do
+until curl -s http://${SERVER_IP}:8000/rest/v1/ > /dev/null || curl -s -o /dev/null -w "%{http_code}" http://${SERVER_IP}:8000/rest/v1/ | grep -q "401\|404\|200"; do
   if [ $retry_count -ge $max_retries ]; then
     echo "Error: Supabase API failed to become ready in time. Check docker logs."
     exit 1

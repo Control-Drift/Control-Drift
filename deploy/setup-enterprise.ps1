@@ -43,7 +43,7 @@ Set-Location docker
 
 Write-Host "[*] Copying default Supabase configuration..."
 Copy-Item .env.example .env
-(Get-Content .env) -replace 'SUPABASE_PUBLIC_URL=http://localhost:8000', "SUPABASE_PUBLIC_URL=http://${ServerIP}:8000" | Set-Content .env
+(Get-Content .env) -replace 'http://localhost:8000', "http://${ServerIP}:8000" -replace 'http://localhost:3000', "http://${ServerIP}:3000" | Set-Content .env
 Add-Content -Path .env -Value "GOTRUE_MAILER_AUTOCONFIRM=true"
 Add-Content -Path .env -Value "COMPOSE_FILE=docker-compose.yml:docker-compose.override.yml"
 
@@ -114,12 +114,12 @@ $supabaseReady = $false
 while (-not $supabaseReady -and $retryCount -lt $maxRetries) {
     try {
         $response = Invoke-WebRequest -Uri "http://${ServerIP}:8000/rest/v1/" -Method Get -UseBasicParsing -ErrorAction SilentlyContinue
-        if ($response.StatusCode -eq 200 -or $response.StatusCode -eq 404) {
+        if ($response.StatusCode -eq 200 -or $response.StatusCode -eq 404 -or $response.StatusCode -eq 401) {
             $supabaseReady = $true
             break
         }
     } catch {
-        if ($_.Exception.Response.StatusCode -eq 404 -or $_.Exception.Response.StatusCode -eq 200) {
+        if ($_.Exception.Response.StatusCode -eq 404 -or $_.Exception.Response.StatusCode -eq 200 -or $_.Exception.Response.StatusCode -eq 401) {
             $supabaseReady = $true
             break
         }
