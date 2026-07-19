@@ -1,6 +1,11 @@
 #!/bin/bash
 # Control Drift - Enterprise Infrastructure Setup Script
 
+set -euo pipefail
+
+# Error handler
+trap 'echo "Error: Script failed on line $LINENO. Deployment halted." >&2' ERR
+
 if [ "$EUID" -ne 0 ]; then
   echo "Please run this script as root (sudo)."
   exit 1
@@ -9,6 +14,19 @@ fi
 echo "========================================================="
 echo " Control Drift - Enterprise Setup"
 echo "========================================================="
+
+echo "[*] Checking system dependencies..."
+for cmd in git docker curl; do
+  if ! command -v $cmd &> /dev/null; then
+    echo "Error: $cmd is not installed or not in PATH."
+    exit 1
+  fi
+done
+
+if ! docker info &> /dev/null; then
+  echo "Error: Docker daemon is not running. Please start Docker and try again."
+  exit 1
+fi
 
 read -p "Enter the IP address or domain for this server (default: localhost): " SERVER_IP
 SERVER_IP=${SERVER_IP:-localhost}
@@ -85,6 +103,33 @@ echo "[*] Starting Control Drift and AI Proxy..."
 cd deploy
 docker compose pull litellm
 docker compose up -d --build
+
+echo "[*] Waiting for Supabase API to initialize (this may take a minute)..."
+max_retries=30
+retry_count=0
+until curl -s http://${SERVER_IP}:8000/rest/v1/ > /dev/null || curl -s -o /dev/null -w "%{http_code}" http://${SERVER_IP}:8000/rest/v1/ | grep -q "404\|200"; do
+  if [ $retry_count -ge $max_retries ]; then
+    echo "Error: Supabase API failed to become ready in time. Check docker logs."
+    exit 1
+  fi
+  printf "."
+  sleep 5
+  retry_count=$((retry_count+1))
+done
+echo -e "\n[*] Supabase is ready!"
+
+echo "[*] Waiting for Control Drift frontend..."
+retry_count=0
+until curl -s -o /dev/null -w "%{http_code}" http://localhost:80 | grep -q "200"; do
+  if [ $retry_count -ge $max_retries ]; then
+    echo "Error: Control Drift frontend failed to start. Check docker logs."
+    exit 1
+  fi
+  printf "."
+  sleep 5
+  retry_count=$((retry_count+1))
+done
+echo -e "\n[*] Control Drift is ready!"
 
 echo "========================================================="
 echo " Deployment Complete!"

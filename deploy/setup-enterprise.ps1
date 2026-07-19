@@ -1,11 +1,30 @@
+$ErrorActionPreference = 'Stop'
+
 if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
     Write-Warning "Please run this script as Administrator."
-    Exit
+    Exit 1
 }
 
 Write-Host "========================================================="
 Write-Host " Control Drift - Enterprise Setup"
 Write-Host "========================================================="
+
+Write-Host "[*] Checking system dependencies..."
+$requiredCommands = @("git", "docker")
+foreach ($cmd in $requiredCommands) {
+    if (-not (Get-Command $cmd -ErrorAction SilentlyContinue)) {
+        Write-Error "Error: $cmd is not installed or not in PATH."
+        Exit 1
+    }
+}
+
+try {
+    $null = docker info 2>&1
+    if ($LASTEXITCODE -ne 0) { throw }
+} catch {
+    Write-Error "Error: Docker daemon is not running. Please start Docker and try again."
+    Exit 1
+}
 
 $ServerIP = Read-Host "Enter the IP address or domain for this server (default: localhost)"
 if ([string]::IsNullOrWhiteSpace($ServerIP)) {
@@ -87,6 +106,61 @@ Write-Host "[*] Starting Control Drift and AI Proxy..."
 Set-Location deploy
 docker compose pull litellm
 docker compose up -d --build
+
+Write-Host "[*] Waiting for Supabase API to initialize (this may take a minute)..." -NoNewline
+$maxRetries = 30
+$retryCount = 0
+$supabaseReady = $false
+while (-not $supabaseReady -and $retryCount -lt $maxRetries) {
+    try {
+        $response = Invoke-WebRequest -Uri "http://${ServerIP}:8000/rest/v1/" -Method Get -UseBasicParsing -ErrorAction SilentlyContinue
+        if ($response.StatusCode -eq 200 -or $response.StatusCode -eq 404) {
+            $supabaseReady = $true
+            break
+        }
+    } catch {
+        if ($_.Exception.Response.StatusCode -eq 404 -or $_.Exception.Response.StatusCode -eq 200) {
+            $supabaseReady = $true
+            break
+        }
+    }
+    Write-Host "." -NoNewline
+    Start-Sleep -Seconds 5
+    $retryCount++
+}
+Write-Host ""
+if (-not $supabaseReady) {
+    Write-Error "Error: Supabase API failed to become ready in time. Check docker logs."
+    Exit 1
+}
+Write-Host "[*] Supabase is ready!"
+
+Write-Host "[*] Waiting for Control Drift frontend..." -NoNewline
+$retryCount = 0
+$driftReady = $false
+while (-not $driftReady -and $retryCount -lt $maxRetries) {
+    try {
+        $response = Invoke-WebRequest -Uri "http://localhost:80" -Method Get -UseBasicParsing -ErrorAction SilentlyContinue
+        if ($response.StatusCode -eq 200) {
+            $driftReady = $true
+            break
+        }
+    } catch {
+        if ($_.Exception.Response.StatusCode -eq 200) {
+            $driftReady = $true
+            break
+        }
+    }
+    Write-Host "." -NoNewline
+    Start-Sleep -Seconds 5
+    $retryCount++
+}
+Write-Host ""
+if (-not $driftReady) {
+    Write-Error "Error: Control Drift frontend failed to start. Check docker logs."
+    Exit 1
+}
+Write-Host "[*] Control Drift is ready!"
 
 Write-Host "========================================================="
 Write-Host " Deployment Complete!"
