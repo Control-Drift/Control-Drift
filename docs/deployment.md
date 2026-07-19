@@ -3,7 +3,7 @@
 This guide outlines how to deploy Control Drift in an enterprise environment using a single-server Proof of Concept (PoC) architecture. This setup includes:
 
 1. **Supabase**: A self-hosted PostgreSQL database and authentication server.
-2. **LiteLLM**: An AI proxy for securely managing access to OpenAI, Anthropic, or Gemini models without exposing your master API keys to the frontend.
+2. **LiteLLM**: An AI proxy for securely managing access to OpenAI, Anthropic, or Gemini models without exposing API keys to the frontend.
 3. **Control Drift**: The frontend React application served via Nginx.
 
 ---
@@ -12,13 +12,11 @@ This guide outlines how to deploy Control Drift in an enterprise environment usi
 
 - **Docker** and **Docker Compose** installed on your host machine.
 - **Git** installed.
-- (Optional but recommended) A valid API key for OpenAI, Anthropic, or Gemini if using the AI features.
+- (Optional but recommended) A valid API key for your AI provider of choice.
 
 ---
 
 ## Step-by-Step Deployment
-
-Setting up the single-server Enterprise environment is designed to be as effortless as possible using our automated scripts.
 
 ### 1. Install Docker Desktop
 Before running the scripts, you must have Docker installed. 
@@ -32,8 +30,8 @@ git clone https://github.com/Control-Drift/Control-Drift.git
 cd Control-Drift
 ```
 
-### 3. Set Your AI Keys
-Our script automatically configures an AI Proxy (LiteLLM) to keep your API keys secure. You just need to pass your keys to the terminal so the proxy can grab them.
+### 3. Set Your AI API Keys
+The deployment script will automatically configure an AI Proxy (LiteLLM) to keep your API keys secure. You will just need to pass your keys to the terminal so the proxy can grab them.
 
 **On Windows (PowerShell):**
 ```powershell
@@ -75,11 +73,12 @@ Once the script finishes, everything is running! Control Drift just needs the AP
 Your deployment is now complete! You can access the services at:
 
 - **Control Drift Frontend**: `http://<SERVER_IP>:80`
-- **Supabase Studio (Database Admin)**: `http://<SERVER_IP>:3000`
+- **Supabase API Gateway (Backend/Kong)**: `http://<SERVER_IP>:8000`
+- **Supabase Studio (Database Admin UI)**: `http://<SERVER_IP>:3000`
 - **LiteLLM Proxy**: `http://<SERVER_IP>:4000`
 
 ### Initial Login
-By design, Control Drift does not have a public "Sign Up" page. To log in for the first time, your administrator must provision your account via the Supabase Studio console.
+To access the application when connected to a database, your must provision accounts via the Supabase console.
 
 ---
 
