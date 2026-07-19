@@ -36,7 +36,22 @@ const getSafeMarkdown = (val) => {
 };
 
 const convertMarkdownToQuillHtml = (markdown) => {
-    const rawHtml = marked.parse(getSafeMarkdown(markdown));
+    let processed = getSafeMarkdown(markdown);
+    
+    // Auto-repair badly formatted Markdown lists (e.g. from AI) where unindented bullets break ordered lists.
+    let lines = processed.split('\n');
+    let inNumberedList = false;
+    for (let i = 0; i < lines.length; i++) {
+        if (/^\d+\.\s/.test(lines[i])) {
+            inNumberedList = true;
+        } else if (inNumberedList && /^- /.test(lines[i])) {
+            lines[i] = '    ' + lines[i]; // Indent by 4 spaces to nest the bullet
+        } else if (inNumberedList && !/^\s*$/.test(lines[i]) && !/^\s+-/.test(lines[i])) {
+            inNumberedList = false; // Break the list state if we hit normal text
+        }
+    }
+    
+    const rawHtml = marked.parse(lines.join('\n'));
     const cleanHtml = DOMPurify.sanitize(rawHtml);
     // ReactQuill expects code blocks to have the ql-syntax class.
     // marked outputs <pre><code>...</code></pre>.
