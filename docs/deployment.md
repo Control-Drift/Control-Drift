@@ -18,105 +18,55 @@ This guide outlines how to deploy Control Drift in an enterprise environment usi
 
 ## Step-by-Step Deployment
 
-### 1. Clone the Control Drift Repository
+Setting up the single-server Enterprise environment is designed to be as effortless as possible using our automated scripts.
 
-First, clone the Control Drift repository to your server and navigate into it:
+### 1. Install Docker Desktop
+Before running the scripts, you must have Docker installed. 
+- Download and install **[Docker Desktop](https://www.docker.com/products/docker-desktop/)** (Windows/Mac) or Docker Engine (Linux).
+- Ensure the Docker application is running in the background before proceeding.
 
+### 2. Clone the Repository
+Clone the Control Drift repository to your machine and navigate into it:
 ```bash
-git clone https://github.com/your-org/control-drift.git
-cd control-drift
+git clone https://github.com/Control-Drift/Control-Drift.git
+cd Control-Drift
 ```
 
-### 2. Install and Start Supabase
+### 3. Set Your AI Keys
+Our script automatically configures an AI Proxy (LiteLLM) to keep your API keys secure. You just need to pass your keys to the terminal so the proxy can grab them.
 
-We use the official Supabase Docker setup. Control Drift includes an automated script that fetches the necessary files, injects our schema, and starts the database. 
+**On Windows (PowerShell):**
+```powershell
+$env:OPENAI_API_KEY="sk-your-openai-key"
+```
+**On Linux/Mac (Bash):**
+```bash
+export OPENAI_API_KEY="sk-your-openai-key"
+```
 
-You can run the provided bash script or do it manually.
+### 4. Run the Automated Setup Script
+Run the automated enterprise setup script for your operating system. This script will download Supabase, inject the database schema, configure the AI proxy, generate your config files, and boot up the entire platform.
 
-**Automated Approach:**
+**On Windows (PowerShell):**
+```powershell
+.\deploy\setup-enterprise.ps1
+```
+*(Note: If you get an execution policy error, run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` first).*
+
+**On Linux/Mac (Bash):**
 ```bash
 bash deploy/setup-enterprise.sh
 ```
 
-**Manual Approach:**
-If you prefer to run it manually:
-```bash
-# Fetch official Supabase docker repository
-mkdir -p supabase && cd supabase
-git init
-git remote add -f origin https://github.com/supabase/supabase.git
-git config core.sparseCheckout true
-echo "docker/*" >> .git/info/sparse-checkout
-git pull --depth=1 origin master
-cd docker
+### 5. Link the Database to Control Drift
+Once the script finishes, everything is running! Control Drift just needs the API key for your newly created database.
 
-# Copy default config and enable auto-confirmation for users
-cp .env.example .env
-echo "GOTRUE_MAILER_AUTOCONFIRM=true" >> .env
+1. Open your browser and go to **`http://localhost:8000`** (This is your local Supabase Studio).
+2. Look in the project settings for your **API Keys** and copy the `anon` / `public` key.
+3. Open the `deploy/config.json` file in your repository.
+4. Replace `<YOUR_SUPABASE_ANON_KEY>` with the key you just copied.
 
-# Inject the Control Drift database schema
-mkdir -p volumes/db/init
-cp ../../../deploy/schema.sql volumes/db/init/01-schema.sql
-
-# Start Supabase
-docker compose pull
-docker compose up -d
-cd ../../../
-```
-*Supabase Studio will now be accessible at `http://localhost:8000`.*
-
-### 3. Configure the AI Proxy (LiteLLM)
-
-Control Drift uses LiteLLM as a proxy to keep your API keys secure. Create or modify `deploy/litellm-config.yaml` to define your available models:
-
-```yaml
-model_list:
-  - model_name: gpt-4o
-    litellm_params:
-      model: openai/gpt-4o
-  - model_name: claude-3-5-sonnet-20240620
-    litellm_params:
-      model: anthropic/claude-3-5-sonnet-20240620
-```
-
-Before starting the stack in the next step, ensure you pass your actual API keys to the Docker environment. You can set them in your shell:
-```bash
-export OPENAI_API_KEY="sk-your-openai-key"
-export ANTHROPIC_API_KEY="sk-your-anthropic-key"
-```
-
-### 4. Configure Control Drift (`config.json`)
-
-To tell the Control Drift frontend to use your new local Supabase instance and AI proxy, you need to create a `config.json` file inside the `deploy/` directory. This file is mounted directly into the Nginx container, meaning you can edit it later without rebuilding the container.
-
-Create `deploy/config.json`:
-
-```json
-{
-  "database": {
-    "provider": "supabase",
-    "endpoint": "http://127.0.0.1:8000",
-    "apiKey": "<YOUR_SUPABASE_ANON_KEY>"
-  },
-  "ai": {
-    "enabled": true,
-    "endpointUrl": "http://127.0.0.1:4000/v1/chat/completions",
-    "model": "gpt-4o",
-    "proxy": true
-  }
-}
-```
-*(Note: The `apiKey` above is the default public anon key for a local Supabase docker instance. If you changed your JWT secret, update this key accordingly).*
-
-### 5. Start Control Drift
-
-Finally, build and start the Control Drift frontend and the LiteLLM proxy using the provided compose file:
-
-```bash
-cd deploy
-docker compose pull litellm
-docker compose up -d --build
-```
+*(Note: Because `config.json` is mounted directly into the container, you do not need to restart Docker after saving the file).*
 
 ---
 
