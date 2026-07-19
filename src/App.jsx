@@ -111,7 +111,7 @@ function AppContent() {
                <aside className={`sidebar ${isMobileMenuOpen ? 'mobile-open' : ''} ${effectiveIsSidebarCollapsed ? 'collapsed' : ''}`}>
                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', position: 'relative' }}>
                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '0', overflow: 'hidden', width: '100%', justifyContent: effectiveIsSidebarCollapsed ? 'center' : 'flex-start', paddingLeft: effectiveIsSidebarCollapsed ? '0' : '16px' }}>
-                     {effectiveIsSidebarCollapsed ? <CustomLogo iconOnly={true} style={{ width: '28px', height: '28px' }} /> : <CustomLogo style={{ gap: '0px' }} />}
+                     {effectiveIsSidebarCollapsed ? <CustomLogo iconOnly={true} style={{ width: '28px', height: '28px' }} /> : <CustomLogo />}
                    </div>
                    
                    <button className="mobile-only" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-primary)', padding: '8px', borderRadius: '8px', cursor: 'pointer', alignItems: 'center', justifyContent: 'center' }}>
