@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS public.user_roles (
 -- ==========================================
 
 -- Enable RLS on all tables
-ALTER TABLE public.exercises ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.gaps ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.simulations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
@@ -77,7 +77,7 @@ ALTER TABLE public.user_roles ENABLE ROW LEVEL SECURITY;
 -- Create policies allowing authenticated operators to read/write/update data
 -- (Since this is a single-tenant enterprise setup, all authenticated operators share the workspace)
 
-CREATE POLICY "Enable all for authenticated users" ON public.exercises
+CREATE POLICY "Enable all for authenticated users" ON public.events
     FOR ALL TO authenticated USING (true) WITH CHECK (true);
 
 CREATE POLICY "Enable all for authenticated users" ON public.gaps
