@@ -54,7 +54,7 @@ clicks.
   <br/>
   <img src="docs/assets/heatmap.png" alt="Heatmap Screenshot" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
-- **Simulation Management**: Plan, execute, and log threat simulations in a highly streamlined manner using the intuitive 4-step Simulation Wizard.
+- **Simulation Management**: Plan, execute, and log threat simulations in a highly streamlined manner using the intuitive 4-step Simulation Launcher.
   <br/>
   <img src="docs/assets/Simulation_Launcher.png" alt="Simulation Launcher Screenshot" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
