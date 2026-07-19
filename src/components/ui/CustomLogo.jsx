@@ -44,11 +44,17 @@ export default function CustomLogo({ className = "", style = {}, iconOnly = fals
       style={{ 
         display: 'flex', 
         alignItems: 'center',
-        gap: '0px',
+        gap: '12px',
         ...style,
       }}
     >
-      <LogoMark size={16} />
+      <div style={{ width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, position: 'relative' }}>
+        <img 
+          src={emblem} 
+          alt="Control Drift" 
+          style={{ position: 'absolute', height: '22px', width: 'auto', maxWidth: 'none', objectFit: 'contain' }} 
+        />
+      </div>
       
       {/* The Typography */}
       <div style={{ 
