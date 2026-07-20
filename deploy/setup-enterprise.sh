@@ -31,17 +31,18 @@ fi
 read -p "Enter the IP address or domain for this server (default: localhost): " SERVER_IP
 SERVER_IP=${SERVER_IP:-localhost}
 
+echo "[*] Force-removing any remaining Supabase containers from previous failed runs..."
+docker ps -a --filter "name=supabase-" -q | xargs -r docker rm -f -v >/dev/null 2>&1 || true
+docker ps -a --filter "name=realtime-dev.supabase-realtime" -q | xargs -r docker rm -f -v >/dev/null 2>&1 || true
+
 echo "[*] Fetching official Supabase docker repository (using sparse-checkout for speed)..."
 if [ -d "supabase" ]; then
-    echo "[*] Tearing down existing deployment to prevent dangling containers..."
+    echo "[*] Tearing down existing deployment networks..."
     if [ -f "supabase/docker/docker-compose.yml" ]; then
         cd supabase/docker
         docker compose down -v || true
         cd ../../
     fi
-    echo "[*] Force-removing any remaining Supabase containers..."
-    docker ps -a --filter "name=supabase-" -q | xargs -r docker rm -f -v >/dev/null 2>&1 || true
-    docker ps -a --filter "name=realtime-dev.supabase-realtime" -q | xargs -r docker rm -f -v >/dev/null 2>&1 || true
     rm -rf supabase
 fi
 mkdir -p supabase

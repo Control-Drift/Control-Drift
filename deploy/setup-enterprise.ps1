@@ -31,17 +31,18 @@ if ([string]::IsNullOrWhiteSpace($ServerIP)) {
     $ServerIP = "localhost"
 }
 
+Write-Host "[*] Force-removing any remaining Supabase containers from previous failed runs..."
+docker ps -a --filter "name=supabase-" -q | ForEach-Object { docker rm -f -v $_ 2>$null }
+docker ps -a --filter "name=realtime-dev.supabase-realtime" -q | ForEach-Object { docker rm -f -v $_ 2>$null }
+
 Write-Host "[*] Fetching official Supabase docker repository (using sparse-checkout for speed)..."
 if (Test-Path supabase) {
-    Write-Host "[*] Tearing down existing deployment to prevent dangling containers..."
+    Write-Host "[*] Tearing down existing deployment networks..."
     if (Test-Path "supabase/docker/docker-compose.yml") {
         Set-Location supabase/docker
         docker compose down -v 2>$null
         Set-Location ../../
     }
-    Write-Host "[*] Force-removing any remaining Supabase containers..."
-    docker ps -a --filter "name=supabase-" -q | ForEach-Object { docker rm -f -v $_ 2>$null }
-    docker ps -a --filter "name=realtime-dev.supabase-realtime" -q | ForEach-Object { docker rm -f -v $_ 2>$null }
     Remove-Item -Recurse -Force supabase
 }
 New-Item -ItemType Directory -Force -Path supabase | Out-Null
