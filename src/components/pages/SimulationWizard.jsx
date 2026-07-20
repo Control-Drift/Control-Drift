@@ -792,32 +792,8 @@ CRITICAL INSTRUCTIONS:
           
           let procCode = proc.payloadCode || '';
 
-          // Lightweight client-side RAG: find matching TTP names based on keywords in the procedure name
-          let contextString = "";
-          if (mitreData && proc.name) {
-              const searchTerms = proc.name.toLowerCase().split(/[\s_\-\/\\]+/).filter(w => w.length > 3);
-              const matches = [];
-              Object.values(mitreData).forEach(tactic => {
-                  tactic.techniques?.forEach(tech => {
-                      let techName = tech.name.toLowerCase();
-                      if (searchTerms.some(term => techName.includes(term))) {
-                          matches.push(`${tech.id} (${tech.name})`);
-                      }
-                      tech.subTechniques?.forEach(sub => {
-                          let subName = sub.name.toLowerCase();
-                          if (searchTerms.some(term => subName.includes(term))) {
-                              matches.push(`${sub.id} (${sub.name})`);
-                          }
-                      });
-                  });
-              });
-              const uniqueMatches = [...new Set(matches)].slice(0, 15);
-              if (uniqueMatches.length > 0) {
-                  contextString = `\n\nHint: Based on local keyword matching, these techniques might be highly relevant. Consider them if applicable:\n${uniqueMatches.join(', ')}`;
-              }
-          }
-
-          const prompt = `Procedure Details:\nName/Description: ${proc.name || 'None provided'}\nPayload Code: ${procCode || 'None provided'}${contextString}\n\nTask: Return the comma-separated list of the most relevant MITRE ATT&CK technique IDs for this procedure. Do not guess loosely related techniques.`;
+          
+          const prompt = `Procedure Details:\nName/Description: ${proc.name || 'None provided'}\nPayload Code: ${procCode || 'None provided'}\n\nTask: Return the comma-separated list of the most relevant MITRE ATT&CK technique IDs for this procedure.`;
           
           const result = await generateAIContent(prompt, sysPrompt);
           const cleanChunk = result.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '');
