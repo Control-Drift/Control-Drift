@@ -19,7 +19,7 @@ export default function BlackHoleIcon({ size = 24, className = "", style = {} })
         </linearGradient>
         
         {/* Foolproof mask: Hides ONLY the top half of the central void */}
-        <mask id="bh-mask">
+        <mask id="bh-mask" maskUnits="userSpaceOnUse">
           <rect width="28" height="28" fill="white" />
           <circle cx="14" cy="14" r="4.5" fill="black" />
           <rect x="0" y="14" width="28" height="14" fill="white" />
@@ -27,23 +27,23 @@ export default function BlackHoleIcon({ size = 24, className = "", style = {} })
       </defs>
 
       {/* 1. Concentric Circles (Outer vertical rings) */}
-      <circle cx="14" cy="14" r="8.5" stroke="url(#bh-grad)" strokeWidth="3.5" fill="none" opacity="0.4" style={{ filter: 'blur(2px)' }} />
-      <circle cx="14" cy="14" r="6.5" stroke="url(#bh-grad)" strokeWidth="3.5" fill="none" opacity="0.4" style={{ filter: 'blur(2px)' }} />
-      <circle cx="14" cy="14" r="8.5" stroke="url(#bh-grad)" strokeWidth="1.2" fill="none" />
-      <circle cx="14" cy="14" r="6.5" stroke="url(#bh-grad)" strokeWidth="1.2" fill="none" />
+      <circle cx="14" cy="14" r="8.5" stroke="url(#bh-grad)" strokeWidth="2.5" fill="none" opacity="0.5" style={{ filter: 'blur(1.5px)' }} />
+      <circle cx="14" cy="14" r="6.5" stroke="url(#bh-grad)" strokeWidth="2.5" fill="none" opacity="0.5" style={{ filter: 'blur(1.5px)' }} />
+      <circle cx="14" cy="14" r="8.5" stroke="url(#bh-grad)" strokeWidth="0.8" fill="none" />
+      <circle cx="14" cy="14" r="6.5" stroke="url(#bh-grad)" strokeWidth="0.8" fill="none" />
       
       {/* 2. Central Void (with glowing circumference) */}
-      <circle cx="14" cy="14" r="4.5" stroke="url(#bh-grad)" strokeWidth="3.5" fill="none" opacity="0.4" style={{ filter: 'blur(2px)' }} />
-      <circle cx="14" cy="14" r="4.5" stroke="url(#bh-grad)" strokeWidth="1.2" fill="#0a0b10" />
+      <circle cx="14" cy="14" r="4.5" stroke="url(#bh-grad)" strokeWidth="2.5" fill="none" opacity="0.8" style={{ filter: 'blur(1.5px)' }} />
+      <circle cx="14" cy="14" r="4.5" stroke="url(#bh-grad)" strokeWidth="0.8" fill="#0a0b10" />
 
       {/* 3. Rings around them (Horizontal Ellipses, back-half masked out by the void) */}
       <g mask="url(#bh-mask)">
         {/* Glows */}
-        <ellipse cx="14" cy="14" rx="12" ry="3.5" stroke="url(#bh-grad)" strokeWidth="3.5" fill="none" opacity="0.4" style={{ filter: 'blur(2px)' }} />
-        <ellipse cx="14" cy="14" rx="9.5" ry="2" stroke="url(#bh-grad)" strokeWidth="3.5" fill="none" opacity="0.4" style={{ filter: 'blur(2px)' }} />
+        <ellipse cx="14" cy="14" rx="12" ry="3.5" stroke="url(#bh-grad)" strokeWidth="2.5" fill="none" opacity="0.5" style={{ filter: 'blur(1.5px)' }} />
+        <ellipse cx="14" cy="14" rx="9.5" ry="2" stroke="url(#bh-grad)" strokeWidth="2.5" fill="none" opacity="0.5" style={{ filter: 'blur(1.5px)' }} />
         {/* Cores */}
-        <ellipse cx="14" cy="14" rx="12" ry="3.5" stroke="url(#bh-grad)" strokeWidth="1.2" fill="none" />
-        <ellipse cx="14" cy="14" rx="9.5" ry="2" stroke="url(#bh-grad)" strokeWidth="1.2" fill="none" />
+        <ellipse cx="14" cy="14" rx="12" ry="3.5" stroke="url(#bh-grad)" strokeWidth="0.8" fill="none" />
+        <ellipse cx="14" cy="14" rx="9.5" ry="2" stroke="url(#bh-grad)" strokeWidth="0.8" fill="none" />
       </g>
     </svg>
   );
