@@ -49,13 +49,17 @@ if (Test-Path supabase) {
     }
     Remove-Item -Recurse -Force supabase
 }
-Write-Host "[*] Fetching official Supabase docker repository (via fast zip download)..."
-Invoke-WebRequest -Uri "https://github.com/supabase/supabase/archive/refs/heads/master.zip" -OutFile "supabase.zip"
-Expand-Archive -Path "supabase.zip" -DestinationPath "supabase_temp" -Force
+Write-Host "[*] Fetching official Supabase docker repository (via Git sparse-checkout)..."
+$oldErr = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+git clone --depth 1 --filter=blob:none --sparse https://github.com/supabase/supabase.git supabase_temp 2>&1 | Out-Null
+Set-Location supabase_temp
+git sparse-checkout set docker 2>&1 | Out-Null
+Set-Location ..
+$ErrorActionPreference = $oldErr
 New-Item -ItemType Directory -Force -Path "supabase" | Out-Null
-Move-Item -Path "supabase_temp\supabase-master\docker" -Destination "supabase\docker" -Force
+Move-Item -Path "supabase_temp\docker" -Destination "supabase\docker" -Force
 Remove-Item -Recurse -Force "supabase_temp"
-Remove-Item -Force "supabase.zip"
+if (Test-Path "supabase.zip") { Remove-Item -Force "supabase.zip" }
 Set-Location supabase/docker
 
 Write-Host "[*] Copying default Supabase configuration..."
