@@ -126,10 +126,14 @@ Write-Host "[*] Generating Control Drift Config..."
 if (Test-Path deploy/config.json) { Remove-Item -Recurse -Force deploy/config.json }
 $AnonKey = (Select-String -Path supabase/docker/.env -Pattern "^ANON_KEY=(.*)$").Matches.Groups[1].Value
 
-$AiModelMatch = Select-String -Path supabase/docker/.env -Pattern "^AI_MODEL=(.*)$"
-$AiModel = if ($AiModelMatch) { $AiModelMatch.Matches.Groups[1].Value } else { "gpt-4o" }
+$AiModelMatch = $null
+$AiEndpointMatch = $null
+if (Test-Path deploy/.env) {
+    $AiModelMatch = Select-String -Path deploy/.env -Pattern "^AI_MODEL=(.*)$"
+    $AiEndpointMatch = Select-String -Path deploy/.env -Pattern "^AI_ENDPOINT=(.*)$"
+}
 
-$AiEndpointMatch = Select-String -Path supabase/docker/.env -Pattern "^AI_ENDPOINT=(.*)$"
+$AiModel = if ($AiModelMatch) { $AiModelMatch.Matches.Groups[1].Value } else { "gpt-4o" }
 $AiEndpoint = if ($AiEndpointMatch) { $AiEndpointMatch.Matches.Groups[1].Value } else { "http://${ServerIP}:4000/v1/chat/completions" }
 
 $appConfig = @"
