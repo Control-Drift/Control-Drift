@@ -125,6 +125,13 @@ Set-Content -Path deploy/litellm-config.yaml -Value $litellmConfig
 Write-Host "[*] Generating Control Drift Config..."
 if (Test-Path deploy/config.json) { Remove-Item -Recurse -Force deploy/config.json }
 $AnonKey = (Select-String -Path supabase/docker/.env -Pattern "^ANON_KEY=(.*)$").Matches.Groups[1].Value
+
+$AiModelMatch = Select-String -Path supabase/docker/.env -Pattern "^AI_MODEL=(.*)$"
+$AiModel = if ($AiModelMatch) { $AiModelMatch.Matches.Groups[1].Value } else { "gpt-4o" }
+
+$AiEndpointMatch = Select-String -Path supabase/docker/.env -Pattern "^AI_ENDPOINT=(.*)$"
+$AiEndpoint = if ($AiEndpointMatch) { $AiEndpointMatch.Matches.Groups[1].Value } else { "http://${ServerIP}:4000/v1/chat/completions" }
+
 $appConfig = @"
 {
   "database": {
@@ -134,8 +141,8 @@ $appConfig = @"
   },
   "ai": {
     "enabled": true,
-    "endpointUrl": "http://${ServerIP}:4000/v1/chat/completions",
-    "model": "gpt-4o",
+    "endpointUrl": "${AiEndpoint}",
+    "model": "${AiModel}",
     "proxy": true
   }
 }
