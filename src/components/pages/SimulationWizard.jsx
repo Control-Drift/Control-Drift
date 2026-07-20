@@ -788,16 +788,20 @@ CRITICAL INSTRUCTIONS:
       }
       setMappingProcedureId(proc.id);
       try {
-          const sysPrompt = "You are an expert Red Teamer. Based on your knowledge of the MITRE ATT&CK framework, what are the most accurate Technique IDs (e.g., T1055 or T1059.001) for this event? Be highly thorough and extract ALL relevant techniques implied by the procedure, including secondary actions like Ingress Tool Transfer (T1105), Command and Control, and Exfiltration. Return ONLY a comma-separated list of the IDs. DO NOT return any conversational text.";
+          const sysPrompt = "You are an expert Red Teamer mapping procedures to the MITRE ATT&CK framework. You must first analyze the procedure step-by-step inside <reasoning> tags to determine the exact actions occurring. After your reasoning, output a final comma-separated list of the relevant Technique IDs (e.g., T1055, T1059.001) inside <final_answer> tags. Do not output anything outside of these two tags.";
           
           let procCode = proc.payloadCode || '';
 
           
-          const prompt = `Procedure Details:\nName/Description: ${proc.name || 'None provided'}\nPayload Code: ${procCode || 'None provided'}\n\nTask: Return the comma-separated list of the most relevant MITRE ATT&CK technique IDs for this procedure.`;
+          const prompt = `Procedure Details:\nName/Description: ${proc.name || 'None provided'}\nPayload Code: ${procCode || 'None provided'}\n\nTask: Analyze the procedure and map it to the most relevant MITRE ATT&CK technique IDs. Use <reasoning> tags for your analysis, then provide the IDs in <final_answer> tags.`;
           
           const result = await generateAIContent(prompt, sysPrompt);
-          const cleanChunk = result.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '');
-          const mappedIds = cleanChunk.match(/T\d{4}(?:\.\d{3})?/gi) || [];
+          
+          // Parse out the final answer to avoid capturing T-codes mentioned during reasoning
+          const finalAnswerMatch = result.match(/<final_answer>([\s\S]*?)<\/final_answer>/i);
+          const answerText = finalAnswerMatch ? finalAnswerMatch[1] : result;
+          
+          const mappedIds = answerText.match(/T\d{4}(?:\.\d{3})?/gi) || [];
           
           // Validate against our MITRE dataset to prevent hallucinated IDs from breaking the UI
           const allValidMitreIds = new Set();
