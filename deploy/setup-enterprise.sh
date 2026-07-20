@@ -123,12 +123,13 @@ EOF
 
 echo "[*] Generating Control Drift Config..."
 rm -rf deploy/config.json 2>/dev/null || true
+ANON_KEY=$(grep '^ANON_KEY=' supabase/docker/.env | cut -d '=' -f2)
 cat <<EOF > deploy/config.json
 {
   "database": {
     "provider": "supabase",
     "endpoint": "http://${SERVER_IP}:8000",
-    "apiKey": "<YOUR_SUPABASE_ANON_KEY>"
+    "apiKey": "${ANON_KEY}"
   },
   "ai": {
     "enabled": true,
