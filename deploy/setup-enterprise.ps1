@@ -112,28 +112,46 @@ $AnonKey = (Select-String -Path supabase/docker/.env -Pattern "^ANON_KEY=(.*)$")
 
 Write-Host ""
 Write-Host "--- AI Configuration ---"
+Write-Host "Note: To keep your API keys secure, all traffic will be automatically routed through the internal LiteLLM proxy."
+
+$UserProvider = Read-Host "Enter LiteLLM Provider Prefix (e.g. openai, anthropic, gemini) [openai]"
+if ([string]::IsNullOrWhiteSpace($UserProvider)) { $UserProvider = "openai" }
+
 $UserAiModel = Read-Host "Enter AI Model Name (e.g. gpt-4o, essentialai/rnj-1) [gpt-4o]"
 if ([string]::IsNullOrWhiteSpace($UserAiModel)) { $UserAiModel = "gpt-4o" }
 
-$UserAiEndpoint = Read-Host "Enter AI Endpoint URL (Leave blank to route through the secure proxy)"
-if ([string]::IsNullOrWhiteSpace($UserAiEndpoint)) { $UserAiEndpoint = "http://${ServerIP}:4000/v1/chat/completions" }
+$UserAiEndpoint = Read-Host "Enter Target AI Endpoint URL (Leave blank for default public providers like OpenAI)"
+
+$UserApiKey = Read-Host "Enter API Key (Leave blank for local unauthenticated LLMs)"
 
 Write-Host "[*] Generating AI Proxy Config..."
 if (Test-Path deploy/litellm-config.yaml) { Remove-Item -Recurse -Force deploy/litellm-config.yaml }
 
-$litellmConfig = @"
-model_list:
-  - model_name: gpt-4o
-    litellm_params:
-      model: openai/gpt-4o
-  - model_name: claude-3-5-sonnet-20240620
-    litellm_params:
-      model: anthropic/claude-3-5-sonnet-20240620
-  - model_name: gemini-1.5-pro
-    litellm_params:
-      model: gemini/gemini-1.5-pro
-"@
-$litellmConfig | Out-File -FilePath deploy/litellm-config.yaml -Encoding ASCII
+$litellmConfigLines = @(
+    "model_list:",
+    "  - model_name: $UserAiModel",
+    "    litellm_params:",
+    "      model: ${UserProvider}/${UserAiModel}"
+)
+
+if (-not [string]::IsNullOrWhiteSpace($UserAiEndpoint)) {
+    $litellmConfigLines += "      api_base: $UserAiEndpoint"
+}
+
+if (-not [string]::IsNullOrWhiteSpace($UserApiKey)) {
+    $litellmConfigLines += "      api_key: $UserApiKey"
+}
+
+$litellmConfigLines += @(
+    "  - model_name: gpt-4o",
+    "    litellm_params:",
+    "      model: openai/gpt-4o",
+    "  - model_name: claude-3-5-sonnet-20240620",
+    "    litellm_params:",
+    "      model: anthropic/claude-3-5-sonnet-20240620"
+)
+
+$litellmConfigLines -join "`n" | Out-File -FilePath deploy/litellm-config.yaml -Encoding ASCII
 
 $appConfig = @"
 {
@@ -144,7 +162,7 @@ $appConfig = @"
   },
   "ai": {
     "enabled": true,
-    "endpointUrl": "$UserAiEndpoint",
+    "endpointUrl": "http://${ServerIP}:4000/v1/chat/completions",
     "model": "$UserAiModel",
     "proxy": true
   }

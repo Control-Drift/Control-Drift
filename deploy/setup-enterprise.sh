@@ -112,25 +112,44 @@ ANON_KEY=$(grep '^ANON_KEY=' supabase/docker/.env | cut -d '=' -f2)
 
 echo ""
 echo "--- AI Configuration ---"
+echo "Note: To keep your API keys secure, all traffic will be automatically routed through the internal LiteLLM proxy."
+
+read -p "Enter LiteLLM Provider Prefix (e.g. openai, anthropic, gemini) [openai]: " user_provider
+user_provider=${user_provider:-"openai"}
+
 read -p "Enter AI Model Name (e.g. gpt-4o, essentialai/rnj-1) [gpt-4o]: " user_ai_model
 user_ai_model=${user_ai_model:-"gpt-4o"}
 
-read -p "Enter AI Endpoint URL (Leave blank to route through the secure proxy): " user_ai_endpoint
-user_ai_endpoint=${user_ai_endpoint:-"http://${SERVER_IP}:4000/v1/chat/completions"}
+read -p "Enter Target AI Endpoint URL (Leave blank for default public providers like OpenAI): " user_ai_endpoint
+
+read -p "Enter API Key (Leave blank for local unauthenticated LLMs): " user_api_key
 
 echo "[*] Generating AI Proxy Config..."
 rm -rf deploy/litellm-config.yaml 2>/dev/null || true
+
 cat <<EOF > deploy/litellm-config.yaml
 model_list:
+  - model_name: $user_ai_model
+    litellm_params:
+      model: ${user_provider}/${user_ai_model}
+EOF
+
+if [ -n "$user_ai_endpoint" ]; then
+  echo "      api_base: $user_ai_endpoint" >> deploy/litellm-config.yaml
+fi
+
+if [ -n "$user_api_key" ]; then
+  echo "      api_key: $user_api_key" >> deploy/litellm-config.yaml
+fi
+
+# Add default fallbacks
+cat <<EOF >> deploy/litellm-config.yaml
   - model_name: gpt-4o
     litellm_params:
       model: openai/gpt-4o
   - model_name: claude-3-5-sonnet-20240620
     litellm_params:
       model: anthropic/claude-3-5-sonnet-20240620
-  - model_name: gemini-1.5-pro
-    litellm_params:
-      model: gemini/gemini-1.5-pro
 EOF
 
 cat <<EOF > deploy/config.json
@@ -142,7 +161,7 @@ cat <<EOF > deploy/config.json
   },
   "ai": {
     "enabled": true,
-    "endpointUrl": "${user_ai_endpoint}",
+    "endpointUrl": "http://${SERVER_IP}:4000/v1/chat/completions",
     "model": "${user_ai_model}",
     "proxy": true
   }
