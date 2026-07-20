@@ -126,9 +126,9 @@ switch ($ProviderChoice) {
 
 $UserAiModel = Read-Host "Enter AI Model Name"
 
-$UserAiEndpoint = Read-Host "Enter Target AI Endpoint URL (Leave blank for default public providers like OpenAI)"
+$UserAiEndpoint = Read-Host "Enter Target AI Endpoint URL (Leave blank for default)"
 
-$UserApiKey = Read-Host "Enter API Key (Leave blank for local unauthenticated LLMs)"
+$UserApiKey = Read-Host "Enter API Key (Leave blank if none)"
 
 Write-Host "[*] Generating AI Proxy Config..."
 if (Test-Path deploy/litellm-config.yaml) { Remove-Item -Recurse -Force deploy/litellm-config.yaml }

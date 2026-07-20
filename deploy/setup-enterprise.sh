@@ -126,9 +126,9 @@ esac
 
 read -p "Enter AI Model Name: " user_ai_model
 
-read -p "Enter Target AI Endpoint URL (Leave blank for default public providers like OpenAI): " user_ai_endpoint
+read -p "Enter Target AI Endpoint URL (Leave blank for default): " user_ai_endpoint
 
-read -p "Enter API Key (Leave blank for local unauthenticated LLMs): " user_api_key
+read -p "Enter API Key (Leave blank if none): " user_api_key
 
 echo "[*] Generating AI Proxy Config..."
 rm -rf deploy/litellm-config.yaml 2>/dev/null || true
