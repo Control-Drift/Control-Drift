@@ -121,12 +121,15 @@ docker compose up -d
 ```
 *(Because the database volumes are physically mounted on your server, all of your user accounts, tables, and settings are completely saved and will persist through shutdowns!)*
 
-### Stopping and Starting the AI Proxy (LiteLLM)
-Because the proxy was launched as a standalone container rather than part of the Compose stack, you can manage it with standard Docker commands from anywhere on the server:
+### Stopping and Starting the Frontend & AI Proxy
+The Control Drift frontend and the LiteLLM proxy are also managed by their own Compose stack in the `deploy` directory:
 ```bash
-# To shut down the proxy
-docker stop control-drift-proxy
+# Navigate to the deployment directory
+cd deploy/
 
-# To start the proxy back up
-docker start control-drift-proxy
+# To shut down the frontend and proxy
+docker compose down
+
+# To start them back up
+docker compose up -d
 ```
