@@ -106,8 +106,49 @@ Write-Host "[+] Schema injected successfully!"
 
 Set-Location ../../
 
+Write-Host "[*] Generating Control Drift Config..."
+if (Test-Path deploy/config.json) { Remove-Item -Recurse -Force deploy/config.json }
+$AnonKey = (Select-String -Path supabase/docker/.env -Pattern "^ANON_KEY=(.*)$").Matches.Groups[1].Value
+
+if (-not (Test-Path deploy/.env)) {
+    Write-Host ""
+    Write-Host "--- AI Configuration ---"
+    $UserAiModel = Read-Host "Enter AI Model Name (e.g. gpt-4o, essentialai/rnj-1) [gpt-4o]"
+    if ([string]::IsNullOrWhiteSpace($UserAiModel)) { $UserAiModel = "gpt-4o" }
+
+    $UserAiEndpoint = Read-Host "Enter Custom AI Endpoint URL (Leave blank to use default OpenAI/Anthropic/Gemini APIs)"
+
+    "AI_ENDPOINT=`"http://${ServerIP}:4000/v1/chat/completions`"" | Out-File -FilePath deploy/.env -Encoding ASCII
+    "AI_MODEL=`"$UserAiModel`"" | Out-File -FilePath deploy/.env -Encoding ASCII -Append
+    if (-not [string]::IsNullOrWhiteSpace($UserAiEndpoint)) {
+        "AI_CUSTOM_BACKEND=`"$UserAiEndpoint`"" | Out-File -FilePath deploy/.env -Encoding ASCII -Append
+    }
+    Write-Host "------------------------"
+    Write-Host ""
+}
+
+$AiModelMatch = $null
+$AiCustomBackendMatch = $null
+if (Test-Path deploy/.env) {
+    $AiModelMatch = Select-String -Path deploy/.env -Pattern "^AI_MODEL=`"?(.*?)`"?$"
+    $AiCustomBackendMatch = Select-String -Path deploy/.env -Pattern "^AI_CUSTOM_BACKEND=`"?(.*?)`"?$"
+}
+
+$AiModel = if ($AiModelMatch) { $AiModelMatch.Matches.Groups[1].Value } else { "" }
+$AiCustomBackend = if ($AiCustomBackendMatch) { $AiCustomBackendMatch.Matches.Groups[1].Value } else { "" }
+
 Write-Host "[*] Generating AI Proxy Config..."
-if (-not (Test-Path deploy/litellm-config.yaml)) {
+if (Test-Path deploy/litellm-config.yaml) { Remove-Item -Recurse -Force deploy/litellm-config.yaml }
+
+if (-not [string]::IsNullOrWhiteSpace($AiCustomBackend)) {
+$litellmConfig = @"
+model_list:
+  - model_name: $AiModel
+    litellm_params:
+      model: openai/$AiModel
+      api_base: $AiCustomBackend
+"@
+} else {
 $litellmConfig = @"
 model_list:
   - model_name: gpt-4o
@@ -120,36 +161,8 @@ model_list:
     litellm_params:
       model: gemini/gemini-1.5-pro
 "@
+}
 $litellmConfig | Out-File -FilePath deploy/litellm-config.yaml -Encoding ASCII
-}
-
-Write-Host "[*] Generating Control Drift Config..."
-if (Test-Path deploy/config.json) { Remove-Item -Recurse -Force deploy/config.json }
-$AnonKey = (Select-String -Path supabase/docker/.env -Pattern "^ANON_KEY=(.*)$").Matches.Groups[1].Value
-
-if (-not (Test-Path deploy/.env)) {
-    Write-Host ""
-    Write-Host "--- AI Configuration ---"
-    $UserAiModel = Read-Host "Enter AI Model Name (e.g. gpt-4o, essentialai/rnj-1) [gpt-4o]"
-    if ([string]::IsNullOrWhiteSpace($UserAiModel)) { $UserAiModel = "gpt-4o" }
-
-    Write-Host ""
-    Write-Host "How should the web frontend connect to this model?"
-    Write-Host "1) Through the secure LiteLLM Proxy (Recommended for multi-user servers)"
-    Write-Host "2) Direct Connection (e.g. directly to a local LM Studio IP)"
-    $ConnectionChoice = Read-Host "Choice [1/2]"
-
-    if ($ConnectionChoice -eq "2") {
-        $UserAiEndpoint = Read-Host "Enter Direct AI Endpoint URL (e.g. http://10.0.0.210:1234/v1/chat/completions)"
-        "AI_ENDPOINT=`"$UserAiEndpoint`"" | Out-File -FilePath deploy/.env -Encoding ASCII
-    } else {
-        "AI_ENDPOINT=`"http://${ServerIP}:4000/v1/chat/completions`"" | Out-File -FilePath deploy/.env -Encoding ASCII
-    }
-    
-    "AI_MODEL=`"$UserAiModel`"" | Out-File -FilePath deploy/.env -Encoding ASCII -Append
-    Write-Host "------------------------"
-    Write-Host ""
-}
 
 $AiModelMatch = $null
 $AiEndpointMatch = $null

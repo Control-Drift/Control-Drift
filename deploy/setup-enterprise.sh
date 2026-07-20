@@ -106,8 +106,44 @@ echo "[+] Schema injected successfully!"
 
 cd ../../
 
+echo "[*] Generating Control Drift Config..."
+rm -rf deploy/config.json 2>/dev/null || true
+ANON_KEY=$(grep '^ANON_KEY=' supabase/docker/.env | cut -d '=' -f2)
+
+if [ ! -f deploy/.env ]; then
+  echo ""
+  echo "--- AI Configuration ---"
+  read -p "Enter AI Model Name (e.g. gpt-4o, essentialai/rnj-1) [gpt-4o]: " user_ai_model
+  user_ai_model=${user_ai_model:-"gpt-4o"}
+
+  read -p "Enter Custom AI Endpoint URL (Leave blank to use default OpenAI/Anthropic/Gemini APIs): " user_ai_endpoint
+
+  echo "AI_ENDPOINT=\"http://${SERVER_IP}:4000/v1/chat/completions\"" > deploy/.env
+  echo "AI_MODEL=\"$user_ai_model\"" >> deploy/.env
+  if [ -n "$user_ai_endpoint" ]; then
+    echo "AI_CUSTOM_BACKEND=\"$user_ai_endpoint\"" >> deploy/.env
+  fi
+  echo "------------------------"
+  echo ""
+fi
+
+# Extract optional AI configuration from deploy/.env
+AI_MODEL=$(grep "^AI_MODEL=" deploy/.env 2>/dev/null | cut -d '=' -f2 | tr -d '"' || true)
+AI_ENDPOINT=$(grep "^AI_ENDPOINT=" deploy/.env 2>/dev/null | cut -d '=' -f2 | tr -d '"' || true)
+AI_CUSTOM_BACKEND=$(grep "^AI_CUSTOM_BACKEND=" deploy/.env 2>/dev/null | cut -d '=' -f2 | tr -d '"' || true)
+
 echo "[*] Generating AI Proxy Config..."
-if [ ! -f deploy/litellm-config.yaml ]; then
+rm -rf deploy/litellm-config.yaml 2>/dev/null || true
+
+if [ -n "$AI_CUSTOM_BACKEND" ]; then
+cat <<EOF > deploy/litellm-config.yaml
+model_list:
+  - model_name: $AI_MODEL
+    litellm_params:
+      model: openai/$AI_MODEL
+      api_base: $AI_CUSTOM_BACKEND
+EOF
+else
 cat <<EOF > deploy/litellm-config.yaml
 model_list:
   - model_name: gpt-4o
@@ -120,34 +156,6 @@ model_list:
     litellm_params:
       model: gemini/gemini-1.5-pro
 EOF
-fi
-
-echo "[*] Generating Control Drift Config..."
-rm -rf deploy/config.json 2>/dev/null || true
-ANON_KEY=$(grep '^ANON_KEY=' supabase/docker/.env | cut -d '=' -f2)
-
-if [ ! -f deploy/.env ]; then
-  echo ""
-  echo "--- AI Configuration ---"
-  read -p "Enter AI Model Name (e.g. gpt-4o, essentialai/rnj-1) [gpt-4o]: " user_ai_model
-  user_ai_model=${user_ai_model:-"gpt-4o"}
-
-  echo ""
-  echo "How should the web frontend connect to this model?"
-  echo "1) Through the secure LiteLLM Proxy (Recommended for multi-user servers)"
-  echo "2) Direct Connection (e.g. directly to a local LM Studio IP)"
-  read -p "Choice [1/2]: " connection_choice
-
-  if [[ "$connection_choice" == "2" ]]; then
-    read -p "Enter Direct AI Endpoint URL (e.g. http://10.0.0.210:1234/v1/chat/completions): " user_ai_endpoint
-    echo "AI_ENDPOINT=\"$user_ai_endpoint\"" > deploy/.env
-  else
-    echo "AI_ENDPOINT=\"http://${SERVER_IP}:4000/v1/chat/completions\"" > deploy/.env
-  fi
-  
-  echo "AI_MODEL=\"$user_ai_model\"" >> deploy/.env
-  echo "------------------------"
-  echo ""
 fi
 
 # Extract optional AI configuration from deploy/.env
