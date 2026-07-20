@@ -65,7 +65,7 @@ services:
   studio:
     ports:
       - `"3000:3000/tcp`"
-  pooler:
+  supavisor:
     ports:
       - `"54320:5432`"
   db:
