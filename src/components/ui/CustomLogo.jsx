@@ -48,11 +48,11 @@ export default function CustomLogo({ className = "", style = {}, iconOnly = fals
         ...style,
       }}
     >
-      <div style={{ width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, position: 'relative' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <img 
           src={emblem} 
           alt="Control Drift" 
-          style={{ position: 'absolute', height: '22px', width: 'auto', maxWidth: 'none', objectFit: 'contain' }} 
+          style={{ height: '24px', width: 'auto', objectFit: 'contain' }} 
         />
       </div>
       
