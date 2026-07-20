@@ -109,7 +109,7 @@ if (-not $IsHealthy) {
 Write-Host "[+] Database is healthy!"
 
 Write-Host "[*] Injecting Control Drift Database Schema..."
-cmd.exe /c "docker exec -i supabase-db psql -U postgres -d postgres < ../../deploy/schema.sql"
+Get-Content ../../deploy/schema.sql | docker exec -i supabase-db psql -U postgres -d postgres
 Write-Host "[+] Schema injected successfully!"
 
 Set-Location ../../
