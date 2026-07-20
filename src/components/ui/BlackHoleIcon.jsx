@@ -17,28 +17,38 @@ export default function BlackHoleIcon({ size = 24, className = "", style = {} })
           <stop offset="50%" stopColor="#a855f7" />
           <stop offset="100%" stopColor="#2563eb" />
         </linearGradient>
+        
+        <mask id="blackhole-mask">
+          <rect width="24" height="24" fill="white" />
+          <circle cx="12" cy="12" r="4.5" fill="black" />
+        </mask>
       </defs>
 
-      {/* Back halves of the accretion disk rings (drawn behind black hole) -> TOP HALF -> Sweep 0 */}
-      <path d="M 1 12 A 11 3.5 0 0 0 23 12" stroke="url(#blackhole-grad)" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.6" />
-      <path d="M 3 12 A 9 2.5 0 0 0 21 12" stroke="url(#blackhole-grad)" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.8" />
-      <path d="M 5 12 A 7 1.5 0 0 0 19 12" stroke="url(#blackhole-grad)" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+      {/* 1. Back halves of horizontal ellipses (Masked by black hole) */}
+      <g mask="url(#blackhole-mask)">
+        {/* Glow */}
+        <path d="M 1 12 A 11 2.5 0 0 0 23 12" stroke="url(#blackhole-grad)" strokeWidth="3.5" fill="none" opacity="0.4" style={{ filter: 'blur(2px)' }} />
+        <path d="M 3.5 12 A 8.5 1.5 0 0 0 20.5 12" stroke="url(#blackhole-grad)" strokeWidth="3.5" fill="none" opacity="0.4" style={{ filter: 'blur(2px)' }} />
+        {/* Core */}
+        <path d="M 1 12 A 11 2.5 0 0 0 23 12" stroke="url(#blackhole-grad)" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+        <path d="M 3.5 12 A 8.5 1.5 0 0 0 20.5 12" stroke="url(#blackhole-grad)" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+      </g>
 
-      {/* The central black hole (Event Horizon) */}
-      <circle cx="12" cy="12" r="4.5" fill="#0a0b10" stroke="url(#blackhole-grad)" strokeWidth="1.5" />
+      {/* 2. Vertical Circular Rings */}
+      {/* Glow */}
+      <circle cx="12" cy="12" r="8" stroke="url(#blackhole-grad)" strokeWidth="3.5" fill="none" opacity="0.4" style={{ filter: 'blur(2px)' }} />
+      <circle cx="12" cy="12" r="6" stroke="url(#blackhole-grad)" strokeWidth="3.5" fill="none" opacity="0.4" style={{ filter: 'blur(2px)' }} />
+      {/* Core */}
+      <circle cx="12" cy="12" r="8" stroke="url(#blackhole-grad)" strokeWidth="1.2" fill="none" />
+      <circle cx="12" cy="12" r="6" stroke="url(#blackhole-grad)" strokeWidth="1.2" fill="none" />
 
-      {/* Front halves of the accretion disk rings (drawn in front of black hole) -> BOTTOM HALF -> Sweep 1 */}
-      <path d="M 1 12 A 11 3.5 0 0 1 23 12" stroke="url(#blackhole-grad)" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.6" />
-      <path d="M 3 12 A 9 2.5 0 0 1 21 12" stroke="url(#blackhole-grad)" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.8" />
-      <path d="M 5 12 A 7 1.5 0 0 1 19 12" stroke="url(#blackhole-grad)" strokeWidth="1.5" strokeLinecap="round" fill="none" />
-
-      {/* Gravitational lensing rings (top) -> TOP HALF -> Sweep 0 */}
-      <path d="M 8 7.5 A 4 4 0 0 0 16 7.5" stroke="url(#blackhole-grad)" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.9" />
-      <path d="M 9.5 5.5 A 2.5 2.5 0 0 0 14.5 5.5" stroke="url(#blackhole-grad)" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.5" />
-      
-      {/* Gravitational lensing rings (bottom) -> BOTTOM HALF -> Sweep 1 */}
-      <path d="M 8 16.5 A 4 4 0 0 1 16 16.5" stroke="url(#blackhole-grad)" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.9" />
-      <path d="M 9.5 18.5 A 2.5 2.5 0 0 1 14.5 18.5" stroke="url(#blackhole-grad)" strokeWidth="1.5" strokeLinecap="round" fill="none" opacity="0.5" />
+      {/* 3. Front halves of horizontal ellipses (Not masked, crosses in front) */}
+      {/* Glow */}
+      <path d="M 1 12 A 11 2.5 0 0 1 23 12" stroke="url(#blackhole-grad)" strokeWidth="3.5" fill="none" opacity="0.4" style={{ filter: 'blur(2px)' }} />
+      <path d="M 3.5 12 A 8.5 1.5 0 0 1 20.5 12" stroke="url(#blackhole-grad)" strokeWidth="3.5" fill="none" opacity="0.4" style={{ filter: 'blur(2px)' }} />
+      {/* Core */}
+      <path d="M 1 12 A 11 2.5 0 0 1 23 12" stroke="url(#blackhole-grad)" strokeWidth="1.2" strokeLinecap="round" fill="none" />
+      <path d="M 3.5 12 A 8.5 1.5 0 0 1 20.5 12" stroke="url(#blackhole-grad)" strokeWidth="1.2" strokeLinecap="round" fill="none" />
     </svg>
   );
 }
