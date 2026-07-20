@@ -110,38 +110,23 @@ echo "[*] Generating Control Drift Config..."
 rm -rf deploy/config.json 2>/dev/null || true
 ANON_KEY=$(grep '^ANON_KEY=' supabase/docker/.env | cut -d '=' -f2)
 
-if [ ! -f deploy/.env ]; then
-  echo ""
-  echo "--- AI Configuration ---"
-  read -p "Enter AI Model Name (e.g. gpt-4o, essentialai/rnj-1) [gpt-4o]: " user_ai_model
-  user_ai_model=${user_ai_model:-"gpt-4o"}
+echo ""
+echo "--- AI Configuration ---"
+read -p "Enter AI Model Name (e.g. gpt-4o, essentialai/rnj-1) [gpt-4o]: " user_ai_model
+user_ai_model=${user_ai_model:-"gpt-4o"}
 
-  read -p "Enter Custom AI Endpoint URL (Leave blank to use default OpenAI/Anthropic/Gemini APIs): " user_ai_endpoint
-
-  echo "AI_ENDPOINT=\"http://${SERVER_IP}:4000/v1/chat/completions\"" > deploy/.env
-  echo "AI_MODEL=\"$user_ai_model\"" >> deploy/.env
-  if [ -n "$user_ai_endpoint" ]; then
-    echo "AI_CUSTOM_BACKEND=\"$user_ai_endpoint\"" >> deploy/.env
-  fi
-  echo "------------------------"
-  echo ""
-fi
-
-# Extract optional AI configuration from deploy/.env
-AI_MODEL=$(grep "^AI_MODEL=" deploy/.env 2>/dev/null | cut -d '=' -f2 | tr -d '"' || true)
-AI_ENDPOINT=$(grep "^AI_ENDPOINT=" deploy/.env 2>/dev/null | cut -d '=' -f2 | tr -d '"' || true)
-AI_CUSTOM_BACKEND=$(grep "^AI_CUSTOM_BACKEND=" deploy/.env 2>/dev/null | cut -d '=' -f2 | tr -d '"' || true)
+read -p "Enter Custom AI Endpoint URL (Leave blank to use default OpenAI/Anthropic/Gemini APIs): " user_ai_endpoint
 
 echo "[*] Generating AI Proxy Config..."
 rm -rf deploy/litellm-config.yaml 2>/dev/null || true
 
-if [ -n "$AI_CUSTOM_BACKEND" ]; then
+if [ -n "$user_ai_endpoint" ]; then
 cat <<EOF > deploy/litellm-config.yaml
 model_list:
-  - model_name: $AI_MODEL
+  - model_name: $user_ai_model
     litellm_params:
-      model: openai/$AI_MODEL
-      api_base: $AI_CUSTOM_BACKEND
+      model: openai/$user_ai_model
+      api_base: $user_ai_endpoint
 EOF
 else
 cat <<EOF > deploy/litellm-config.yaml
@@ -158,10 +143,6 @@ model_list:
 EOF
 fi
 
-# Extract optional AI configuration from deploy/.env
-AI_MODEL=$(grep "^AI_MODEL=" deploy/.env 2>/dev/null | cut -d '=' -f2 | tr -d '"' || true)
-AI_ENDPOINT=$(grep "^AI_ENDPOINT=" deploy/.env 2>/dev/null | cut -d '=' -f2 | tr -d '"' || true)
-
 cat <<EOF > deploy/config.json
 {
   "database": {
@@ -171,8 +152,8 @@ cat <<EOF > deploy/config.json
   },
   "ai": {
     "enabled": true,
-    "endpointUrl": "${AI_ENDPOINT}",
-    "model": "${AI_MODEL}",
+    "endpointUrl": "http://${SERVER_IP}:4000/v1/chat/completions",
+    "model": "${user_ai_model}",
     "proxy": true
   }
 }

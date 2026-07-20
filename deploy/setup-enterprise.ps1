@@ -110,43 +110,23 @@ Write-Host "[*] Generating Control Drift Config..."
 if (Test-Path deploy/config.json) { Remove-Item -Recurse -Force deploy/config.json }
 $AnonKey = (Select-String -Path supabase/docker/.env -Pattern "^ANON_KEY=(.*)$").Matches.Groups[1].Value
 
-if (-not (Test-Path deploy/.env)) {
-    Write-Host ""
-    Write-Host "--- AI Configuration ---"
-    $UserAiModel = Read-Host "Enter AI Model Name (e.g. gpt-4o, essentialai/rnj-1) [gpt-4o]"
-    if ([string]::IsNullOrWhiteSpace($UserAiModel)) { $UserAiModel = "gpt-4o" }
+Write-Host ""
+Write-Host "--- AI Configuration ---"
+$UserAiModel = Read-Host "Enter AI Model Name (e.g. gpt-4o, essentialai/rnj-1) [gpt-4o]"
+if ([string]::IsNullOrWhiteSpace($UserAiModel)) { $UserAiModel = "gpt-4o" }
 
-    $UserAiEndpoint = Read-Host "Enter Custom AI Endpoint URL (Leave blank to use default OpenAI/Anthropic/Gemini APIs)"
-
-    "AI_ENDPOINT=`"http://${ServerIP}:4000/v1/chat/completions`"" | Out-File -FilePath deploy/.env -Encoding ASCII
-    "AI_MODEL=`"$UserAiModel`"" | Out-File -FilePath deploy/.env -Encoding ASCII -Append
-    if (-not [string]::IsNullOrWhiteSpace($UserAiEndpoint)) {
-        "AI_CUSTOM_BACKEND=`"$UserAiEndpoint`"" | Out-File -FilePath deploy/.env -Encoding ASCII -Append
-    }
-    Write-Host "------------------------"
-    Write-Host ""
-}
-
-$AiModelMatch = $null
-$AiCustomBackendMatch = $null
-if (Test-Path deploy/.env) {
-    $AiModelMatch = Select-String -Path deploy/.env -Pattern "^AI_MODEL=`"?(.*?)`"?$"
-    $AiCustomBackendMatch = Select-String -Path deploy/.env -Pattern "^AI_CUSTOM_BACKEND=`"?(.*?)`"?$"
-}
-
-$AiModel = if ($AiModelMatch) { $AiModelMatch.Matches.Groups[1].Value } else { "" }
-$AiCustomBackend = if ($AiCustomBackendMatch) { $AiCustomBackendMatch.Matches.Groups[1].Value } else { "" }
+$UserAiEndpoint = Read-Host "Enter Custom AI Endpoint URL (Leave blank to use default OpenAI/Anthropic/Gemini APIs)"
 
 Write-Host "[*] Generating AI Proxy Config..."
 if (Test-Path deploy/litellm-config.yaml) { Remove-Item -Recurse -Force deploy/litellm-config.yaml }
 
-if (-not [string]::IsNullOrWhiteSpace($AiCustomBackend)) {
+if (-not [string]::IsNullOrWhiteSpace($UserAiEndpoint)) {
 $litellmConfig = @"
 model_list:
-  - model_name: $AiModel
+  - model_name: $UserAiModel
     litellm_params:
-      model: openai/$AiModel
-      api_base: $AiCustomBackend
+      model: openai/$UserAiModel
+      api_base: $UserAiEndpoint
 "@
 } else {
 $litellmConfig = @"
@@ -164,32 +144,22 @@ model_list:
 }
 $litellmConfig | Out-File -FilePath deploy/litellm-config.yaml -Encoding ASCII
 
-$AiModelMatch = $null
-$AiEndpointMatch = $null
-if (Test-Path deploy/.env) {
-    $AiModelMatch = Select-String -Path deploy/.env -Pattern "^AI_MODEL=`"?(.*?)`"?$"
-    $AiEndpointMatch = Select-String -Path deploy/.env -Pattern "^AI_ENDPOINT=`"?(.*?)`"?$"
-}
-
-$AiModel = if ($AiModelMatch) { $AiModelMatch.Matches.Groups[1].Value } else { "" }
-$AiEndpoint = if ($AiEndpointMatch) { $AiEndpointMatch.Matches.Groups[1].Value } else { "" }
-
 $appConfig = @"
 {
   "database": {
     "provider": "supabase",
     "endpoint": "http://${ServerIP}:8000",
-    "apiKey": "${AnonKey}"
+    "apiKey": "$AnonKey"
   },
   "ai": {
     "enabled": true,
-    "endpointUrl": "${AiEndpoint}",
-    "model": "${AiModel}",
+    "endpointUrl": "http://${ServerIP}:4000/v1/chat/completions",
+    "model": "$UserAiModel",
     "proxy": true
   }
 }
 "@
-Set-Content -Path deploy/config.json -Value $appConfig
+$appConfig | Out-File -FilePath deploy/config.json -Encoding ASCII
 
 Write-Host "[*] Starting Control Drift and AI Proxy..."
 Set-Location deploy
