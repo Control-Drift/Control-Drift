@@ -34,9 +34,9 @@ if ([string]::IsNullOrWhiteSpace($ServerIP)) {
 Write-Host "[*] Fetching official Supabase docker repository (using sparse-checkout for speed)..."
 if (Test-Path supabase) {
     Write-Host "[*] Tearing down existing deployment to prevent dangling containers..."
-    if (Test-Path "supabase/docker") {
+    if (Test-Path "supabase/docker/docker-compose.yml") {
         Set-Location supabase/docker
-        docker compose down -v
+        docker compose down -v 2>$null
         Set-Location ../../
     }
     Remove-Item -Recurse -Force supabase

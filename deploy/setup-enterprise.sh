@@ -34,9 +34,9 @@ SERVER_IP=${SERVER_IP:-localhost}
 echo "[*] Fetching official Supabase docker repository (using sparse-checkout for speed)..."
 if [ -d "supabase" ]; then
     echo "[*] Tearing down existing deployment to prevent dangling containers..."
-    if [ -d "supabase/docker" ]; then
+    if [ -f "supabase/docker/docker-compose.yml" ]; then
         cd supabase/docker
-        docker compose down -v
+        docker compose down -v || true
         cd ../../
     fi
     rm -rf supabase
