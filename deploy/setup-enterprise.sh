@@ -46,8 +46,8 @@ echo "[*] Copying default Supabase configuration..."
 cp .env.example .env
 sed -i "s|http://localhost:8000|http://${SERVER_IP}:8000|g" .env
 sed -i "s|http://localhost:3000|http://${SERVER_IP}:3000|g" .env
+sed -i 's/^COMPOSE_FILE=/#COMPOSE_FILE=/' .env
 echo "GOTRUE_MAILER_AUTOCONFIRM=true" >> .env
-echo "COMPOSE_FILE=docker-compose.yml:docker-compose.override.yml" >> .env
 
 echo "[*] Exposing Supabase Studio and Injecting Schema..."
 cat << EOF > docker-compose.override.yml

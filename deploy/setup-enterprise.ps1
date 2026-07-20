@@ -44,9 +44,8 @@ Set-Location docker
 
 Write-Host "[*] Copying default Supabase configuration..."
 Copy-Item .env.example .env
-(Get-Content .env) -replace 'http://localhost:8000', "http://${ServerIP}:8000" -replace 'http://localhost:3000', "http://${ServerIP}:3000" | Set-Content .env
+(Get-Content .env) -replace 'http://localhost:8000', "http://${ServerIP}:8000" -replace 'http://localhost:3000', "http://${ServerIP}:3000" -replace '^COMPOSE_FILE=', '#COMPOSE_FILE=' | Set-Content .env
 Add-Content -Path .env -Value "GOTRUE_MAILER_AUTOCONFIRM=true"
-Add-Content -Path .env -Value "COMPOSE_FILE=docker-compose.yml:docker-compose.override.yml"
 
 Write-Host "[*] Exposing Supabase Studio and Injecting Schema..."
 $overrideConfig = @"
