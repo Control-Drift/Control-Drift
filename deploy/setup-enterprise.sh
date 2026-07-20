@@ -91,7 +91,8 @@ while [ $WAIT_TIME -lt 600 ]; do
     sleep 5
     WAIT_TIME=$((WAIT_TIME + 5))
     STATUS=$(docker inspect --format="{{.State.Health.Status}}" supabase-db 2>/dev/null || true)
-    if [ "$STATUS" = "healthy" ]; then
+    echo "Current supabase-db status: '$STATUS'"
+    if echo "$STATUS" | grep -q "healthy"; then
         IS_HEALTHY=true
         break
     fi

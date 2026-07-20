@@ -92,7 +92,8 @@ while ($WaitTime -lt 600) {
     Start-Sleep -Seconds 5
     $WaitTime += 5
     $status = docker inspect --format="{{.State.Health.Status}}" supabase-db 2>$null
-    if ($status -eq "healthy") {
+    Write-Host "Current supabase-db status: '$status'"
+    if ($status -match "healthy") {
         $IsHealthy = $true
         break
     }
