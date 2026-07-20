@@ -70,7 +70,7 @@ services:
       - `"54320:5432`"
   db:
     healthcheck:
-      start_period: 120s
+      start_period: 1800s
     volumes:
       - ./volumes/db/init/01-schema.sql:/docker-entrypoint-initdb.d/init-scripts/99-control-drift.sql:Z
 "@
@@ -85,10 +85,10 @@ Write-Host "[*] Starting Supabase backend stack..."
 docker compose pull
 docker compose up -d
 
-Write-Host "[*] Waiting up to 10 minutes for database initialization and health checks (this takes longer on low-spec servers)..."
+Write-Host "[*] Waiting up to 30 minutes for database initialization and health checks (this takes a very long time on low-spec servers)..."
 $WaitTime = 0
 $IsHealthy = $false
-while ($WaitTime -lt 600) {
+while ($WaitTime -lt 1800) {
     Start-Sleep -Seconds 5
     $WaitTime += 5
     $status = docker inspect --format="{{.State.Health.Status}}" supabase-db 2>$null
