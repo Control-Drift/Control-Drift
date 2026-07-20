@@ -32,7 +32,15 @@ if ([string]::IsNullOrWhiteSpace($ServerIP)) {
 }
 
 Write-Host "[*] Fetching official Supabase docker repository (using sparse-checkout for speed)..."
-if (Test-Path supabase) { Remove-Item -Recurse -Force supabase }
+if (Test-Path supabase) {
+    Write-Host "[*] Tearing down existing deployment to prevent dangling containers..."
+    if (Test-Path "supabase/docker") {
+        Set-Location supabase/docker
+        docker compose down -v
+        Set-Location ../../
+    }
+    Remove-Item -Recurse -Force supabase
+}
 New-Item -ItemType Directory -Force -Path supabase | Out-Null
 Set-Location supabase
 git init
@@ -44,7 +52,7 @@ Set-Location docker
 
 Write-Host "[*] Copying default Supabase configuration..."
 Copy-Item .env.example .env
-(Get-Content .env) -replace 'http://localhost:8000', "http://${ServerIP}:8000" -replace 'http://localhost:3000', "http://${ServerIP}:3000" -replace '^COMPOSE_FILE=', '#COMPOSE_FILE=' | Set-Content .env
+(Get-Content .env) -replace '^API_EXTERNAL_URL=.*', "API_EXTERNAL_URL=http://${ServerIP}:8000/auth/v1" -replace '^SUPABASE_PUBLIC_URL=.*', "SUPABASE_PUBLIC_URL=http://${ServerIP}:8000" -replace '^SITE_URL=.*', "SITE_URL=http://${ServerIP}:3000" -replace '^ADDITIONAL_REDIRECT_URLS=.*', "ADDITIONAL_REDIRECT_URLS=http://${ServerIP},http://${ServerIP}:80,http://${ServerIP}:3000,http://localhost:3000,http://localhost:80" -replace '^COMPOSE_FILE=', '#COMPOSE_FILE=' | Set-Content .env
 Add-Content -Path .env -Value "GOTRUE_MAILER_AUTOCONFIRM=true"
 
 Write-Host "[*] Exposing Supabase Studio and Injecting Schema..."
@@ -65,9 +73,9 @@ Write-Host "[*] Injecting Database Schema for Auto-Initialization..."
 New-Item -ItemType Directory -Force -Path "volumes/db/init" | Out-Null
 Copy-Item ../../deploy/schema.sql volumes/db/init/01-schema.sql
 
-Write-Host "[*] Starting Supabase backend stack..."
+Write-Host "[*] Starting Supabase backend stack (this will block until all containers are fully healthy)..."
 docker compose pull
-docker compose up -d
+docker compose up -d --wait
 
 Set-Location ../../
 

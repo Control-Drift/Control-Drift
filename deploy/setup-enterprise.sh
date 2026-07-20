@@ -32,7 +32,15 @@ read -p "Enter the IP address or domain for this server (default: localhost): " 
 SERVER_IP=${SERVER_IP:-localhost}
 
 echo "[*] Fetching official Supabase docker repository (using sparse-checkout for speed)..."
-rm -rf supabase
+if [ -d "supabase" ]; then
+    echo "[*] Tearing down existing deployment to prevent dangling containers..."
+    if [ -d "supabase/docker" ]; then
+        cd supabase/docker
+        docker compose down -v
+        cd ../../
+    fi
+    rm -rf supabase
+fi
 mkdir -p supabase
 cd supabase
 git init
@@ -44,8 +52,10 @@ cd docker
 
 echo "[*] Copying default Supabase configuration..."
 cp .env.example .env
-sed -i "s|http://localhost:8000|http://${SERVER_IP}:8000|g" .env
-sed -i "s|http://localhost:3000|http://${SERVER_IP}:3000|g" .env
+sed -i "s|^API_EXTERNAL_URL=.*|API_EXTERNAL_URL=http://${SERVER_IP}:8000/auth/v1|g" .env
+sed -i "s|^SUPABASE_PUBLIC_URL=.*|SUPABASE_PUBLIC_URL=http://${SERVER_IP}:8000|g" .env
+sed -i "s|^SITE_URL=.*|SITE_URL=http://${SERVER_IP}:3000|g" .env
+sed -i "s|^ADDITIONAL_REDIRECT_URLS=.*|ADDITIONAL_REDIRECT_URLS=http://${SERVER_IP},http://${SERVER_IP}:80,http://${SERVER_IP}:3000,http://localhost:3000,http://localhost:80|g" .env
 sed -i 's/^COMPOSE_FILE=/#COMPOSE_FILE=/' .env
 echo "GOTRUE_MAILER_AUTOCONFIRM=true" >> .env
 
@@ -66,9 +76,9 @@ echo "[*] Injecting Database Schema for Auto-Initialization..."
 mkdir -p volumes/db/init
 cp ../../deploy/schema.sql volumes/db/init/01-schema.sql
 
-echo "[*] Starting Supabase backend stack..."
+echo "[*] Starting Supabase backend stack (this will block until all containers are fully healthy)..."
 docker compose pull
-docker compose up -d
+docker compose up -d --wait
 
 cd ../../
 
