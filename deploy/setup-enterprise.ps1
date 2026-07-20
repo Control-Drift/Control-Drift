@@ -107,6 +107,7 @@ Write-Host "[+] Schema injected successfully!"
 Set-Location ../../
 
 Write-Host "[*] Generating LiteLLM AI Proxy Configuration..."
+if (Test-Path deploy/litellm-config.yaml) { Remove-Item -Recurse -Force deploy/litellm-config.yaml }
 $litellmConfig = @"
 model_list:
   - model_name: gpt-4o
@@ -122,6 +123,7 @@ model_list:
 Set-Content -Path deploy/litellm-config.yaml -Value $litellmConfig
 
 Write-Host "[*] Generating Control Drift Config..."
+if (Test-Path deploy/config.json) { Remove-Item -Recurse -Force deploy/config.json }
 $appConfig = @"
 {
   "database": {

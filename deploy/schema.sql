@@ -1,8 +1,8 @@
 -- Control Drift - Enterprise Supabase Schema
 -- Run this script in the Supabase SQL Editor to initialize your database structure.
 
--- 1. Create the Exercises table
-CREATE TABLE IF NOT EXISTS public.exercises (
+-- 1. Create the Events table
+CREATE TABLE IF NOT EXISTS public.events (
     "id" text PRIMARY KEY,
     "ttp" text,
     "simulation" text,

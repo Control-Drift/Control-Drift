@@ -107,6 +107,7 @@ echo "[+] Schema injected successfully!"
 cd ../../
 
 echo "[*] Generating LiteLLM AI Proxy Configuration..."
+rm -rf deploy/litellm-config.yaml 2>/dev/null || true
 cat <<EOF > deploy/litellm-config.yaml
 model_list:
   - model_name: gpt-4o
@@ -121,6 +122,7 @@ model_list:
 EOF
 
 echo "[*] Generating Control Drift Config..."
+rm -rf deploy/config.json 2>/dev/null || true
 cat <<EOF > deploy/config.json
 {
   "database": {
