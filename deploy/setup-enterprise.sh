@@ -35,7 +35,7 @@ echo "[*] Force-removing any remaining Supabase containers from previous failed 
 docker ps -a --filter "name=supabase-" -q | xargs -r docker rm -f -v >/dev/null 2>&1 || true
 docker ps -a --filter "name=realtime-dev.supabase-realtime" -q | xargs -r docker rm -f -v >/dev/null 2>&1 || true
 
-echo "[*] Fetching official Supabase docker repository (via fast tarball download)..."
+echo "[*] Fetching official Supabase docker repository (via Git sparse-checkout)..."
 if [ -d "supabase" ]; then
     echo "[*] Tearing down existing deployment networks..."
     if [ -f "supabase/docker/docker-compose.yml" ]; then
@@ -45,10 +45,14 @@ if [ -d "supabase" ]; then
     fi
     rm -rf supabase
 fi
+git clone --depth 1 --filter=blob:none --sparse https://github.com/supabase/supabase.git supabase_temp >/dev/null 2>&1
+cd supabase_temp
+git sparse-checkout set docker >/dev/null 2>&1
+cd ..
 mkdir -p supabase
-cd supabase
-curl -sL https://github.com/supabase/supabase/archive/refs/heads/master.tar.gz | tar -xz --strip-components=1 "supabase-master/docker"
-cd docker
+mv supabase_temp/docker supabase/docker
+rm -rf supabase_temp
+cd supabase/docker
 
 echo "[*] Copying default Supabase configuration..."
 cp .env.example .env
@@ -137,6 +141,8 @@ echo "[*] Generating AI Proxy Config..."
 rm -rf deploy/litellm-config.yaml 2>/dev/null || true
 
 cat <<EOF > deploy/litellm-config.yaml
+litellm_settings:
+  master_key: dummy
 model_list:
   - model_name: $user_ai_model
     litellm_params:
