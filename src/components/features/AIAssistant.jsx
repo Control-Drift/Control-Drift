@@ -320,8 +320,8 @@ export default function AIAssistant() {
                       <div key={i} className={`ai-message ${msg.role}`} style={{ maxWidth: isFullScreen ? '80%' : '85%' }}>
                         {msg.role === 'assistant' ? (
                           <div style={{ display: 'flex', gap: '12px' }}>
-                              <div style={{ width: '28px', height: '28px', flexShrink: 0, marginTop: '2px', background: 'rgba(5, 5, 10, 0.5)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(126,34,206,0.3)', boxShadow: '0 0 10px rgba(156, 39, 176, 0.2)' }}>
-                                  <img src={emblem} alt="AI" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                              <div style={{ width: '28px', height: '28px', flexShrink: 0, marginTop: '2px', background: 'rgba(5, 5, 10, 0.5)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(126,34,206,0.3)', boxShadow: '0 0 10px rgba(156, 39, 176, 0.2)', overflow: 'hidden' }}>
+                                  <img src={emblem} alt="AI" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
                               </div>
                               <div style={{ flex: 1, overflowX: 'auto' }}>
                                  <MarkdownRenderer content={msg.content} onOpenStudio={setStudioCode} />
@@ -345,8 +345,8 @@ export default function AIAssistant() {
                     {isTyping && (
                       <div className="ai-message assistant" style={{ background: 'transparent', border: 'none' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '5px 0', color: 'var(--accent-secondary)' }}>
-                          <div className="ai-think-spin" style={{ width: '28px', height: '28px', background: 'rgba(5, 5, 10, 0.5)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(126,34,206,0.3)', boxShadow: '0 0 15px rgba(156, 39, 176, 0.6)' }}>
-                              <img src={emblem} alt="AI Typing" style={{ width: '18px', height: '18px', objectFit: 'contain' }} />
+                          <div className="ai-think-spin" style={{ width: '28px', height: '28px', background: 'linear-gradient(135deg, rgba(29,78,216,0.4), rgba(126,34,206,0.4))', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(126,34,206,0.6)', boxShadow: '0 0 15px rgba(156, 39, 176, 0.6)' }}>
+                              <BrainCircuit size={16} color="var(--accent-secondary)" />
                           </div>
                           <span style={{ fontSize: '0.85rem', fontStyle: 'italic', opacity: 0.8, color: 'var(--text-secondary)' }} className="animate-pulse">Thinking...</span>
                         </div>
