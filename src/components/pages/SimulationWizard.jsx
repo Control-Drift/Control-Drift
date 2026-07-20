@@ -598,40 +598,15 @@ export default function SimulationWizard() {
      }
       setIsMappingTTPs(true);
       try {
-          // Generate the hyper-compressed dictionary, EXCLUDING Recon and Resource Development
-          let dictionaryLines = [];
-          
-          Object.keys(mitreData).forEach(tacticName => {
-              if (tacticName.toLowerCase() === 'reconnaissance' || tacticName.toLowerCase() === 'resource development') {
-                  return; // Skip these to save massive context tokens
-              }
-              const tactic = mitreData[tacticName];
-              
-              tactic.techniques.forEach(tech => {
-                  let line = `${tech.id} ${tech.name}`;
-                  if (tech.subTechniques && tech.subTechniques.length > 0) {
-                      let subs = tech.subTechniques.map(sub => {
-                          let dec = sub.id.split('.')[1];
-                          return `${dec} ${sub.name}`;
-                      });
-                      line += `(${subs.join(',')})`;
-                  }
-                  dictionaryLines.push(line);
-              });
-          });
-          
-          // Join with pipes to completely eliminate newlines and condense the string
-          const dictionaryString = dictionaryLines.join('|');
-
-          const sysPrompt = `You are a top-tier Red Teamer. You are given a scenario and an ultra-compressed MITRE ATT&CK Dictionary. 
-Your goal is to map the scenario to the exact T-codes.
+          const sysPrompt = `You are a top-tier Red Teamer. You are given a scenario. 
+Your goal is to map the scenario to the exact MITRE ATT&CK T-codes.
 
 CRITICAL INSTRUCTIONS:
-1. FIRST, write a deep, step-by-step analysis of the attacker's actions to gain a full grasp of the scenario. Do NOT look at the Dictionary yet.
-2. SECOND, ONLY after your analysis is complete, review the provided MITRE Dictionary and extract the exact Txxxx or Txxxx.xxx IDs that apply.
+1. FIRST, write a deep, step-by-step analysis of the attacker's actions to gain a full grasp of the scenario.
+2. SECOND, ONLY after your analysis is complete, extract the exact Txxxx or Txxxx.xxx IDs that apply.
 3. Finally, at the very end of your response, you MUST output a single line starting with "MAPPED_IDS:" followed by a comma-separated list of the exact IDs you selected.`;
           
-          const prompt = `Target Environment: ${simulationDetails.environment || 'None provided'}\nSimulation Scenario: ${simulationDetails.goals || 'None provided'}\n\nUltra-Compressed MITRE Dictionary:\n${dictionaryString}\n\nTask: Analyze deeply first, then review the Dictionary and list the MAPPED_IDS at the end.`;
+          const prompt = `Target Environment: ${simulationDetails.environment || 'None provided'}\nSimulation Scenario: ${simulationDetails.goals || 'None provided'}\n\nTask: Analyze deeply first, then list the MAPPED_IDS at the end.`;
 
           let currentFoundIds = new Set();
           let totalFound = 0;
