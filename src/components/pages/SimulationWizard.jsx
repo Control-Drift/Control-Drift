@@ -788,20 +788,32 @@ CRITICAL INSTRUCTIONS:
       }
       setMappingProcedureId(proc.id);
       try {
-          const sysPrompt = "You are an expert Red Teamer mapping procedures to the MITRE ATT&CK framework. You must first analyze the procedure step-by-step inside <reasoning> tags to determine the exact actions occurring. After your reasoning, output a final comma-separated list of the relevant Technique IDs (e.g., T1055, T1059.001) inside <final_answer> tags. Do not output anything outside of these two tags.";
+          const sysPrompt = `You are an expert Red Teamer mapping procedures to the MITRE ATT&CK framework.
+You MUST output your response as a valid JSON object with exactly two keys:
+1. "reasoning": A string where you analyze the procedure step-by-step.
+2. "technique_ids": An array of strings containing the final MITRE ATT&CK Technique IDs (e.g., ["T1055", "T1059.001"]).
+Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
           
           let procCode = proc.payloadCode || '';
 
-          
-          const prompt = `Procedure Details:\nName/Description: ${proc.name || 'None provided'}\nPayload Code: ${procCode || 'None provided'}\n\nTask: Analyze the procedure and map it to the most relevant MITRE ATT&CK technique IDs. Use <reasoning> tags for your analysis, then provide the IDs in <final_answer> tags.`;
+          const prompt = `Procedure Details:\nName/Description: ${proc.name || 'None provided'}\nPayload Code: ${procCode || 'None provided'}\n\nTask: Analyze the procedure and map it to the most relevant MITRE ATT&CK technique IDs. Return your analysis and final IDs in the requested JSON format.`;
           
           const result = await generateAIContent(prompt, sysPrompt);
           
-          // Parse out the final answer to avoid capturing T-codes mentioned during reasoning
-          const finalAnswerMatch = result.match(/<final_answer>([\s\S]*?)<\/final_answer>/i);
-          const answerText = finalAnswerMatch ? finalAnswerMatch[1] : result;
-          
-          const mappedIds = answerText.match(/T\d{4}(?:\.\d{3})?/gi) || [];
+          let mappedIds = [];
+          try {
+              // Strip out any markdown formatting gpt-4o might try to add
+              const cleanJson = result.replace(/```json/gi, '').replace(/```/g, '').trim();
+              const parsed = JSON.parse(cleanJson);
+              if (parsed.technique_ids && Array.isArray(parsed.technique_ids)) {
+                  mappedIds = parsed.technique_ids;
+              }
+          } catch (e) {
+              console.warn("Failed to parse JSON from AI, falling back to regex.", e);
+              // Fallback regex if the model absolutely refused to output JSON
+              const cleanChunk = result.replace(/<think>[\s\S]*?(?:<\/think>|$)/gi, '');
+              mappedIds = cleanChunk.match(/T\d{4}(?:\.\d{3})?/gi) || [];
+          }
           
           // Validate against our MITRE dataset to prevent hallucinated IDs from breaking the UI
           const allValidMitreIds = new Set();
