@@ -40,10 +40,8 @@ if [ -d "supabase" ]; then
         cd ../../
     fi
     echo "[*] Force-removing any remaining Supabase containers..."
-    CONTAINERS=$(docker ps -a --filter "name=supabase-" -q)
-    if [ -n "$CONTAINERS" ]; then docker rm -f -v $CONTAINERS >/dev/null 2>&1 || true; fi
-    CONTAINERS=$(docker ps -a --filter "name=realtime-dev.supabase-realtime" -q)
-    if [ -n "$CONTAINERS" ]; then docker rm -f -v $CONTAINERS >/dev/null 2>&1 || true; fi
+    docker ps -a --filter "name=supabase-" -q | xargs -r docker rm -f -v >/dev/null 2>&1 || true
+    docker ps -a --filter "name=realtime-dev.supabase-realtime" -q | xargs -r docker rm -f -v >/dev/null 2>&1 || true
     rm -rf supabase
 fi
 mkdir -p supabase

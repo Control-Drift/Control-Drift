@@ -40,10 +40,8 @@ if (Test-Path supabase) {
         Set-Location ../../
     }
     Write-Host "[*] Force-removing any remaining Supabase containers..."
-    $containers = docker ps -a --filter "name=supabase-" -q
-    if ($containers) { docker rm -f -v $containers 2>$null }
-    $containers = docker ps -a --filter "name=realtime-dev.supabase-realtime" -q
-    if ($containers) { docker rm -f -v $containers 2>$null }
+    docker ps -a --filter "name=supabase-" -q | ForEach-Object { docker rm -f -v $_ 2>$null }
+    docker ps -a --filter "name=realtime-dev.supabase-realtime" -q | ForEach-Object { docker rm -f -v $_ 2>$null }
     Remove-Item -Recurse -Force supabase
 }
 New-Item -ItemType Directory -Force -Path supabase | Out-Null
