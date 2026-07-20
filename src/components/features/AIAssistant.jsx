@@ -321,7 +321,7 @@ export default function AIAssistant() {
                         {msg.role === 'assistant' ? (
                           <div style={{ display: 'flex', gap: '12px' }}>
                               <div style={{ width: '28px', height: '28px', flexShrink: 0, marginTop: '2px', background: 'rgba(5, 5, 10, 0.5)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(126,34,206,0.3)', boxShadow: '0 0 10px rgba(156, 39, 176, 0.2)', overflow: 'hidden' }}>
-                                  <img src={emblem} alt="AI" style={{ width: '24px', height: '24px', objectFit: 'contain' }} />
+                                  <img src={emblem} alt="AI" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
                               </div>
                               <div style={{ flex: 1, overflowX: 'auto' }}>
                                  <MarkdownRenderer content={msg.content} onOpenStudio={setStudioCode} />
