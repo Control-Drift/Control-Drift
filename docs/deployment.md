@@ -56,15 +56,10 @@ Run the automated enterprise setup script for your operating system. This script
 bash deploy/setup-enterprise.sh
 ```
 
-### 5. Link the Database to Control Drift
-Once the script finishes, everything is running! Control Drift just needs the API key for your newly created database.
+### 5. Verify the Deployment
+Once the script finishes, everything is running! The deployment script automatically fetches your generated Supabase `ANON_KEY` and injects it into `deploy/config.json` for you.
 
-1. Open your browser and go to **`http://<SERVER_IP>:3000`** (This is your Supabase Studio).
-2. Look in the project settings for your **API Keys** and copy the `anon` / `public` key.
-3. Open the `deploy/config.json` file in your repository.
-4. Replace `<YOUR_SUPABASE_ANON_KEY>` with the key you just copied.
-
-*(Note: Because `config.json` is mounted directly into the container, you do not need to restart Docker after saving the file).*
+*(Note: Because `config.json` is mounted directly into the container, if you ever need to manually rotate or update your API key in the future, you do not need to restart Docker after saving the file).*
 
 ---
 
@@ -105,3 +100,33 @@ If your organization implements strict RLS policies, you can assign explicit rol
 1. Navigate to the **Table Editor** in Supabase Studio.
 2. Select the `user_roles` table.
 3. Create a new row mapping the user's `uuid` (from the `auth.users` table) to the desired role string. This provides the groundwork for scalable, multi-tenant permission models.
+
+---
+
+## Managing the Services
+
+If you ever need to restart your server or manually shut down the backend, use the following commands:
+
+### Stopping and Starting the Database (Supabase)
+The Supabase stack is managed via Docker Compose within its own directory:
+```bash
+# Navigate to the initialized docker directory
+cd supabase/docker/
+
+# To shut down the database stack
+docker compose down
+
+# To start the database stack back up
+docker compose up -d
+```
+*(Because the database volumes are physically mounted on your server, all of your user accounts, tables, and settings are completely saved and will persist through shutdowns!)*
+
+### Stopping and Starting the AI Proxy (LiteLLM)
+Because the proxy was launched as a standalone container rather than part of the Compose stack, you can manage it with standard Docker commands from anywhere on the server:
+```bash
+# To shut down the proxy
+docker stop control-drift-proxy
+
+# To start the proxy back up
+docker start control-drift-proxy
+```
