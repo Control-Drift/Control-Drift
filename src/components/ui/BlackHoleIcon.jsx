@@ -18,24 +18,25 @@ export default function BlackHoleIcon({ size = 24, className = "", style = {} })
           <stop offset="100%" stopColor="#2563eb" />
         </linearGradient>
         
+        {/* Foolproof mask: Hides ONLY the top half of the central void */}
         <mask id="bh-mask">
           <rect width="28" height="28" fill="white" />
-          {/* A precise path covering only the top half of the central void to mask out the back ellipses */}
-          <path d="M 9.5 14 A 4.5 4.5 0 0 1 18.5 14 Z" fill="black" />
+          <circle cx="14" cy="14" r="4.5" fill="black" />
+          <rect x="0" y="14" width="28" height="14" fill="white" />
         </mask>
       </defs>
 
-      {/* 1. Concentric Circles (2 glowing rings + 1 black void) */}
-      {/* Glows */}
+      {/* 1. Concentric Circles (Outer vertical rings) */}
       <circle cx="14" cy="14" r="8.5" stroke="url(#bh-grad)" strokeWidth="3.5" fill="none" opacity="0.4" style={{ filter: 'blur(2px)' }} />
       <circle cx="14" cy="14" r="6.5" stroke="url(#bh-grad)" strokeWidth="3.5" fill="none" opacity="0.4" style={{ filter: 'blur(2px)' }} />
-      {/* Cores */}
       <circle cx="14" cy="14" r="8.5" stroke="url(#bh-grad)" strokeWidth="1.2" fill="none" />
       <circle cx="14" cy="14" r="6.5" stroke="url(#bh-grad)" strokeWidth="1.2" fill="none" />
-      {/* Black Void */}
-      <circle cx="14" cy="14" r="4.5" fill="#0a0b10" />
+      
+      {/* 2. Central Void (with glowing circumference) */}
+      <circle cx="14" cy="14" r="4.5" stroke="url(#bh-grad)" strokeWidth="3.5" fill="none" opacity="0.4" style={{ filter: 'blur(2px)' }} />
+      <circle cx="14" cy="14" r="4.5" stroke="url(#bh-grad)" strokeWidth="1.2" fill="#0a0b10" />
 
-      {/* 2. Rings around them (Horizontal Ellipses, back-half masked out by the void) */}
+      {/* 3. Rings around them (Horizontal Ellipses, back-half masked out by the void) */}
       <g mask="url(#bh-mask)">
         {/* Glows */}
         <ellipse cx="14" cy="14" rx="12" ry="3.5" stroke="url(#bh-grad)" strokeWidth="3.5" fill="none" opacity="0.4" style={{ filter: 'blur(2px)' }} />
