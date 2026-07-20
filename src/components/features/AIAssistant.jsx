@@ -21,6 +21,7 @@ import { useAppContext } from '../../AppContext';
 import CodeStudio from '../pages/CodeStudio';
 import MarkdownRenderer from '../ui/MarkdownRenderer';
 import emblem from '../../assets/drift_emblem.png';
+import BlackHoleIcon from '../ui/BlackHoleIcon';
 
 export default function AIAssistant() {
   const { generateAIContentStream, activeAiContext, aiSettings, isAiActive } = useAppContext();
@@ -321,7 +322,7 @@ export default function AIAssistant() {
                         {msg.role === 'assistant' ? (
                           <div style={{ display: 'flex', gap: '12px' }}>
                               <div style={{ width: '28px', height: '28px', flexShrink: 0, marginTop: '2px', background: 'rgba(5, 5, 10, 0.5)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(126,34,206,0.3)', boxShadow: '0 0 10px rgba(156, 39, 176, 0.2)', overflow: 'hidden' }}>
-                                  <img src={emblem} alt="AI" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
+                                  <BlackHoleIcon style={{ width: '100%', height: '100%' }} />
                               </div>
                               <div style={{ flex: 1, overflowX: 'auto' }}>
                                  <MarkdownRenderer content={msg.content} onOpenStudio={setStudioCode} />
@@ -346,7 +347,7 @@ export default function AIAssistant() {
                       <div className="ai-message assistant" style={{ background: 'transparent', border: 'none' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '5px 0', color: 'var(--accent-secondary)' }}>
                           <div className="ai-think-spin" style={{ width: '28px', height: '28px', background: 'linear-gradient(135deg, rgba(29,78,216,0.4), rgba(126,34,206,0.4))', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(126,34,206,0.6)', boxShadow: '0 0 15px rgba(156, 39, 176, 0.6)' }}>
-                              <BrainCircuit size={16} color="var(--accent-secondary)" />
+                              <BlackHoleIcon size={24} />
                           </div>
                           <span style={{ fontSize: '0.85rem', fontStyle: 'italic', opacity: 0.8, color: 'var(--text-secondary)' }} className="animate-pulse">Thinking...</span>
                         </div>
