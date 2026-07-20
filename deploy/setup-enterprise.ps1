@@ -113,7 +113,7 @@ $AnonKey = (Select-String -Path supabase/docker/.env -Pattern "^ANON_KEY=(.*)$")
 Write-Host ""
 Write-Host "--- AI Configuration ---"
 Write-Host "Select the AI Provider:"
-Write-Host "1) OpenAI (or OpenAI-compatible local models like LM Studio)"
+Write-Host "1) OpenAI (or OpenAI-compatible models)"
 Write-Host "2) Anthropic (Claude)"
 Write-Host "3) Gemini"
 $ProviderChoice = Read-Host "Choice [1]"

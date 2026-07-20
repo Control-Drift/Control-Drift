@@ -113,7 +113,7 @@ ANON_KEY=$(grep '^ANON_KEY=' supabase/docker/.env | cut -d '=' -f2)
 echo ""
 echo "--- AI Configuration ---"
 echo "Select the AI Provider:"
-echo "1) OpenAI (or OpenAI-compatible local models like LM Studio)"
+echo "1) OpenAI (or OpenAI-compatible models)"
 echo "2) Anthropic (Claude)"
 echo "3) Gemini"
 read -p "Choice [1]: " provider_choice
