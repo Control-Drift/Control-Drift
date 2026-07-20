@@ -112,10 +112,17 @@ $AnonKey = (Select-String -Path supabase/docker/.env -Pattern "^ANON_KEY=(.*)$")
 
 Write-Host ""
 Write-Host "--- AI Configuration ---"
-Write-Host "Note: To keep your API keys secure, all traffic will be automatically routed through the internal LiteLLM proxy."
+Write-Host "Select the AI Provider:"
+Write-Host "1) OpenAI (or OpenAI-compatible local models like LM Studio)"
+Write-Host "2) Anthropic (Claude)"
+Write-Host "3) Gemini"
+$ProviderChoice = Read-Host "Choice [1]"
 
-$UserProvider = Read-Host "Enter LiteLLM Provider Prefix (e.g. openai, anthropic, gemini) [openai]"
-if ([string]::IsNullOrWhiteSpace($UserProvider)) { $UserProvider = "openai" }
+switch ($ProviderChoice) {
+    "2" { $UserProvider = "anthropic" }
+    "3" { $UserProvider = "gemini" }
+    default { $UserProvider = "openai" }
+}
 
 $UserAiModel = Read-Host "Enter AI Model Name (e.g. gpt-4o, essentialai/rnj-1) [gpt-4o]"
 if ([string]::IsNullOrWhiteSpace($UserAiModel)) { $UserAiModel = "gpt-4o" }

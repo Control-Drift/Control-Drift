@@ -112,10 +112,17 @@ ANON_KEY=$(grep '^ANON_KEY=' supabase/docker/.env | cut -d '=' -f2)
 
 echo ""
 echo "--- AI Configuration ---"
-echo "Note: To keep your API keys secure, all traffic will be automatically routed through the internal LiteLLM proxy."
+echo "Select the AI Provider:"
+echo "1) OpenAI (or OpenAI-compatible local models like LM Studio)"
+echo "2) Anthropic (Claude)"
+echo "3) Gemini"
+read -p "Choice [1]: " provider_choice
 
-read -p "Enter LiteLLM Provider Prefix (e.g. openai, anthropic, gemini) [openai]: " user_provider
-user_provider=${user_provider:-"openai"}
+case "$provider_choice" in
+  2) user_provider="anthropic" ;;
+  3) user_provider="gemini" ;;
+  *) user_provider="openai" ;;
+esac
 
 read -p "Enter AI Model Name (e.g. gpt-4o, essentialai/rnj-1) [gpt-4o]: " user_ai_model
 user_ai_model=${user_ai_model:-"gpt-4o"}
