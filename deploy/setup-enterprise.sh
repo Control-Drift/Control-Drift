@@ -124,8 +124,7 @@ case "$provider_choice" in
   *) user_provider="openai" ;;
 esac
 
-read -p "Enter AI Model Name (e.g. gpt-4o, essentialai/rnj-1) [gpt-4o]: " user_ai_model
-user_ai_model=${user_ai_model:-"gpt-4o"}
+read -p "Enter AI Model Name: " user_ai_model
 
 read -p "Enter Target AI Endpoint URL (Leave blank for default public providers like OpenAI): " user_ai_endpoint
 

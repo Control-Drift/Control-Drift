@@ -124,8 +124,7 @@ switch ($ProviderChoice) {
     default { $UserProvider = "openai" }
 }
 
-$UserAiModel = Read-Host "Enter AI Model Name (e.g. gpt-4o, essentialai/rnj-1) [gpt-4o]"
-if ([string]::IsNullOrWhiteSpace($UserAiModel)) { $UserAiModel = "gpt-4o" }
+$UserAiModel = Read-Host "Enter AI Model Name"
 
 $UserAiEndpoint = Read-Host "Enter Target AI Endpoint URL (Leave blank for default public providers like OpenAI)"
 
