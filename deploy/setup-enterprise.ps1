@@ -71,15 +71,10 @@ services:
   db:
     healthcheck:
       start_period: 1800s
-    volumes:
-      - ./volumes/db/init/01-schema.sql:/docker-entrypoint-initdb.d/init-scripts/99-control-drift.sql:Z
 "@
 Set-Content -Path docker-compose.override.yml -Value $overrideConfig
 
-Write-Host "[*] Injecting Database Schema for Auto-Initialization..."
-New-Item -ItemType Directory -Force -Path "volumes/db/init" | Out-Null
-Copy-Item ../../deploy/schema.sql volumes/db/init/01-schema.sql
-try { chmod -R 777 volumes/db/init 2>$null } catch {}
+Write-Host "[*] Preparing to start Supabase stack..."
 
 Write-Host "[*] Starting Supabase backend stack..."
 docker compose pull
@@ -99,10 +94,14 @@ while ($WaitTime -lt 1800) {
     }
 }
 if (-not $IsHealthy) {
-    Write-Error "Error: supabase-db failed to become healthy within 10 minutes."
+    Write-Error "Error: supabase-db failed to become healthy within 30 minutes."
     Exit 1
 }
 Write-Host "[+] Database is healthy!"
+
+Write-Host "[*] Injecting Control Drift Database Schema..."
+cmd.exe /c "docker exec -i supabase-db psql -U postgres -d postgres < ../../deploy/schema.sql"
+Write-Host "[+] Schema injected successfully!"
 
 Set-Location ../../
 

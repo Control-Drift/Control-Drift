@@ -71,14 +71,9 @@ services:
   db:
     healthcheck:
       start_period: 1800s
-    volumes:
-      - ./volumes/db/init/01-schema.sql:/docker-entrypoint-initdb.d/init-scripts/99-control-drift.sql:Z
 EOF
 
-echo "[*] Injecting Database Schema for Auto-Initialization..."
-mkdir -p volumes/db/init
-cp ../../deploy/schema.sql volumes/db/init/01-schema.sql
-chmod -R 777 volumes/db/init
+echo "[*] Preparing to start Supabase stack..."
 
 echo "[*] Starting Supabase backend stack..."
 docker compose pull
@@ -99,10 +94,14 @@ while [ $WAIT_TIME -lt 1800 ]; do
 done
 
 if [ "$IS_HEALTHY" = false ]; then
-    echo "Error: supabase-db failed to become healthy within 3 minutes." >&2
+    echo "Error: supabase-db failed to become healthy within 30 minutes." >&2
     exit 1
 fi
 echo "[+] Database is healthy!"
+
+echo "[*] Injecting Control Drift Database Schema..."
+docker exec -i supabase-db psql -U postgres -d postgres < ../../deploy/schema.sql
+echo "[+] Schema injected successfully!"
 
 cd ../../
 
