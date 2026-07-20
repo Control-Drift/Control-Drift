@@ -44,17 +44,15 @@ export default function CustomLogo({ className = "", style = {}, iconOnly = fals
       style={{ 
         display: 'flex', 
         alignItems: 'center',
-        gap: '12px',
+        gap: '10px',
         ...style,
       }}
     >
-      <div style={{ width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, position: 'relative' }}>
-        <img 
-          src={emblem} 
-          alt="Control Drift" 
-          style={{ position: 'absolute', height: '22px', width: 'auto', maxWidth: 'none', objectFit: 'contain' }} 
-        />
-      </div>
+      <img 
+        src={emblem} 
+        alt="Control Drift" 
+        style={{ height: '28px', width: 'auto', flexShrink: 0, objectFit: 'contain' }} 
+      />
       
       {/* The Typography */}
       <div style={{ 
@@ -62,8 +60,9 @@ export default function CustomLogo({ className = "", style = {}, iconOnly = fals
         alignItems: 'center', 
         gap: '6px',
         fontFamily: '"Orbitron", sans-serif',
-        fontSize: '18px',
+        fontSize: '20px',
         lineHeight: 1,
+        marginTop: '2px'
       }}>
         {/* Heavy, rigid control */}
         <span style={{ 
