@@ -30,17 +30,14 @@ git clone https://github.com/Control-Drift/Control-Drift.git
 cd Control-Drift
 ```
 
-### 3. Set Your AI API Keys
-The deployment script will automatically configure an AI Proxy (LiteLLM) to keep your API keys secure. You will just need to pass your keys to the terminal so the proxy can grab them.
+### 3. Configure AI Integration
+The deployment script features an interactive setup process that handles your AI configuration automatically. It will prompt you for four details:
+1. **Provider**: (e.g., OpenAI, Anthropic, Gemini, or OpenAI-compatible local models).
+2. **Model Name**: (e.g., gpt-4o, claude-3-5-sonnet, essentialai/rnj-1).
+3. **Endpoint URL**: (Leave blank for public providers, or enter your custom URL like `http://192.168.1.100:1234/v1` for local models).
+4. **API Key**: (Your enterprise API key, or leave blank if using a local unauthenticated model).
 
-**On Windows (PowerShell):**
-```powershell
-$env:OPENAI_API_KEY="sk-your-openai-key"
-```
-**On Linux/Mac (Bash):**
-```bash
-export OPENAI_API_KEY="sk-your-openai-key"
-```
+These details are injected directly into the secure proxy configuration (`litellm-config.yaml`) keeping your keys safe from the frontend browser.
 
 ### 4. Run the Automated Setup Script
 Run the automated enterprise setup script for your operating system. This script will download Supabase, inject the database schema, configure the AI proxy, generate your config files, and boot up the entire platform.
