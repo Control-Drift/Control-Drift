@@ -32,15 +32,19 @@ if ([string]::IsNullOrWhiteSpace($ServerIP)) {
 }
 
 Write-Host "[*] Force-removing any remaining Supabase containers from previous failed runs..."
-docker ps -a --filter "name=supabase-" -q | ForEach-Object { docker rm -f -v $_ 2>$null }
-docker ps -a --filter "name=realtime-dev.supabase-realtime" -q | ForEach-Object { docker rm -f -v $_ 2>$null }
+$oldErr = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+docker ps -a --filter "name=supabase-" -q | ForEach-Object { docker rm -f -v $_ 2>&1 | Out-Null }
+docker ps -a --filter "name=realtime-dev.supabase-realtime" -q | ForEach-Object { docker rm -f -v $_ 2>&1 | Out-Null }
+$ErrorActionPreference = $oldErr
 
 Write-Host "[*] Fetching official Supabase docker repository (using sparse-checkout for speed)..."
 if (Test-Path supabase) {
     Write-Host "[*] Tearing down existing deployment networks..."
     if (Test-Path "supabase/docker/docker-compose.yml") {
         Set-Location supabase/docker
-        docker compose down -v 2>$null
+        $oldErr = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+        docker compose down -v 2>&1 | Out-Null
+        $ErrorActionPreference = $oldErr
         Set-Location ../../
     }
     Remove-Item -Recurse -Force supabase
