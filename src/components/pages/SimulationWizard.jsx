@@ -802,9 +802,12 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
           
           let mappedIds = [];
           try {
-              // Strip out any markdown formatting gpt-4o might try to add
-              const cleanJson = result.replace(/```json/gi, '').replace(/```/g, '').trim();
-              const parsed = JSON.parse(cleanJson);
+              // Aggressively extract the JSON object to bypass any conversational preamble/postamble
+              const jsonMatch = result.match(/\{[\s\S]*\}/);
+              if (!jsonMatch) {
+                  throw new Error("No JSON object found in response");
+              }
+              const parsed = JSON.parse(jsonMatch[0]);
               if (parsed.technique_ids && Array.isArray(parsed.technique_ids)) {
                   mappedIds = parsed.technique_ids;
               }
