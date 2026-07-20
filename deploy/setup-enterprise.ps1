@@ -106,8 +106,8 @@ Write-Host "[+] Schema injected successfully!"
 
 Set-Location ../../
 
-Write-Host "[*] Generating LiteLLM AI Proxy Configuration..."
-if (Test-Path deploy/litellm-config.yaml) { Remove-Item -Recurse -Force deploy/litellm-config.yaml }
+Write-Host "[*] Generating AI Proxy Config..."
+if (-not (Test-Path deploy/litellm-config.yaml)) {
 $litellmConfig = @"
 model_list:
   - model_name: gpt-4o
@@ -120,21 +120,40 @@ model_list:
     litellm_params:
       model: gemini/gemini-1.5-pro
 "@
-Set-Content -Path deploy/litellm-config.yaml -Value $litellmConfig
+$litellmConfig | Out-File -FilePath deploy/litellm-config.yaml -Encoding ASCII
+}
 
 Write-Host "[*] Generating Control Drift Config..."
 if (Test-Path deploy/config.json) { Remove-Item -Recurse -Force deploy/config.json }
 $AnonKey = (Select-String -Path supabase/docker/.env -Pattern "^ANON_KEY=(.*)$").Matches.Groups[1].Value
 
+if (-not (Test-Path deploy/.env)) {
+    Write-Host ""
+    Write-Host "--- AI Configuration ---"
+    Write-Host "By default, the system routes AI requests through the secure LiteLLM proxy to gpt-4o."
+    $ConfigAi = Read-Host "Would you like to configure a custom AI model (e.g. local LM Studio) or allow users to configure their own? (y/N)"
+    if ($ConfigAi -match "^[Yy]$") {
+        $UserAiEndpoint = Read-Host "AI Endpoint URL (Leave blank to let end-users configure via UI)"
+        $UserAiModel = Read-Host "AI Model Name (Leave blank to let end-users configure via UI)"
+        "AI_ENDPOINT=`"$UserAiEndpoint`"" | Out-File -FilePath deploy/.env -Encoding ASCII
+        "AI_MODEL=`"$UserAiModel`"" | Out-File -FilePath deploy/.env -Encoding ASCII -Append
+    } else {
+        "AI_ENDPOINT=`"http://${ServerIP}:4000/v1/chat/completions`"" | Out-File -FilePath deploy/.env -Encoding ASCII
+        "AI_MODEL=`"gpt-4o`"" | Out-File -FilePath deploy/.env -Encoding ASCII -Append
+    }
+    Write-Host "------------------------"
+    Write-Host ""
+}
+
 $AiModelMatch = $null
 $AiEndpointMatch = $null
 if (Test-Path deploy/.env) {
-    $AiModelMatch = Select-String -Path deploy/.env -Pattern "^AI_MODEL=(.*)$"
-    $AiEndpointMatch = Select-String -Path deploy/.env -Pattern "^AI_ENDPOINT=(.*)$"
+    $AiModelMatch = Select-String -Path deploy/.env -Pattern "^AI_MODEL=`"?(.*?)`"?$"
+    $AiEndpointMatch = Select-String -Path deploy/.env -Pattern "^AI_ENDPOINT=`"?(.*?)`"?$"
 }
 
-$AiModel = if ($AiModelMatch) { $AiModelMatch.Matches.Groups[1].Value } else { "gpt-4o" }
-$AiEndpoint = if ($AiEndpointMatch) { $AiEndpointMatch.Matches.Groups[1].Value } else { "http://${ServerIP}:4000/v1/chat/completions" }
+$AiModel = if ($AiModelMatch) { $AiModelMatch.Matches.Groups[1].Value } else { "" }
+$AiEndpoint = if ($AiEndpointMatch) { $AiEndpointMatch.Matches.Groups[1].Value } else { "" }
 
 $appConfig = @"
 {

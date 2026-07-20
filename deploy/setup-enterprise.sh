@@ -106,8 +106,8 @@ echo "[+] Schema injected successfully!"
 
 cd ../../
 
-echo "[*] Generating LiteLLM AI Proxy Configuration..."
-rm -rf deploy/litellm-config.yaml 2>/dev/null || true
+echo "[*] Generating AI Proxy Config..."
+if [ ! -f deploy/litellm-config.yaml ]; then
 cat <<EOF > deploy/litellm-config.yaml
 model_list:
   - model_name: gpt-4o
@@ -120,16 +120,33 @@ model_list:
     litellm_params:
       model: gemini/gemini-1.5-pro
 EOF
+fi
 
 echo "[*] Generating Control Drift Config..."
 rm -rf deploy/config.json 2>/dev/null || true
 ANON_KEY=$(grep '^ANON_KEY=' supabase/docker/.env | cut -d '=' -f2)
-# Extract optional AI configuration from deploy/.env if the user wants a custom model
-AI_MODEL=$(grep "^AI_MODEL=" deploy/.env 2>/dev/null | cut -d '=' -f2 || true)
-AI_MODEL=${AI_MODEL:-"gpt-4o"}
 
-AI_ENDPOINT=$(grep "^AI_ENDPOINT=" deploy/.env 2>/dev/null | cut -d '=' -f2 || true)
-AI_ENDPOINT=${AI_ENDPOINT:-"http://${SERVER_IP}:4000/v1/chat/completions"}
+if [ ! -f deploy/.env ]; then
+  echo ""
+  echo "--- AI Configuration ---"
+  echo "By default, the system routes AI requests through the secure LiteLLM proxy to gpt-4o."
+  read -p "Would you like to configure a custom AI model (e.g. local LM Studio) or allow users to configure their own? (y/N): " config_ai
+  if [[ "$config_ai" =~ ^[Yy]$ ]]; then
+    read -p "AI Endpoint URL (Leave blank to let end-users configure via UI): " user_ai_endpoint
+    read -p "AI Model Name (Leave blank to let end-users configure via UI): " user_ai_model
+    echo "AI_ENDPOINT=\"$user_ai_endpoint\"" > deploy/.env
+    echo "AI_MODEL=\"$user_ai_model\"" >> deploy/.env
+  else
+    echo "AI_ENDPOINT=\"http://${SERVER_IP}:4000/v1/chat/completions\"" > deploy/.env
+    echo "AI_MODEL=\"gpt-4o\"" >> deploy/.env
+  fi
+  echo "------------------------"
+  echo ""
+fi
+
+# Extract optional AI configuration from deploy/.env
+AI_MODEL=$(grep "^AI_MODEL=" deploy/.env 2>/dev/null | cut -d '=' -f2 | tr -d '"' || true)
+AI_ENDPOINT=$(grep "^AI_ENDPOINT=" deploy/.env 2>/dev/null | cut -d '=' -f2 | tr -d '"' || true)
 
 cat <<EOF > deploy/config.json
 {
