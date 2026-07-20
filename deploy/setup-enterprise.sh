@@ -56,8 +56,12 @@ sed -i "s|^API_EXTERNAL_URL=.*|API_EXTERNAL_URL=http://${SERVER_IP}:8000/auth/v1
 sed -i "s|^SUPABASE_PUBLIC_URL=.*|SUPABASE_PUBLIC_URL=http://${SERVER_IP}:8000|g" .env
 sed -i "s|^SITE_URL=.*|SITE_URL=http://${SERVER_IP}:3000|g" .env
 sed -i "s|^ADDITIONAL_REDIRECT_URLS=.*|ADDITIONAL_REDIRECT_URLS=http://${SERVER_IP},http://${SERVER_IP}:80,http://${SERVER_IP}:3000,http://localhost:3000,http://localhost:80|g" .env
-sed -i 's/^COMPOSE_FILE=/#COMPOSE_FILE=/' .env
+sed -i 's/^#COMPOSE_FILE=/COMPOSE_FILE=/' .env
 echo "GOTRUE_MAILER_AUTOCONFIRM=true" >> .env
+
+# Safely remap the external supavisor port to 54320 to avoid host collisions, 
+# without breaking internal networking or the pg_isready healthcheck
+sed -i 's/- ${POSTGRES_PORT}:5432/- 54320:5432/g' docker-compose.yml
 
 echo "[*] Exposing Supabase Studio and Injecting Schema..."
 cat << EOF > docker-compose.override.yml
@@ -65,9 +69,6 @@ services:
   studio:
     ports:
       - "3000:3000/tcp"
-  supavisor:
-    ports:
-      - "54320:5432"
   db:
     healthcheck:
       start_period: 1800s
