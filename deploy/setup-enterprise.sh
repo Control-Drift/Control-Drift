@@ -56,6 +56,8 @@ services:
     ports:
       - "3000:3000/tcp"
   db:
+    healthcheck:
+      start_period: 120s
     volumes:
       - ./volumes/db/init/01-schema.sql:/docker-entrypoint-initdb.d/init-scripts/99-control-drift.sql:Z
 EOF
