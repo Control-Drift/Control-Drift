@@ -126,7 +126,8 @@ switch ($ProviderChoice) {
 
 $UserAiModel = Read-Host "Enter AI Model Name"
 
-$UserAiEndpoint = Read-Host "Enter Target AI Endpoint URL (Leave blank for default)"
+$UserAiEndpoint = Read-Host "Enter Target AI Endpoint URL (e.g. http://10.0.0.210:1234/v1, leave blank for default)"
+$UserAiEndpoint = $UserAiEndpoint -replace "/chat/completions/?$", ""
 
 $UserApiKey = Read-Host "Enter API Key (Leave blank if none)"
 

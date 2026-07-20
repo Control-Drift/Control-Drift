@@ -126,7 +126,10 @@ esac
 
 read -p "Enter AI Model Name: " user_ai_model
 
-read -p "Enter Target AI Endpoint URL (Leave blank for default): " user_ai_endpoint
+read -p "Enter Target AI Endpoint URL (e.g. http://10.0.0.210:1234/v1, leave blank for default): " user_ai_endpoint
+# Automatically strip /chat/completions if the user accidentally includes it
+user_ai_endpoint=${user_ai_endpoint%/chat/completions}
+user_ai_endpoint=${user_ai_endpoint%/chat/completions/}
 
 read -p "Enter API Key (Leave blank if none): " user_api_key
 
