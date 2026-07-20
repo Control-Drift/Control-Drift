@@ -39,6 +39,11 @@ if (Test-Path supabase) {
         docker compose down -v 2>$null
         Set-Location ../../
     }
+    Write-Host "[*] Force-removing any remaining Supabase containers..."
+    $containers = docker ps -a --filter "name=supabase-" -q
+    if ($containers) { docker rm -f -v $containers 2>$null }
+    $containers = docker ps -a --filter "name=realtime-dev.supabase-realtime" -q
+    if ($containers) { docker rm -f -v $containers 2>$null }
     Remove-Item -Recurse -Force supabase
 }
 New-Item -ItemType Directory -Force -Path supabase | Out-Null
@@ -73,9 +78,27 @@ Write-Host "[*] Injecting Database Schema for Auto-Initialization..."
 New-Item -ItemType Directory -Force -Path "volumes/db/init" | Out-Null
 Copy-Item ../../deploy/schema.sql volumes/db/init/01-schema.sql
 
-Write-Host "[*] Starting Supabase backend stack (this will block until all containers are fully healthy)..."
+Write-Host "[*] Starting Supabase backend stack..."
 docker compose pull
-docker compose up -d --wait
+docker compose up -d
+
+Write-Host "[*] Waiting up to 3 minutes for database initialization and health checks..."
+$WaitTime = 0
+$IsHealthy = $false
+while ($WaitTime -lt 180) {
+    Start-Sleep -Seconds 5
+    $WaitTime += 5
+    $status = docker inspect --format="{{.State.Health.Status}}" supabase-db 2>$null
+    if ($status -eq "healthy") {
+        $IsHealthy = $true
+        break
+    }
+}
+if (-not $IsHealthy) {
+    Write-Error "Error: supabase-db failed to become healthy within 3 minutes."
+    Exit 1
+}
+Write-Host "[+] Database is healthy!"
 
 Set-Location ../../
 

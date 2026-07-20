@@ -39,6 +39,11 @@ if [ -d "supabase" ]; then
         docker compose down -v || true
         cd ../../
     fi
+    echo "[*] Force-removing any remaining Supabase containers..."
+    CONTAINERS=$(docker ps -a --filter "name=supabase-" -q)
+    if [ -n "$CONTAINERS" ]; then docker rm -f -v $CONTAINERS >/dev/null 2>&1 || true; fi
+    CONTAINERS=$(docker ps -a --filter "name=realtime-dev.supabase-realtime" -q)
+    if [ -n "$CONTAINERS" ]; then docker rm -f -v $CONTAINERS >/dev/null 2>&1 || true; fi
     rm -rf supabase
 fi
 mkdir -p supabase
@@ -76,9 +81,28 @@ echo "[*] Injecting Database Schema for Auto-Initialization..."
 mkdir -p volumes/db/init
 cp ../../deploy/schema.sql volumes/db/init/01-schema.sql
 
-echo "[*] Starting Supabase backend stack (this will block until all containers are fully healthy)..."
+echo "[*] Starting Supabase backend stack..."
 docker compose pull
-docker compose up -d --wait
+docker compose up -d
+
+echo "[*] Waiting up to 3 minutes for database initialization and health checks..."
+WAIT_TIME=0
+IS_HEALTHY=false
+while [ $WAIT_TIME -lt 180 ]; do
+    sleep 5
+    WAIT_TIME=$((WAIT_TIME + 5))
+    STATUS=$(docker inspect --format="{{.State.Health.Status}}" supabase-db 2>/dev/null || true)
+    if [ "$STATUS" = "healthy" ]; then
+        IS_HEALTHY=true
+        break
+    fi
+done
+
+if [ "$IS_HEALTHY" = false ]; then
+    echo "Error: supabase-db failed to become healthy within 3 minutes." >&2
+    exit 1
+fi
+echo "[+] Database is healthy!"
 
 cd ../../
 
