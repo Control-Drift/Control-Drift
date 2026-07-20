@@ -257,7 +257,7 @@ export default function AIAssistant() {
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
-            <Sparkles size={24} color="var(--accent-primary)" style={{ flexShrink: 0 }} />
+            <BrainCircuit size={24} color="var(--accent-primary)" style={{ flexShrink: 0 }} />
             <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, paddingRight: '10px' }}>
                {(() => {
                   const p = aiSettings?.provider || 'None';
