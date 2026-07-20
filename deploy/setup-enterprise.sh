@@ -129,17 +129,23 @@ ANON_KEY=$(grep '^ANON_KEY=' supabase/docker/.env | cut -d '=' -f2)
 if [ ! -f deploy/.env ]; then
   echo ""
   echo "--- AI Configuration ---"
-  echo "By default, the system routes AI requests through the secure LiteLLM proxy to gpt-4o."
-  read -p "Would you like to configure a custom AI model (e.g. local LM Studio) or allow users to configure their own? (y/N): " config_ai
-  if [[ "$config_ai" =~ ^[Yy]$ ]]; then
-    read -p "AI Endpoint URL (Leave blank to let end-users configure via UI): " user_ai_endpoint
-    read -p "AI Model Name (Leave blank to let end-users configure via UI): " user_ai_model
+  read -p "Enter AI Model Name (e.g. gpt-4o, essentialai/rnj-1) [gpt-4o]: " user_ai_model
+  user_ai_model=${user_ai_model:-"gpt-4o"}
+
+  echo ""
+  echo "How should the web frontend connect to this model?"
+  echo "1) Through the secure LiteLLM Proxy (Recommended for multi-user servers)"
+  echo "2) Direct Connection (e.g. directly to a local LM Studio IP)"
+  read -p "Choice [1/2]: " connection_choice
+
+  if [[ "$connection_choice" == "2" ]]; then
+    read -p "Enter Direct AI Endpoint URL (e.g. http://10.0.0.210:1234/v1/chat/completions): " user_ai_endpoint
     echo "AI_ENDPOINT=\"$user_ai_endpoint\"" > deploy/.env
-    echo "AI_MODEL=\"$user_ai_model\"" >> deploy/.env
   else
     echo "AI_ENDPOINT=\"http://${SERVER_IP}:4000/v1/chat/completions\"" > deploy/.env
-    echo "AI_MODEL=\"gpt-4o\"" >> deploy/.env
   fi
+  
+  echo "AI_MODEL=\"$user_ai_model\"" >> deploy/.env
   echo "------------------------"
   echo ""
 fi

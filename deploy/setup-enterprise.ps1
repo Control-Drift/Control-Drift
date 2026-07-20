@@ -130,17 +130,23 @@ $AnonKey = (Select-String -Path supabase/docker/.env -Pattern "^ANON_KEY=(.*)$")
 if (-not (Test-Path deploy/.env)) {
     Write-Host ""
     Write-Host "--- AI Configuration ---"
-    Write-Host "By default, the system routes AI requests through the secure LiteLLM proxy to gpt-4o."
-    $ConfigAi = Read-Host "Would you like to configure a custom AI model (e.g. local LM Studio) or allow users to configure their own? (y/N)"
-    if ($ConfigAi -match "^[Yy]$") {
-        $UserAiEndpoint = Read-Host "AI Endpoint URL (Leave blank to let end-users configure via UI)"
-        $UserAiModel = Read-Host "AI Model Name (Leave blank to let end-users configure via UI)"
+    $UserAiModel = Read-Host "Enter AI Model Name (e.g. gpt-4o, essentialai/rnj-1) [gpt-4o]"
+    if ([string]::IsNullOrWhiteSpace($UserAiModel)) { $UserAiModel = "gpt-4o" }
+
+    Write-Host ""
+    Write-Host "How should the web frontend connect to this model?"
+    Write-Host "1) Through the secure LiteLLM Proxy (Recommended for multi-user servers)"
+    Write-Host "2) Direct Connection (e.g. directly to a local LM Studio IP)"
+    $ConnectionChoice = Read-Host "Choice [1/2]"
+
+    if ($ConnectionChoice -eq "2") {
+        $UserAiEndpoint = Read-Host "Enter Direct AI Endpoint URL (e.g. http://10.0.0.210:1234/v1/chat/completions)"
         "AI_ENDPOINT=`"$UserAiEndpoint`"" | Out-File -FilePath deploy/.env -Encoding ASCII
-        "AI_MODEL=`"$UserAiModel`"" | Out-File -FilePath deploy/.env -Encoding ASCII -Append
     } else {
         "AI_ENDPOINT=`"http://${ServerIP}:4000/v1/chat/completions`"" | Out-File -FilePath deploy/.env -Encoding ASCII
-        "AI_MODEL=`"gpt-4o`"" | Out-File -FilePath deploy/.env -Encoding ASCII -Append
     }
+    
+    "AI_MODEL=`"$UserAiModel`"" | Out-File -FilePath deploy/.env -Encoding ASCII -Append
     Write-Host "------------------------"
     Write-Host ""
 }
