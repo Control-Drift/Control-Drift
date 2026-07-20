@@ -180,6 +180,7 @@ Write-Host "[*] Starting Control Drift and AI Proxy..."
 Set-Location deploy
 docker compose pull litellm
 docker compose up -d --build
+docker compose restart litellm
 
 Write-Host "[*] Waiting for Supabase API to initialize (this may take a minute)..." -NoNewline
 $maxRetries = 30

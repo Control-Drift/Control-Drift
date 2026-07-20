@@ -178,6 +178,7 @@ echo "[*] Starting Control Drift and AI Proxy..."
 cd deploy
 docker compose pull litellm
 docker compose up -d --build
+docker compose restart litellm
 
 echo "[*] Waiting for Supabase API to initialize (this may take a minute)..."
 max_retries=30
