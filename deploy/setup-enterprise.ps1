@@ -115,20 +115,12 @@ Write-Host "--- AI Configuration ---"
 $UserAiModel = Read-Host "Enter AI Model Name (e.g. gpt-4o, essentialai/rnj-1) [gpt-4o]"
 if ([string]::IsNullOrWhiteSpace($UserAiModel)) { $UserAiModel = "gpt-4o" }
 
-$UserAiEndpoint = Read-Host "Enter Custom AI Endpoint URL (Leave blank to use default OpenAI/Anthropic/Gemini APIs)"
+$UserAiEndpoint = Read-Host "Enter AI Endpoint URL (Leave blank to route through the secure proxy)"
+if ([string]::IsNullOrWhiteSpace($UserAiEndpoint)) { $UserAiEndpoint = "http://${ServerIP}:4000/v1/chat/completions" }
 
 Write-Host "[*] Generating AI Proxy Config..."
 if (Test-Path deploy/litellm-config.yaml) { Remove-Item -Recurse -Force deploy/litellm-config.yaml }
 
-if (-not [string]::IsNullOrWhiteSpace($UserAiEndpoint)) {
-$litellmConfig = @"
-model_list:
-  - model_name: $UserAiModel
-    litellm_params:
-      model: openai/$UserAiModel
-      api_base: $UserAiEndpoint
-"@
-} else {
 $litellmConfig = @"
 model_list:
   - model_name: gpt-4o
@@ -141,7 +133,6 @@ model_list:
     litellm_params:
       model: gemini/gemini-1.5-pro
 "@
-}
 $litellmConfig | Out-File -FilePath deploy/litellm-config.yaml -Encoding ASCII
 
 $appConfig = @"
@@ -153,7 +144,7 @@ $appConfig = @"
   },
   "ai": {
     "enabled": true,
-    "endpointUrl": "http://${ServerIP}:4000/v1/chat/completions",
+    "endpointUrl": "$UserAiEndpoint",
     "model": "$UserAiModel",
     "proxy": true
   }

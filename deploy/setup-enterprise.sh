@@ -115,20 +115,11 @@ echo "--- AI Configuration ---"
 read -p "Enter AI Model Name (e.g. gpt-4o, essentialai/rnj-1) [gpt-4o]: " user_ai_model
 user_ai_model=${user_ai_model:-"gpt-4o"}
 
-read -p "Enter Custom AI Endpoint URL (Leave blank to use default OpenAI/Anthropic/Gemini APIs): " user_ai_endpoint
+read -p "Enter AI Endpoint URL (Leave blank to route through the secure proxy): " user_ai_endpoint
+user_ai_endpoint=${user_ai_endpoint:-"http://${SERVER_IP}:4000/v1/chat/completions"}
 
 echo "[*] Generating AI Proxy Config..."
 rm -rf deploy/litellm-config.yaml 2>/dev/null || true
-
-if [ -n "$user_ai_endpoint" ]; then
-cat <<EOF > deploy/litellm-config.yaml
-model_list:
-  - model_name: $user_ai_model
-    litellm_params:
-      model: openai/$user_ai_model
-      api_base: $user_ai_endpoint
-EOF
-else
 cat <<EOF > deploy/litellm-config.yaml
 model_list:
   - model_name: gpt-4o
@@ -141,7 +132,6 @@ model_list:
     litellm_params:
       model: gemini/gemini-1.5-pro
 EOF
-fi
 
 cat <<EOF > deploy/config.json
 {
@@ -152,7 +142,7 @@ cat <<EOF > deploy/config.json
   },
   "ai": {
     "enabled": true,
-    "endpointUrl": "http://${SERVER_IP}:4000/v1/chat/completions",
+    "endpointUrl": "${user_ai_endpoint}",
     "model": "${user_ai_model}",
     "proxy": true
   }
