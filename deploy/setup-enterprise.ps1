@@ -45,14 +45,14 @@ if (Test-Path supabase) {
     }
     Remove-Item -Recurse -Force supabase
 }
-New-Item -ItemType Directory -Force -Path supabase | Out-Null
-Set-Location supabase
-git init
-git remote add -f origin https://github.com/supabase/supabase.git
-git config core.sparseCheckout true
-Add-Content -Path .git/info/sparse-checkout -Value "docker/*"
-git pull --depth=1 origin master
-Set-Location docker
+Write-Host "[*] Fetching official Supabase docker repository (via fast zip download)..."
+Invoke-WebRequest -Uri "https://github.com/supabase/supabase/archive/refs/heads/master.zip" -OutFile "supabase.zip"
+Expand-Archive -Path "supabase.zip" -DestinationPath "supabase_temp" -Force
+New-Item -ItemType Directory -Force -Path "supabase" | Out-Null
+Move-Item -Path "supabase_temp\supabase-master\docker" -Destination "supabase\docker" -Force
+Remove-Item -Recurse -Force "supabase_temp"
+Remove-Item -Force "supabase.zip"
+Set-Location supabase/docker
 
 Write-Host "[*] Copying default Supabase configuration..."
 Copy-Item .env.example .env

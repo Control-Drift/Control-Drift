@@ -35,7 +35,7 @@ echo "[*] Force-removing any remaining Supabase containers from previous failed 
 docker ps -a --filter "name=supabase-" -q | xargs -r docker rm -f -v >/dev/null 2>&1 || true
 docker ps -a --filter "name=realtime-dev.supabase-realtime" -q | xargs -r docker rm -f -v >/dev/null 2>&1 || true
 
-echo "[*] Fetching official Supabase docker repository (using sparse-checkout for speed)..."
+echo "[*] Fetching official Supabase docker repository (via fast tarball download)..."
 if [ -d "supabase" ]; then
     echo "[*] Tearing down existing deployment networks..."
     if [ -f "supabase/docker/docker-compose.yml" ]; then
@@ -47,11 +47,7 @@ if [ -d "supabase" ]; then
 fi
 mkdir -p supabase
 cd supabase
-git init
-git remote add -f origin https://github.com/supabase/supabase.git
-git config core.sparseCheckout true
-echo "docker/*" >> .git/info/sparse-checkout
-git pull --depth=1 origin master
+curl -sL https://github.com/supabase/supabase/archive/refs/heads/master.tar.gz | tar -xz --strip-components=1 "supabase-master/docker"
 cd docker
 
 echo "[*] Copying default Supabase configuration..."
