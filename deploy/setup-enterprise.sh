@@ -125,10 +125,10 @@ echo "[*] Generating Control Drift Config..."
 rm -rf deploy/config.json 2>/dev/null || true
 ANON_KEY=$(grep '^ANON_KEY=' supabase/docker/.env | cut -d '=' -f2)
 # Extract optional AI configuration from deploy/.env if the user wants a custom model
-AI_MODEL=$(grep "^AI_MODEL=" deploy/.env 2>/dev/null | cut -d '=' -f2)
+AI_MODEL=$(grep "^AI_MODEL=" deploy/.env 2>/dev/null | cut -d '=' -f2 || true)
 AI_MODEL=${AI_MODEL:-"gpt-4o"}
 
-AI_ENDPOINT=$(grep "^AI_ENDPOINT=" deploy/.env 2>/dev/null | cut -d '=' -f2)
+AI_ENDPOINT=$(grep "^AI_ENDPOINT=" deploy/.env 2>/dev/null | cut -d '=' -f2 || true)
 AI_ENDPOINT=${AI_ENDPOINT:-"http://${SERVER_IP}:4000/v1/chat/completions"}
 
 cat <<EOF > deploy/config.json
