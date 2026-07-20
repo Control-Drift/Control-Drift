@@ -42,7 +42,11 @@ export class GenericAPIAdapter extends AiAdapter {
         if (systemInstruction) messages.push({ role: 'system', content: systemInstruction });
         messages.push({ role: 'user', content: prompt });
         
-        const bodyParams = { model: targetModel, messages };
+        const apiOptions = { ...options };
+        delete apiOptions.imageData;
+        delete apiOptions.maxTokens;
+
+        const bodyParams = { model: targetModel, messages, ...apiOptions };
         if (maxTokens) bodyParams.max_tokens = maxTokens;
 
         const fetchPromise = fetch(url, {
@@ -100,10 +104,15 @@ export class GenericAPIAdapter extends AiAdapter {
             messages.push({ role: 'user', content: prompt });
         }
         
+        const apiOptions = { ...options };
+        delete apiOptions.imageData;
+        delete apiOptions.maxTokens;
+
         const bodyParams = {
             model: targetModel,
             messages,
-            stream: true
+            stream: true,
+            ...apiOptions
         };
         if (maxTokens) bodyParams.max_tokens = maxTokens;
 

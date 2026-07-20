@@ -798,7 +798,7 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
 
           const prompt = `Procedure Details:\nName/Description: ${proc.name || 'None provided'}\nPayload Code: ${procCode || 'None provided'}\n\nTask: Analyze the procedure and map it to the most relevant MITRE ATT&CK technique IDs. Return your analysis and final IDs in the requested JSON format.`;
           
-          const result = await generateAIContent(prompt, sysPrompt);
+          const result = await generateAIContent(prompt, sysPrompt, null, { temperature: 0, response_format: { type: "json_object" } });
           
           let mappedIds = [];
           try {

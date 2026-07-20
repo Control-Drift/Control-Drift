@@ -21,7 +21,8 @@ services:
   # -----------------------------------------------------------
   litellm:
     image: ghcr.io/berriai/litellm:main-latest
-    container_name: litellm-proxy
+    container_name: control-drift-proxy
+    restart: unless-stopped
     ports:
       - "4000:4000"
     environment:
