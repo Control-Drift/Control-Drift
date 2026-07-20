@@ -85,10 +85,10 @@ Write-Host "[*] Starting Supabase backend stack..."
 docker compose pull
 docker compose up -d
 
-Write-Host "[*] Waiting up to 3 minutes for database initialization and health checks..."
+Write-Host "[*] Waiting up to 10 minutes for database initialization and health checks (this takes longer on low-spec servers)..."
 $WaitTime = 0
 $IsHealthy = $false
-while ($WaitTime -lt 180) {
+while ($WaitTime -lt 600) {
     Start-Sleep -Seconds 5
     $WaitTime += 5
     $status = docker inspect --format="{{.State.Health.Status}}" supabase-db 2>$null
@@ -98,7 +98,7 @@ while ($WaitTime -lt 180) {
     }
 }
 if (-not $IsHealthy) {
-    Write-Error "Error: supabase-db failed to become healthy within 3 minutes."
+    Write-Error "Error: supabase-db failed to become healthy within 10 minutes."
     Exit 1
 }
 Write-Host "[+] Database is healthy!"
