@@ -60,6 +60,7 @@ sed -i "s|^SUPABASE_PUBLIC_URL=.*|SUPABASE_PUBLIC_URL=http://${SERVER_IP}:8000|g
 sed -i "s|^SITE_URL=.*|SITE_URL=http://${SERVER_IP}:3000|g" .env
 sed -i "s|^ADDITIONAL_REDIRECT_URLS=.*|ADDITIONAL_REDIRECT_URLS=http://${SERVER_IP},http://${SERVER_IP}:80,http://${SERVER_IP}:3000,http://localhost:3000,http://localhost:80|g" .env
 sed -i 's/^COMPOSE_FILE=/#COMPOSE_FILE=/' .env
+sed -i 's/^POSTGRES_PORT=.*/POSTGRES_PORT=54320/' .env
 echo "GOTRUE_MAILER_AUTOCONFIRM=true" >> .env
 
 echo "[*] Exposing Supabase Studio and Injecting Schema..."

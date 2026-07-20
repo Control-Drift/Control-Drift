@@ -55,7 +55,7 @@ Set-Location docker
 
 Write-Host "[*] Copying default Supabase configuration..."
 Copy-Item .env.example .env
-(Get-Content .env) -replace '^API_EXTERNAL_URL=.*', "API_EXTERNAL_URL=http://${ServerIP}:8000/auth/v1" -replace '^SUPABASE_PUBLIC_URL=.*', "SUPABASE_PUBLIC_URL=http://${ServerIP}:8000" -replace '^SITE_URL=.*', "SITE_URL=http://${ServerIP}:3000" -replace '^ADDITIONAL_REDIRECT_URLS=.*', "ADDITIONAL_REDIRECT_URLS=http://${ServerIP},http://${ServerIP}:80,http://${ServerIP}:3000,http://localhost:3000,http://localhost:80" -replace '^COMPOSE_FILE=', '#COMPOSE_FILE=' | Set-Content .env
+(Get-Content .env) -replace '^API_EXTERNAL_URL=.*', "API_EXTERNAL_URL=http://${ServerIP}:8000/auth/v1" -replace '^SUPABASE_PUBLIC_URL=.*', "SUPABASE_PUBLIC_URL=http://${ServerIP}:8000" -replace '^SITE_URL=.*', "SITE_URL=http://${ServerIP}:3000" -replace '^ADDITIONAL_REDIRECT_URLS=.*', "ADDITIONAL_REDIRECT_URLS=http://${ServerIP},http://${ServerIP}:80,http://${ServerIP}:3000,http://localhost:3000,http://localhost:80" -replace '^COMPOSE_FILE=', '#COMPOSE_FILE=' -replace '^POSTGRES_PORT=.*', 'POSTGRES_PORT=54320' | Set-Content .env
 Add-Content -Path .env -Value "GOTRUE_MAILER_AUTOCONFIRM=true"
 
 Write-Host "[*] Exposing Supabase Studio and Injecting Schema..."
