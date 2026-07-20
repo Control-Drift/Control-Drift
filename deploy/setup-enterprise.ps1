@@ -143,6 +143,8 @@ Write-Host "[*] Generating AI Proxy Config..."
 if (Test-Path deploy/litellm-config.yaml) { Remove-Item -Recurse -Force deploy/litellm-config.yaml }
 
 $litellmConfigLines = @(
+    "litellm_settings:",
+    "  master_key: dummy",
     "model_list:",
     "  - model_name: $UserAiModel",
     "    litellm_params:",
