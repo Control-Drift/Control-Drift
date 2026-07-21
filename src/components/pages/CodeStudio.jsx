@@ -16,6 +16,7 @@
 
 import React, { useState } from 'react';
 import { X, Save, Copy, Check, Terminal, Sparkles, Send, Target, Code2, ShieldAlert, Zap, Loader2, ChevronDown } from 'lucide-react';
+import BlackHoleIcon from '../ui/BlackHoleIcon';
 import Editor from 'react-simple-code-editor';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-yaml';
@@ -224,7 +225,7 @@ export default function CodeStudio({ initialCode, onClose, onSave, isStandalone 
                                 {isGenerating && (
                                     <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(10,10,12,0.6)', backdropFilter: 'blur(2px)', zIndex: 10, display: 'flex', justifyContent: 'center', paddingTop: '100px' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--accent-secondary)', background: 'rgba(126,34,206,0.2)', padding: '10px 24px', borderRadius: '30px', border: '1px solid rgba(126,34,206,0.4)', height: 'fit-content', boxShadow: '0 0 20px rgba(126,34,206,0.3)' }}>
-                                            <Sparkles size={16} className="ai-think-spin" /> Generating...
+                                            <BlackHoleIcon size={16} className="ai-think-spin" /> Generating...
                                         </div>
                                     </div>
                                 )}
@@ -239,7 +240,7 @@ export default function CodeStudio({ initialCode, onClose, onSave, isStandalone 
                         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '150px', background: 'linear-gradient(180deg, rgba(126,34,206,0.08) 0%, transparent 100%)', pointerEvents: 'none' }} />
 
                         <div style={{ padding: '24px 24px 16px 24px', display: 'flex', alignItems: 'center', gap: '15px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                            <Sparkles size={28} color="var(--accent-secondary)" style={{ filter: 'drop-shadow(0 0 8px rgba(126,34,206,0.5))' }} /> 
+                            <BlackHoleIcon size={28} style={{ filter: 'drop-shadow(0 0 8px rgba(126,34,206,0.5))' }} /> 
                             <div style={{ display: 'flex', flexDirection: 'column' }}>
                                 <h3 style={{ margin: 0, color: 'var(--text-primary)', fontSize: '1.4rem', fontWeight: '800', letterSpacing: '0.5px', lineHeight: '1.2' }}>AI Assistant</h3>
                                 <span style={{ fontSize: '0.9rem', color: 'rgba(255,255,255,0.5)' }}>
@@ -292,7 +293,7 @@ export default function CodeStudio({ initialCode, onClose, onSave, isStandalone 
                                             cursor: (!coPilotInput.trim() || !isAiActive || isGenerating) ? 'not-allowed' : 'pointer'
                                         }}
                                     >
-                                        {isGenerating ? <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} /> : <Sparkles size={20} />} {isGenerating ? 'Generating...' : 'Submit'}
+                                        {isGenerating ? <Loader2 size={20} style={{ animation: 'spin 1s linear infinite' }} /> : <BlackHoleIcon size={20} />} {isGenerating ? 'Generating...' : 'Submit'}
                                     </button>
                                 </div>
                             </div>

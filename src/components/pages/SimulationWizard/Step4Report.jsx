@@ -16,6 +16,7 @@
 
 import React from 'react';
 import { Upload, FileText, Loader2, Sparkles, CheckSquare, Square, Shield } from 'lucide-react';
+import BlackHoleIcon from '../../ui/BlackHoleIcon';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import ReportPDF from '../../features/ReportPDF';
 import RichMarkdownEditor from '../../ui/RichMarkdownEditor';
@@ -121,7 +122,7 @@ export default function Step4Report({
                </PDFDownloadLink>
                {!!isAiActive && (
                  <button className="btn-premium-ai" onClick={generateAIReport} disabled={isGeneratingReport} style={{  display: 'flex', alignItems: 'center', gap: '8px'  }}>
-                   {isGeneratingReport ? <Loader2 size={16} style={{  animation: 'spin 1s linear infinite'  }} /> : <Sparkles size={16} />} {isGeneratingReport ? 'Analyzing...' : 'Generate Report Sections'}
+                   {isGeneratingReport ? <Loader2 size={16} style={{  animation: 'spin 1s linear infinite'  }} /> : <BlackHoleIcon size={16} />} {isGeneratingReport ? 'Analyzing...' : 'Generate Report Sections'}
                  </button>
                )}
              </div>

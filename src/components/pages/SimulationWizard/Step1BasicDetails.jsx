@@ -17,6 +17,7 @@
 import React from 'react';
 import { RedBlueSwordsIcon } from '../../ui/CustomIcons';
 import { Target, Globe, Tag, Users, Flag, Crosshair, Shield, Zap, ChevronDown, ChevronRight, CheckSquare, Square, X, AlertTriangle, Sparkles, Loader2, Info, Swords, Search, CornerDownRight, Play, Lock, ShieldAlert, CloudLightning, FileWarning } from 'lucide-react';
+import BlackHoleIcon from '../../ui/BlackHoleIcon';
 import InlineEnvironmentDropdown from '../../dropdowns/InlineEnvironmentDropdown';
 import InlineTagDropdown from '../../dropdowns/InlineTagDropdown';
 import RichMarkdownEditor from '../../ui/RichMarkdownEditor';
@@ -248,7 +249,7 @@ export default function Step1BasicDetails({
                 )}
                 {!!isAiActive && (
                   <button className="btn-premium-ai" onClick={mapObjectivesToTTPs} disabled={isMappingTTPs} style={{  display: 'flex', alignItems: 'center', gap: '8px'  }}>
-                     {isMappingTTPs ? <Loader2 size={16} style={{  animation: 'spin 1s linear infinite'  }} /> : <Sparkles size={16} />} {isMappingTTPs ? 'Mapping...' : 'Auto-Map TTPs'}
+                     {isMappingTTPs ? <Loader2 size={16} style={{  animation: 'spin 1s linear infinite'  }} /> : <BlackHoleIcon size={16} />} {isMappingTTPs ? 'Mapping...' : 'Auto-Map TTPs'}
                   </button>
                 )}
                 <div style={{  position: 'relative', width: '250px'  }}>

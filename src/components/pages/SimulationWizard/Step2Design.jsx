@@ -16,6 +16,7 @@
 
 import React from 'react';
 import { Sparkles, Terminal, Loader2, ChevronLeft, ChevronRight, Info, Target } from 'lucide-react';
+import BlackHoleIcon from '../../ui/BlackHoleIcon';
 import RichMarkdownEditor from '../../ui/RichMarkdownEditor';
 
 export default function Step2Design({
@@ -66,7 +67,7 @@ export default function Step2Design({
                          {isGenerating ? (
                             <div style={{  width: '100%', height: '100%', boxSizing: 'border-box', padding: '20px', background: 'rgba(0,0,0,0.4)', borderRadius: '8px', border: '1px solid var(--accent-primary)', overflowY: 'auto', fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: 'var(--text-primary)', fontSize: '0.9rem', lineHeight: '1.5', position: 'relative'  }}>
                                <div style={{  position: 'absolute', top: '10px', right: '10px', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-primary)', fontSize: '0.8rem', background: 'rgba(156,39,176,0.1)', padding: '4px 10px', borderRadius: '4px', border: '1px solid rgba(156,39,176,0.3)'  }}>
-                                   <Sparkles size={14} className="ai-think-spin" /> Generating...
+                                   <BlackHoleIcon size={14} className="ai-think-spin" /> Generating...
                                </div>
                                {simulationPayload}
                                <span className="animate-pulse" style={{  display: 'inline-block', width: '8px', height: '15px', background: 'var(--accent-primary)', marginLeft: '4px', verticalAlign: 'middle'  }}></span>
@@ -86,7 +87,7 @@ export default function Step2Design({
                       </button>
                       {!!isAiActive && (
                           <button className="btn-premium-ai hover-lift" onClick={generatePayloads} disabled={isGenerating || !isAiActive} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', padding: '10px 20px', fontSize: '0.9rem' }}>
-                             {isGenerating ? <Loader2 size={16} style={{  animation: 'spin 1s linear infinite'  }} /> : <Sparkles size={16} className={isGenerating ? 'animate-pulse' : ''} />} {isGenerating ? 'Crafting Design...' : 'Generate Design'}
+                             {isGenerating ? <Loader2 size={16} style={{  animation: 'spin 1s linear infinite'  }} /> : <BlackHoleIcon size={16} className={isGenerating ? 'animate-pulse' : ''} />} {isGenerating ? 'Crafting Design...' : 'Generate Design'}
                           </button>
                       )}
                   </div>
