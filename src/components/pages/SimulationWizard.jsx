@@ -953,7 +953,7 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
 
      const getFinalAggScore = (ttpId) => {
          const procs = finalizedTestResults.filter(p => (p.ttps || []).includes(ttpId));
-         if (procs.length === 0) return { outcome: 'Missed', coverageRating: 'None' };
+         if (procs.length === 0) return { outcome: 'N/A', coverageRating: 'N/A' };
          let explicitScoreTotal = 0; let explicitScoreCount = 0;
          let b = 0, a = 0, l = 0, m = 0;
          procs.forEach(p => {
@@ -991,6 +991,11 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
 
      for (const [ttpId, ttp] of allMappedTTPs.entries()) {
          const procedures = finalizedTestResults?.filter(p => (p.ttps || []).includes(ttp.id));
+         
+         if (!procedures || procedures.length === 0) {
+             continue; // Do not record a phantom event if the technique was never actually tested
+         }
+
          const agg = getFinalAggScore(ttp.id);
          let outcomeStatus = 'low'; 
          if (agg.coverageRating === 'Optimal') outcomeStatus = 'high';
