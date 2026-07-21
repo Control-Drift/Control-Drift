@@ -5,6 +5,11 @@
   <p><strong>A modern, practitioner-first platform to pressure-test security controls, expose silent failures, and measure true defensive readiness against real-world threats.</strong></p>
 
   <p>
+    <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License" />
+    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome" />
+  </p>
+
+  <p>
     <a href="#the-problem-security-control-drift">The Problem</a> •
     <a href="#why-control-drift">Why Control Drift?</a> •
     <a href="#features">Features</a> •
@@ -47,23 +52,23 @@ While many commercial solutions attempt to completely automate the testing lifec
 
 - **Security Operations Dashboard**: Track real-time metrics including Kill Chain Exposure, Top Security Controls, and Remediation Burndown.
   <br/>
-  <img src="docs/assets/Dashboard.png" alt="Dashboard Screenshot" width="800" style="border-radius: 8px; margin: 10px 0;" />
+  <img src="docs/assets/Dashboard.gif" alt="Dashboard Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
 - **MITRE ATT&CK Heatmap**: Fully interactive 3D globe providing a visual representation of your security posture across the MITRE ATT&CK framework, dynamically updated based on simulation outcomes.
   <br/>
-  <img src="docs/assets/heatmap.png" alt="Heatmap Screenshot" width="800" style="border-radius: 8px; margin: 10px 0;" />
+  <img src="docs/assets/heatmap.gif" alt="Heatmap Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
 - **Simulation Management**: Plan, execute, and log threat simulations in a highly streamlined manner using the intuitive 4-step Simulation Launcher.
   <br/>
-  <img src="docs/assets/Simulation_Launcher.png" alt="Simulation Launcher Screenshot" width="800" style="border-radius: 8px; margin: 10px 0;" />
+  <img src="docs/assets/Simulation_Launcher.gif" alt="Simulation Launcher Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
 - **End-to-end Gap Tracking & Remediation**: Track and prioritize gap remediation across your environment using the built-in Gap Tracker. Successfully resolved gaps will positively reflect throughout Control Drift's metrics.
   <br/>
-  <img src="docs/assets/Gap_Tracker.png" alt="Gap Tracker Screenshot" width="800" style="border-radius: 8px; margin: 10px 0;" />
+  <img src="docs/assets/Gap_Tracker.gif" alt="Gap Tracker Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
 - **Attack Path Mapping**: Visualize attack paths and choke points across your environment. Leverage your AI integration to automatically map viable attack paths based on your active gaps.
   <br/>
-  <img src="docs/assets/attack_path.png" alt="Attack Path Screenshot" width="800" style="border-radius: 8px; margin: 10px 0;" />
+  <img src="docs/assets/attack_path.gif" alt="Attack Path Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 - **Integrated AI**: Plug-and-play AI integration to enhance workflows and introduce AI-powered features.
 - **Code Studio**: An integrated, AI-assisted IDE for writing, editing, and managing detection rules (Sigma, YARA, Splunk SPL, Azure KQL) and emulation payloads directly in the browser.
 - **Flexible Data Adapters**: Start with `localStorage`/`IndexedDB` for quick testing, then migrate to a backend database (`Supabase`, `Firebase`) or a custom `REST API` when you're ready to scale.
@@ -98,9 +103,25 @@ Get up and running locally in less than 60 seconds.
 
 4. **Open your browser:** Navigate to `http://localhost:5173`. You are now running Control Drift entirely in your browser using the local database adapter!
 
+### Docker Quick Start (Enterprise Mode)
+
+If you prefer to run the full stack via Docker, you can spin up the application in seconds:
+
+```bash
+git clone https://github.com/Control-Drift/Control-Drift.git
+cd control-drift/deploy
+docker compose up -d --build control-drift
+```
+
 ### Connecting a Remote Database (Optional)
 
-For instructions on deploying a self-hosted backend, AI proxy, and the frontend on a single server for your enterprise, please see our **[Enterprise Deployment Guide](docs/deployment.md)**.
+For detailed instructions on deploying a self-hosted backend, AI proxy, and the frontend on a single server for your enterprise, please see the **[Enterprise Deployment Guide](docs/deployment.md)**.
+
+---
+
+## Contributing
+
+Contributions are always welcome! Whether you want to add new data adapters, fix bugs, or suggest new features, feel free to open a Pull Request. If you spot a bug or have a feature request, please open an issue.
 
 ---
 
