@@ -1200,7 +1200,7 @@ export default function Dashboard() {
          </div>
 
          {/* Risk Trend Over Time (Area Chart) */}
-         <div className="glass-panel hover-lift" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '380px' }}>
+         <div className="glass-panel hover-lift animate-scale-in" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '380px' }}>
             <h3 style={{ margin: '0 0 25px 0', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Readiness Score Trend
                 <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>Historical tracking of your Global Readiness Score over time, plotting the outcomes of past adversary simulations against your current baseline.</div>}>
@@ -1246,7 +1246,7 @@ export default function Dashboard() {
          </div>
 
          {/* Top Security Controls */}
-         <div className="glass-panel hover-lift" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '380px' }}>
+         <div className="glass-panel hover-lift animate-scale-in" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '380px', animationDelay: '0.1s' }}>
             <h3 style={{ margin: '0 0 25px 0', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Top Security Controls
                 <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>Performance metrics for your deployed security tools. Efficacy is calculated based on successful defenses against tested techniques.</div>}>

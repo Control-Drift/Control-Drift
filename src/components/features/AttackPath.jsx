@@ -19,6 +19,7 @@ import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../AppContext';
 import { ShieldAlert, Shield, X, Package, Monitor, Zap, Network, SatelliteDish, Sparkles, Activity, Fingerprint, AlertCircle, Crosshair, FileText, Terminal, ChevronDown, ChevronUp, Swords, Map as MapIcon, Target, Code } from 'lucide-react';
+import BlackHoleIcon from '../ui/BlackHoleIcon';
 
 // Custom Cyber Kill Chain Icons - Highly Detailed
 const CyberEyeIcon = ({ size = 32, color = "currentColor", ...props }) => (
@@ -654,7 +655,7 @@ Do not include markdown code block wrappers, return ONLY the raw JSON string.\nG
                                 onClick={handleGeneratePaths}
                                 disabled={isGeneratingPaths || activeGaps.length === 0}
                             >
-                                <Sparkles size={20} className={isGeneratingPaths ? 'animate-pulse' : ''} />
+                                <BlackHoleIcon size={20} className={isGeneratingPaths ? 'animate-pulse' : ''} />
                                 {isGeneratingPaths ? 'AI Assessing Vectors...' : 'Map Viable Paths'}
                             </button>
                             <div style={{ background: 'rgba(0,0,0,0.5)', border: '1px solid var(--glass-border)', borderRadius: '12px', padding: '15px 25px', display: 'flex', flexDirection: 'column', alignItems: 'flex-end', boxShadow: '0 0 20px rgba(0,0,0,0.5)' }}>
