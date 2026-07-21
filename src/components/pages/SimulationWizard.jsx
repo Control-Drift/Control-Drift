@@ -598,60 +598,30 @@ export default function SimulationWizard() {
      }
       setIsMappingTTPs(true);
       try {
-          // --- MINI CLIENT-SIDE RAG ---
-          // 1. Extract keywords from user's scenario
-          const stopWords = new Set(['a', 'an', 'and', 'are', 'as', 'at', 'be', 'by', 'for', 'from', 'has', 'he', 'in', 'is', 'it', 'its', 'of', 'on', 'that', 'the', 'to', 'was', 'were', 'will', 'with']);
-          const rawWords = (simulationDetails.goals.toLowerCase().match(/\b[a-z0-9]+\b/g) || []);
-          const keywords = rawWords.filter(w => !stopWords.has(w) && w.length > 2);
-          
-          // 2. Score techniques based on keyword matches
-          let scoredTechniques = [];
+          // Generate the full compressed dictionary, EXCLUDING Recon and Resource Development
+          let dictionaryLines = [];
           
           Object.keys(mitreData).forEach(tacticName => {
               if (tacticName.toLowerCase() === 'reconnaissance' || tacticName.toLowerCase() === 'resource development') {
-                  return; // Skip pre-attack
+                  return; // Skip these to save massive context tokens
               }
               const tactic = mitreData[tacticName];
               
               tactic.techniques.forEach(tech => {
-                  let score = 0;
-                  const searchString = `${tech.name} ${tech.description || ''}`.toLowerCase();
-                  
-                  keywords.forEach(kw => {
-                      if (searchString.includes(kw)) score += 1;
-                  });
-                  
-                  if (score > 0) {
-                      scoredTechniques.push({ id: tech.id, name: tech.name, score });
-                  }
-                  
-                  // Score subtechniques
-                  if (tech.subTechniques) {
-                      tech.subTechniques.forEach(sub => {
-                          let subScore = 0;
-                          const subSearch = `${sub.name} ${sub.description || ''}`.toLowerCase();
-                          keywords.forEach(kw => {
-                              if (subSearch.includes(kw)) subScore += 1;
-                              else if (searchString.includes(kw)) subScore += 0.5; // inherit parent context lightly
-                          });
-                          if (subScore > 0) {
-                              scoredTechniques.push({ id: sub.id, name: sub.name, score: subScore });
-                          }
+                  let line = `${tech.id} ${tech.name}`;
+                  if (tech.subTechniques && tech.subTechniques.length > 0) {
+                      let subs = tech.subTechniques.map(sub => {
+                          let dec = sub.id.split('.')[1];
+                          return `${dec} ${sub.name}`;
                       });
+                      line += ` (${subs.join(', ')})`;
                   }
+                  dictionaryLines.push(line);
               });
           });
-          
-          // 3. Sort by score and take top 40
-          scoredTechniques.sort((a, b) => b.score - a.score);
-          const topTechniques = scoredTechniques.slice(0, 40);
-          
-          // 4. Build compressed dictionary string
-          const dictionaryLines = topTechniques.map(t => `${t.id}: ${t.name}`);
           const dictionaryString = dictionaryLines.join('\n');
-          // ----------------------------
 
-          const sysPrompt = `You are a top-tier Red Teamer. You are given a scenario and a targeted mini-dictionary of potential MITRE ATT&CK T-codes.
+          const sysPrompt = `You are a top-tier Red Teamer. You are given a scenario and a complete MITRE ATT&CK dictionary.
 Your goal is to map the scenario to the exact T-codes.
 
 CRITICAL INSTRUCTIONS:
@@ -659,7 +629,7 @@ CRITICAL INSTRUCTIONS:
 2. SECOND, ONLY after your analysis is complete, extract the exact Txxxx or Txxxx.xxx IDs that apply. Prioritize using the provided dictionary.
 3. Finally, at the very end of your response, you MUST output a single line starting with "MAPPED_IDS:" followed by a comma-separated list of the exact IDs you selected.`;
           
-          const prompt = `Target Environment: ${simulationDetails.environment || 'None provided'}\nSimulation Scenario: ${simulationDetails.goals || 'None provided'}\n\nRelevant MITRE Dictionary (Top Matches):\n${dictionaryString}\n\nTask: Analyze deeply first, then list the MAPPED_IDS at the end.`;
+          const prompt = `Target Environment: ${simulationDetails.environment || 'None provided'}\nSimulation Scenario: ${simulationDetails.goals || 'None provided'}\n\nMITRE ATT&CK Framework Dictionary:\n${dictionaryString}\n\nTask: Analyze deeply first, then list the MAPPED_IDS at the end.`;
 
           let currentFoundIds = new Set();
           let totalFound = 0;
