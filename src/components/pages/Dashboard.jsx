@@ -1205,7 +1205,7 @@ export default function Dashboard() {
          </div>
 
          {/* Risk Trend Over Time (Area Chart) */}
-         <div className="glass-panel hover-lift animate-slide-in-left" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '380px' }}>
+         <div className="glass-panel hover-lift animate-fade-in" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '380px' }}>
             <h3 style={{ margin: '0 0 25px 0', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Readiness Score Trend
                 <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>Historical tracking of your Global Readiness Score over time, plotting the outcomes of past adversary simulations against your current baseline.</div>}>
@@ -1214,7 +1214,7 @@ export default function Dashboard() {
             </h3>
             <div style={{ flex: 1, minHeight: '250px' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={areaData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <AreaChart data={isMounted ? areaData : []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <defs>
                             <linearGradient id="colorRisk" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.8}/>
@@ -1251,7 +1251,7 @@ export default function Dashboard() {
          </div>
 
          {/* Top Security Controls */}
-         <div className="glass-panel hover-lift animate-slide-in-right" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '380px', animationDelay: '0.1s' }}>
+         <div className="glass-panel hover-lift animate-fade-in" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '380px', animationDelay: '0.1s' }}>
             <h3 style={{ margin: '0 0 25px 0', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Top Security Controls
                 <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>Performance metrics for your deployed security tools. Efficacy is calculated based on successful defenses against tested techniques.</div>}>
