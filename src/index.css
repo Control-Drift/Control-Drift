@@ -257,21 +257,23 @@ select.ai-input option {
 }
 
 @keyframes slideInRight {
-  from { opacity: 0; transform: translateX(40px); }
+  from { opacity: 0; transform: translateX(100px); }
   to { opacity: 1; transform: translateX(0); }
 }
 
 .animate-slide-in-right {
-  animation: slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+  animation: slideInRight 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes slideInLeft {
-  from { opacity: 0; transform: translateX(-40px); }
+  from { opacity: 0; transform: translateX(-100px); }
   to { opacity: 1; transform: translateX(0); }
 }
 
 .animate-slide-in-left {
-  animation: slideInLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  opacity: 0;
+  animation: slideInLeft 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes tooltipFade {
