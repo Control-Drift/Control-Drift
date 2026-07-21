@@ -281,6 +281,16 @@ select.ai-input option {
   to { opacity: 1; transform: translate(-50%, -100%) translateY(-25px) scale(1); }
 }
 
+@keyframes revealRight {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+
+.animate-reveal-right {
+  animation: revealRight 1.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.3s;
+}
+
 /* Status Colors */
 .status-high { background: var(--success-bg) !important; color: var(--success) !important; border-color: rgba(16, 185, 129, 0.3) !important; }
 .status-prevented { background: rgba(6, 182, 212, 0.1) !important; color: #06b6d4 !important; border-color: rgba(6, 182, 212, 0.3) !important; }

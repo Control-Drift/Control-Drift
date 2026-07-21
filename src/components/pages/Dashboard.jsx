@@ -1213,8 +1213,9 @@ export default function Dashboard() {
                 </Tooltip>
             </h3>
             <div style={{ flex: 1, minHeight: '250px' }}>
+                <div className="animate-reveal-right" style={{ width: '100%', height: '100%' }}>
                 <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={isMounted ? areaData : []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <AreaChart data={areaData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                         <defs>
                             <linearGradient id="colorRisk" x1="0" y1="0" x2="0" y2="1">
                                 <stop offset="5%" stopColor="var(--accent-primary)" stopOpacity={0.8}/>
@@ -1239,14 +1240,12 @@ export default function Dashboard() {
                             strokeWidth={3} 
                             fillOpacity={1} 
                             fill="url(#colorRisk)" 
-                            isAnimationActive={true} 
-                            animationBegin={400}
-                            animationDuration={1500} 
-                            animationEasing="ease-in-out"
+                            isAnimationActive={false} 
                             filter="url(#glowArea)"
                         />
                     </AreaChart>
                 </ResponsiveContainer>
+                </div>
             </div>
          </div>
 
