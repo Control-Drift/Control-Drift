@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS public.gaps (
     "riskAcceptedBy" text,
     "riskAcceptedDate" text,
     "validationNotes" text,
+    "remediationCode" text,
     "created_at" timestamp with time zone DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 

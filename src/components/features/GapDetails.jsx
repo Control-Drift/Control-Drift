@@ -323,9 +323,9 @@ export default function GapDetails({ gapIdProp, onClose, onValidate }) {
 
     const handleSaveTracking = async () => {
         if (isReadOnly) return;
-        setSaveStatusTracking(true);
         try {
             await updateGap(gap.id, { stakeholders, ticketLink, aiRemediation, todoList });
+            setSaveStatusTracking(true);
             requestSuccessToast("Tracking details saved successfully.");
         } catch (e) {
             // Error handled by hook
@@ -336,9 +336,9 @@ export default function GapDetails({ gapIdProp, onClose, onValidate }) {
     
     const handleSaveStrategy = async () => {
         if (isReadOnly) return;
-        setSaveStatusStrategy(true);
         try {
             await updateGap(gap.id, { aiRemediation });
+            setSaveStatusStrategy(true);
             requestSuccessToast("Remediation strategy saved successfully.");
         } catch (e) {
             // Error handled by hook
@@ -728,9 +728,11 @@ export default function GapDetails({ gapIdProp, onClose, onValidate }) {
                         <CodeStudio 
                             isStandalone={true} 
                             initialCode={gap.remediationCode || ''}
-                            onSave={(ruleCode) => {
-                                requestSuccessToast("Rule saved successfully.");
-                                updateGap('remediationCode', ruleCode);
+                            onSave={async (ruleCode) => {
+                                try {
+                                    await updateGap(gap.id, { remediationCode: ruleCode });
+                                    requestSuccessToast("Rule saved successfully.");
+                                } catch (e) {}
                             }}
                         />
                     </div>
