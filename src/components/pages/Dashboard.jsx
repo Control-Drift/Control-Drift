@@ -1124,8 +1124,10 @@ export default function Dashboard() {
                                             outcomeStyle = { color: 'var(--success)', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)' };
                                         } else if (lowerOutcome.includes('prevented')) {
                                             outcomeStyle = { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.3)' };
-                                        } else if (lowerOutcome.includes('alerted') || lowerOutcome.includes('logged')) {
+                                        } else if (lowerOutcome.includes('alerted')) {
                                             outcomeStyle = { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.3)' };
+                                        } else if (lowerOutcome.includes('logged')) {
+                                            outcomeStyle = { color: '#eab308', bg: 'rgba(234, 179, 8, 0.15)', border: 'rgba(234, 179, 8, 0.3)' };
                                         } else if (lowerOutcome.includes('missed')) {
                                             outcomeStyle = { color: 'var(--danger)', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.3)' };
                                         } else if (lowerOutcome.includes('accepted')) {
