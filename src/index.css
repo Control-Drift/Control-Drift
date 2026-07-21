@@ -782,9 +782,9 @@ select.ai-input option {
 }
 
 @keyframes brainPulse {
-  0% { transform: scale(1); box-shadow: 0 0 10px rgba(156, 39, 176, 0.4); }
-  50% { transform: scale(1.15); box-shadow: 0 0 30px var(--accent-primary); filter: hue-rotate(45deg); }
-  100% { transform: scale(1); box-shadow: 0 0 10px rgba(156, 39, 176, 0.4); }
+  0% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(156, 39, 176, 0.4)); }
+  50% { transform: scale(1.15); filter: drop-shadow(0 0 15px var(--accent-primary)) hue-rotate(45deg); }
+  100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(156, 39, 176, 0.4)); }
 }
 
 .ai-think-spin {
