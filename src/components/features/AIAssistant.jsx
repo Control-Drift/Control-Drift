@@ -289,7 +289,7 @@ CRITICAL RULES FOR MITRE ATT&CK MAPPING:
           <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexShrink: 0 }}>
             {activeAiContext && isAiActive && (
                 <div style={{ fontSize: '0.7rem', background: 'rgba(192, 132, 252, 0.2)', color: 'var(--accent-primary)', padding: '2px 8px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                    <Target size={10} /> Context: {activeAiContext.id || 'Active'}
+                    <BrainCircuit size={12} /> Context: {activeAiContext.id || 'Active'}
                 </div>
             )}
             <button onClick={() => setIsFullScreen(!isFullScreen)} style={{ background: 'transparent', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', padding: '5px', display: 'flex', alignItems: 'center' }}>
