@@ -52,7 +52,7 @@ While many commercial solutions attempt to completely automate the testing lifec
 
 - **Security Operations Dashboard**: Track real-time metrics including Kill Chain Exposure, Top Security Controls, and Remediation Burndown.
   <br/>
-  <img src="docs/assets/Dashboard.gif" alt="Dashboard Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
+  <img src="docs/assets/Dashboard.png" alt="Dashboard Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
 - **MITRE ATT&CK Heatmap**: Fully interactive 3D globe providing a visual representation of your security posture across the MITRE ATT&CK framework, dynamically updated based on simulation outcomes.
   <br/>
@@ -60,15 +60,15 @@ While many commercial solutions attempt to completely automate the testing lifec
 
 - **Simulation Management**: Plan, execute, and log threat simulations in a highly streamlined manner using the intuitive 4-step Simulation Launcher.
   <br/>
-  <img src="docs/assets/Simulation_Launcher.gif" alt="Simulation Launcher Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
+  <img src="docs/assets/Sim_Launcher.gif" alt="Simulation Launcher Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
 - **End-to-end Gap Tracking & Remediation**: Track and prioritize gap remediation across your environment using the built-in Gap Tracker. Successfully resolved gaps will positively reflect throughout Control Drift's metrics.
   <br/>
-  <img src="docs/assets/Gap_Tracker.gif" alt="Gap Tracker Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
+  <img src="docs/assets/Gap_Tracker.png" alt="Gap Tracker Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
 - **Attack Path Mapping**: Visualize attack paths and choke points across your environment. Leverage your AI integration to automatically map viable attack paths based on your active gaps.
   <br/>
-  <img src="docs/assets/attack_path.gif" alt="Attack Path Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
+  <img src="docs/assets/attack_path.png" alt="Attack Path Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 - **Integrated AI**: Plug-and-play AI integration to enhance workflows and introduce AI-powered features.
 - **Code Studio**: An integrated, AI-assisted IDE for writing, editing, and managing detection rules (Sigma, YARA, Splunk SPL, Azure KQL) and emulation payloads directly in the browser.
 - **Flexible Data Adapters**: Start with `localStorage`/`IndexedDB` for quick testing, then migrate to a backend database (`Supabase`, `Firebase`) or a custom `REST API` when you're ready to scale.
