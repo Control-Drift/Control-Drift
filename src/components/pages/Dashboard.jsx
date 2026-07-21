@@ -181,6 +181,11 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [activePhaseSubject, setActivePhaseSubject] = React.useState("Pre-Attack");
   const [expandedPhaseSubject, setExpandedPhaseSubject] = React.useState(null);
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setTimeout(() => setIsMounted(true), 150);
+  }, []);
 
   React.useEffect(() => {
     setActiveAiContext({
@@ -1200,7 +1205,7 @@ export default function Dashboard() {
          </div>
 
          {/* Risk Trend Over Time (Area Chart) */}
-         <div className="glass-panel hover-lift animate-scale-in" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '380px' }}>
+         <div className="glass-panel hover-lift animate-fade-in" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '380px' }}>
             <h3 style={{ margin: '0 0 25px 0', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Readiness Score Trend
                 <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>Historical tracking of your Global Readiness Score over time, plotting the outcomes of past adversary simulations against your current baseline.</div>}>
@@ -1246,7 +1251,7 @@ export default function Dashboard() {
          </div>
 
          {/* Top Security Controls */}
-         <div className="glass-panel hover-lift animate-scale-in" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '380px', animationDelay: '0.1s' }}>
+         <div className="glass-panel hover-lift animate-fade-in" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '380px', animationDelay: '0.1s' }}>
             <h3 style={{ margin: '0 0 25px 0', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Top Security Controls
                 <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>Performance metrics for your deployed security tools. Efficacy is calculated based on successful defenses against tested techniques.</div>}>
@@ -1292,7 +1297,7 @@ export default function Dashboard() {
                            <div style={{ position: 'relative', width: '56px', height: '56px' }}>
                                <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)', filter: `drop-shadow(0 0 4px ${glowColor})` }}>
                                    <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
-                                   <circle cx="18" cy="18" r="16" fill="none" stroke={heatColor} strokeWidth="3" strokeDasharray="100.5" strokeDashoffset={100.5 - (pct * 100.5)} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1s ease-out, stroke 1s ease-out' }} />
+                                   <circle cx="18" cy="18" r="16" fill="none" stroke={heatColor} strokeWidth="3" strokeDasharray="100.5" strokeDashoffset={isMounted ? (100.5 - (pct * 100.5)) : 100.5} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1), stroke 1s ease-out' }} />
                                </svg>
                                <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
                                    {Math.round(pct * 100)}%
