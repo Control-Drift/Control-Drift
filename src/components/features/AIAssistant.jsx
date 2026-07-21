@@ -263,7 +263,7 @@ CRITICAL RULES FOR MITRE ATT&CK MAPPING:
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flex: 1, minWidth: 0 }}>
-            <BrainCircuit size={24} color="var(--accent-primary)" style={{ flexShrink: 0 }} />
+            <BlackHoleIcon size={24} style={{ flexShrink: 0 }} />
             <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, paddingRight: '10px' }}>
                {(() => {
                   const p = aiSettings?.provider || 'None';
