@@ -861,7 +861,7 @@ export default function Dashboard() {
 
       <div className="slide-in-staggered dashboard-grid" style={{ marginBottom: '40px' }}>
          {/* Kill Chain Exposure Card (Master-Detail) */}
-         <div className="glass-panel hover-lift" style={{ padding: '30px', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', minHeight: '380px', height: expandedPhaseSubject ? 'auto' : '380px' }}>
+         <div className="glass-panel hover-lift" style={{ padding: '30px', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', minHeight: '380px', height: '380px' }}>
             {!expandedPhaseSubject ? (
                 <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', marginBottom: '15px', zIndex: 2 }}>
