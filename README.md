@@ -6,7 +6,6 @@
 
   <p>
     <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License" />
-    <img src="https://img.shields.io/badge/PRs-welcome-brightgreen.svg" alt="PRs Welcome" />
   </p>
 
   <p>
@@ -50,7 +49,7 @@ While many commercial solutions attempt to completely automate the testing lifec
 
 ## Features
 
-- **Security Operations Dashboard**: Track real-time metrics including Kill Chain Exposure, Top Security Controls, and Remediation Burndown.
+- **Security Operations Dashboard**: Track real-time, meaningful metrics including you Global Readiness Score, Top Security Controls, and Remediation Burndown.
   <br/>
   <img src="docs/assets/Dashboard.png" alt="Dashboard Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
@@ -66,7 +65,7 @@ While many commercial solutions attempt to completely automate the testing lifec
   <br/>
   <img src="docs/assets/Gap_Tracker.png" alt="Gap Tracker Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
-- **Attack Path Mapping**: Visualize attack paths and choke points across your environment. Leverage your AI integration to automatically map viable attack paths based on your active gaps.
+- **Attack Path Mapping**: Visualize attack paths aross your environment. Leverage your AI integration to automatically map viable attack paths based on your active gaps.
   <br/>
   <img src="docs/assets/attack_path.png" alt="Attack Path Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 - **Integrated AI**: Plug-and-play AI integration to enhance workflows and introduce AI-powered features.
