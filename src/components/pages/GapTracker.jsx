@@ -509,11 +509,14 @@ export default function GapTracker() {
       const meanSeconds = totalSeconds / validResolved.length;
       if (isNaN(meanSeconds)) return 'N/A';
 
-      const days = Math.floor(meanSeconds / (3600 * 24));
-      const hours = Math.floor((meanSeconds % (3600 * 24)) / 3600);
-      
-      if (days > 0) return `${days}d ${hours}h`;
-      if (hours > 0) return `${hours}h`;
+      const roundedHours = Math.round(meanSeconds / 3600);
+      if (roundedHours > 0) {
+          const d = Math.floor(roundedHours / 24);
+          const h = roundedHours % 24;
+          if (d > 0 && h > 0) return `${d}d ${h}h`;
+          if (d > 0) return `${d}d`;
+          return `${h}h`;
+      }
       return '< 1h';
   };
 
