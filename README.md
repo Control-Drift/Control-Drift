@@ -49,7 +49,7 @@ While many commercial solutions attempt to completely automate the testing lifec
 
 ## Features
 
-- **Security Operations Dashboard**: Track real-time, meaningful metrics including you Global Readiness Score, Top Security Controls, and Remediation Burndown.
+- **Security Operations Dashboard**: Track real-time, meaningful metrics including your Global Readiness Score, Top Security Controls, and Remediation Burndown.
   <br/>
   <img src="docs/assets/Dashboard.png" alt="Dashboard Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
@@ -120,7 +120,7 @@ For detailed instructions on deploying a self-hosted backend, AI proxy, and the 
 
 ## Contributing
 
-Contributions are always welcome! Whether you want to add new data adapters, fix bugs, or suggest new features, feel free to open a Pull Request. If you spot a bug or have a feature request, please open an issue.
+Contributions are welcome. Whether you want to add new data adapters, fix bugs, or suggest new features, feel free to open a Pull Request. If you spot a bug or have a feature request, please open an issue.
 
 ---
 
