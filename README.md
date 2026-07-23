@@ -61,7 +61,7 @@ While many commercial solutions attempt to completely automate the testing lifec
   <br/>
   <img src="docs/assets/Sim_Launcher.gif" alt="Simulation Launcher Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
-- **End-to-end Gap Tracking & Remediation**: Track and prioritize gap remediation across your environment using the built-in Gap Tracker. Successfully resolved gaps will positively reflect throughout Control Drift's metrics.
+- **End-to-end Gap Tracking & Remediation**: Track and prioritize gap remediation across your environment using the built-in Gap Tracker. Resolved gaps instantly update your global readiness metrics.
   <br/>
   <img src="docs/assets/Gap_Tracker.png" alt="Gap Tracker Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
