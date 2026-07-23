@@ -48,26 +48,19 @@ export default function CustomLogo({ className = "", style = {}, iconOnly = fals
         ...style,
       }}
     >
-      <div style={{ width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, position: 'relative' }}>
-        <img 
-          src={emblem} 
-          alt="Control Drift" 
-          style={{ position: 'absolute', height: '22px', width: 'auto', maxWidth: 'none', objectFit: 'contain' }} 
-        />
-      </div>
-      
       {/* The Typography */}
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
-        gap: '6px',
-        fontFamily: '"Orbitron", sans-serif',
-        fontSize: '18px',
+        gap: '8px',
+        fontFamily: '"Michroma", sans-serif',
+        fontSize: '17px',
         lineHeight: 1,
+        marginTop: '2px', // Slight optical adjustment for Michroma
       }}>
         {/* Heavy, rigid control */}
         <span style={{ 
-          fontWeight: 900, 
+          fontWeight: 400, 
           color: '#ffffff', 
           letterSpacing: '0.5px',
           textShadow: '0px 2px 4px rgba(0,0,0,0.5)'
@@ -77,9 +70,9 @@ export default function CustomLogo({ className = "", style = {}, iconOnly = fals
         
         {/* Light, fluid drift */}
         <span style={{ 
-          fontWeight: 900, 
+          fontWeight: 400, 
           letterSpacing: '0.5px',
-          background: 'linear-gradient(90deg, #f43f5e 0%, #a855f7 50%, #3b82f6 100%)',
+          background: 'linear-gradient(90deg, #f43f5e 0%, #a855f7 45%, #3b82f6 80%, #3b82f6 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           filter: 'drop-shadow(0px 2px 8px rgba(168, 85, 247, 0.4))'
