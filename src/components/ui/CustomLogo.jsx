@@ -52,15 +52,14 @@ export default function CustomLogo({ className = "", style = {}, iconOnly = fals
       <div style={{ 
         display: 'flex', 
         alignItems: 'center', 
-        gap: '8px',
-        fontFamily: '"Michroma", sans-serif',
-        fontSize: '17px',
+        gap: '6px',
+        fontFamily: '"Orbitron", sans-serif',
+        fontSize: '18px',
         lineHeight: 1,
-        marginTop: '2px', // Slight optical adjustment for Michroma
       }}>
         {/* Heavy, rigid control */}
         <span style={{ 
-          fontWeight: 400, 
+          fontWeight: 900, 
           color: '#ffffff', 
           letterSpacing: '0.5px',
           textShadow: '0px 2px 4px rgba(0,0,0,0.5)'
@@ -70,7 +69,7 @@ export default function CustomLogo({ className = "", style = {}, iconOnly = fals
         
         {/* Light, fluid drift */}
         <span style={{ 
-          fontWeight: 400, 
+          fontWeight: 900, 
           letterSpacing: '0.5px',
           background: 'linear-gradient(90deg, #f43f5e 0%, #a855f7 45%, #3b82f6 80%, #3b82f6 100%)',
           WebkitBackgroundClip: 'text',
