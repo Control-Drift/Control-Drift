@@ -1440,6 +1440,7 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                 const matchesEnv = !activeEnvironmentFilter || activeEnvironmentFilter === 'All' || data.events.some(e => Array.isArray(e.environment) ? e.environment.includes(activeEnvironmentFilter) : e.environment === activeEnvironmentFilter);
                 return matchesSearch && matchesTag && matchesEnv;
              })
+             .sort((a, b) => new Date(b[1].date).getTime() - new Date(a[1].date).getTime())
              .map(([name, data]) => (
             <div key={name} className="glass-panel hover-lift" onClick={() => setSelectedSimulation(name)} style={{  padding: '25px', display: 'flex', flexDirection: 'column', cursor: 'pointer'  }}>
               <div style={{  display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px'  }}>
