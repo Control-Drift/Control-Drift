@@ -71,7 +71,7 @@ export default function CustomLogo({ className = "", style = {}, iconOnly = fals
         <span style={{ 
           fontWeight: 900, 
           letterSpacing: '0.5px',
-          background: 'linear-gradient(90deg, #f43f5e 0%, #a855f7 45%, #3b82f6 80%, #3b82f6 100%)',
+          background: 'linear-gradient(90deg, #f43f5e 0%, #a855f7 45%, #2563eb 80%, #2563eb 100%)',
           WebkitBackgroundClip: 'text',
           WebkitTextFillColor: 'transparent',
           filter: 'drop-shadow(0px 2px 8px rgba(168, 85, 247, 0.4))'
