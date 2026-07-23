@@ -402,7 +402,7 @@ const testDbConnection = async () => {
       <div className="glass-panel" style={{ padding: '30px', maxWidth: '800px' }}>
         <h2 
            onClick={() => togglePanel('ai')} 
-           style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', marginBottom: expandedPanels.ai ? '25px' : '0', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', justifyContent: 'space-between' }}
+           style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', marginBottom: 0, display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', justifyContent: 'space-between' }}
         >
            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                <BrainCircuit size={24} color="var(--accent-secondary)" /> Generative AI Integration
@@ -410,8 +410,10 @@ const testDbConnection = async () => {
            <ChevronDown size={20} style={{ transform: expandedPanels.ai ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }} />
         </h2>
         
-        {expandedPanels.ai && (
-          <div className="panel-content glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div style={{ display: 'grid', gridTemplateRows: expandedPanels.ai ? '1fr' : '0fr', transition: 'grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+          <div style={{ overflow: 'hidden' }}>
+            <div style={{ paddingTop: '15px', opacity: expandedPanels.ai ? 1 : 0, transition: 'opacity 0.2s ease-in-out', pointerEvents: expandedPanels.ai ? 'auto' : 'none' }}>
+              <div className="panel-content glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {aiSettings.isProxy ? (
               <div style={{ padding: '20px', background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '8px' }}>
                 <h4 style={{ margin: '0 0 10px 0', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -535,14 +537,16 @@ const testDbConnection = async () => {
               </div>
             </div>
             )}
+              </div>
+            </div>
           </div>
-        )}
+        </div>
       </div>
 
       <div className="glass-panel" style={{ padding: '30px', maxWidth: '800px', marginTop: '30px' }}>
         <h2 
            onClick={() => togglePanel('db')} 
-           style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', marginBottom: expandedPanels.db ? '15px' : '0', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', justifyContent: 'space-between' }}
+           style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', marginBottom: 0, display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', justifyContent: 'space-between' }}
         >
            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                <Database size={24} color="var(--accent-primary)" /> Database & Sync
@@ -550,8 +554,9 @@ const testDbConnection = async () => {
            <ChevronDown size={20} style={{ transform: expandedPanels.db ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }} />
         </h2>
         
-        {expandedPanels.db && (
-        <>
+        <div style={{ display: 'grid', gridTemplateRows: expandedPanels.db ? '1fr' : '0fr', transition: 'grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+          <div style={{ overflow: 'hidden' }}>
+            <div style={{ paddingTop: '15px', opacity: expandedPanels.db ? 1 : 0, transition: 'opacity 0.2s ease-in-out', pointerEvents: expandedPanels.db ? 'auto' : 'none' }}>
         <div className="panel-content glass-panel" style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: '20px', marginBottom: '20px' }}>
             {dbAdapter && dbAdapter.type === 'supabase' ? (
               <div style={{ padding: '20px', background: 'rgba(29, 78, 216, 0.1)', border: '1px solid rgba(29, 78, 216, 0.3)', borderRadius: '8px' }}>
@@ -592,15 +597,16 @@ const testDbConnection = async () => {
              {saveStatus && saveStatus.includes('Database imported') && <p style={{ color: 'var(--success)', marginTop: '10px', fontSize: '0.9rem' }}>{saveStatus}</p>}
              {saveStatus && saveStatus.includes('Error parsing') && <p style={{ color: 'var(--danger)', marginTop: '10px', fontSize: '0.9rem' }}>{saveStatus}</p>}
           </div>
-        </>
-        )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Global Metadata Section */}
       <div className="glass-panel" style={{ padding: '30px', maxWidth: '800px', marginTop: '30px', position: 'relative', zIndex: 5 }}>
         <h2 
            onClick={() => togglePanel('taxonomy')} 
-           style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', marginBottom: expandedPanels.taxonomy ? '25px' : '0', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', justifyContent: 'space-between' }}
+           style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', marginBottom: 0, display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', justifyContent: 'space-between' }}
         >
            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                <Layers size={24} color="var(--accent-secondary)" /> Global Metadata
@@ -608,8 +614,10 @@ const testDbConnection = async () => {
            <ChevronDown size={20} style={{ transform: expandedPanels.taxonomy ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }} />
         </h2>
         
-        {expandedPanels.taxonomy && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
+        <div style={{ display: 'grid', gridTemplateRows: expandedPanels.taxonomy ? '1fr' : '0fr', transition: 'grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1)' }}>
+          <div style={{ overflow: 'hidden' }}>
+            <div style={{ paddingTop: '15px', opacity: expandedPanels.taxonomy ? 1 : 0, transition: 'opacity 0.2s ease-in-out', pointerEvents: expandedPanels.taxonomy ? 'auto' : 'none' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
             
             {/* Target Environments */}
             <div>
@@ -743,8 +751,10 @@ const testDbConnection = async () => {
                 </div>
             </div>
 
+              </div>
+            </div>
+          </div>
         </div>
-        )}
       </div>
 
 
