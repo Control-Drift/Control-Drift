@@ -73,7 +73,7 @@ When you run the automated setup script (or follow the manual steps), the `deplo
 
 ### Provisioning New Users
 For security reasons, access must be manually provisioned by an administrator. Because we set `GOTRUE_MAILER_AUTOCONFIRM=true`, administrators can create accounts without requiring an SMTP server or email verification:
-1. Open Supabase API Gateway (Backend/Kong)**: `http://<SERVER_IP>:8000`.
+1. Open **Supabase Studio (Database Admin UI)**: `http://<SERVER_IP>:3000`.
 2. Navigate to the **Authentication** tab.
 3. Click **Add User** -> **Create New User**.
 4. Enter the user's email and a temporary password.
