@@ -2,9 +2,7 @@
   <br />
   <img src="public/drift_emblem.png" alt="Control Drift Logo" width="400" />
   <h1>Control Drift</h1>
-  <p><strong>A modern, practitioner-first platform to pressure-test security controls, expose silent failures, and measure true defensive readiness against real-world threats.</strong></p>
-
-  <p>
+  <p><strong>A modern, practitioner-first platform to pressure-test security controls, expose silent failures, and measure true defensive readiness against real-world threats.</strong>
     <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License" />
   </p>
 
@@ -12,7 +10,8 @@
     <a href="#the-problem-security-control-drift">The Problem</a> •
     <a href="#why-control-drift">Why Control Drift?</a> •
     <a href="#features">Features</a> •
-    <a href="#quick-start">Quick Start</a>
+    <a href="#quick-start">Quick Start</a> •
+    <a href="#documentation">Documentation</a>
   </p>
 </div>
 
@@ -115,6 +114,17 @@ docker compose up -d --build control-drift
 ### Connecting a Remote Database (Optional)
 
 For detailed instructions on deploying a self-hosted backend, AI proxy, and the frontend on a single server for your enterprise, please see the **[Enterprise Deployment Guide](docs/deployment.md)**.
+
+---
+
+## Documentation
+
+For a deeper dive into the platform, check out our comprehensive guides:
+
+- **[User Guide](docs/user_guide.md)**: A complete walkthrough of day-to-day operations and workflows.
+- **[Architecture & Concepts](docs/architecture_and_concepts.md)**: Learn about Event-Driven Posture Modeling and the flexible Data Adapter approach.
+- **[AI Integration Guide](docs/ai_integration_guide.md)**: Setup instructions to unlock AI capabilities, both locally and via the secure Enterprise proxy.
+- **[Enterprise Deployment Guide](docs/deployment.md)**: Detailed instructions for deploying a self-hosted backend.
 
 ---
 
