@@ -120,7 +120,7 @@ For detailed instructions on deploying a self-hosted backend, AI proxy, and the 
 
 ## Documentation
 
-For a deeper dive into the platform, check out our comprehensive guides:
+For a deeper dive into the platform, check out these comprehensive guides:
 
 - **[User Guide](docs/user_guide.md)**: A complete walkthrough of day-to-day operations and workflows.
 - **[Architecture & Concepts](docs/architecture_and_concepts.md)**: Learn about Event-Driven Posture Modeling and the flexible Data Adapter approach.
