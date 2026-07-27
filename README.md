@@ -2,7 +2,8 @@
   <br />
   <img src="public/drift_emblem.png" alt="Control Drift Logo" width="400" />
   <h1>Control Drift</h1>
-  <p><strong>A modern, practitioner-first platform to pressure-test security controls, expose silent failures, and measure true defensive readiness against real-world threats.</strong>
+  <p><strong>A modern, practitioner-first platform to pressure-test security controls, expose silent failures, and measure true defensive readiness against real-world threats.</strong></p>
+  <p>
     <img src="https://img.shields.io/badge/license-Apache%202.0-blue.svg" alt="License" />
   </p>
 
