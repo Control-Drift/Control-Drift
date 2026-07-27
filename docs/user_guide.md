@@ -28,7 +28,7 @@ To start a new test, navigate to the **Simulation Launcher**. The streamlined 4-
 Once you've logged simulations, navigate to the **Heat Globe**.
 
 - **Interactive 3D Globe:** Unlike standard 2D tables, Control Drift visualizes the MITRE ATT&CK matrix on an interactive 3D globe.
-- **Dynamic Updates:** The colors of the techniques on the globe shift dynamically based on your simulation outcomes. Red indicates no coverage (gap), yellow indicates partial coverage, and green indicates optimal coverage.
+- **Dynamic Updates:** The colors of the tactic regions and techniques on the globe light-up dynamically based on simulation data. Red indicates no coverage, orange indicates minimal coverage, yellow indicates partial coverage, and green indicates optimal coverage.
 - **TTP Overlay:** Clicking on any technique on the globe opens an overlay showing historical simulations involving that technique, providing instant context on aggregate scoring and metrics.
 
 ## 4. Gap Tracking and Remediation
