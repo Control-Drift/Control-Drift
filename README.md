@@ -123,7 +123,7 @@ For detailed instructions on deploying a self-hosted backend, AI proxy, and the 
 For additional resources, check out these comprehensive guides:
 
 - **[User Guide](docs/user_guide.md)**: A complete walkthrough of day-to-day operations and workflows.
-- **[Data Logic & Event Model](docs/architecture_overview.md)**: An overview of how Control Drift structures data, calculates metrics, and handles simulation events.
+- **[Architecture Overview](docs/architecture_overview.md)**: An overview of how Control Drift structures data, calculates metrics, and handles simulation events.
 - **[AI Integration Guide](docs/ai_integration_guide.md)**: Setup instructions to unlock AI capabilities, both locally and via the secure Enterprise proxy.
 - **[Enterprise Deployment Guide](docs/deployment.md)**: Detailed instructions for deploying a self-hosted backend.
 
