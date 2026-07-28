@@ -51,7 +51,7 @@ Understanding isolated gaps is useful, but understanding how they chain together
 
 To streamline workflows, Control Drift includes the following AI-powered engineering tools.
 
-- **AI Assistant:** When configured, you can invoke the AI Assistant by clicking on the chat icon located in the lower-right corner of the console window. The chatbot is given contextual infromation on the current data within Control Drift to accurately assist with various workflows.
+- **AI Assistant:** When configured, you can invoke the AI Assistant by clicking on the chat icon located in the lower-right corner of the console window. The chatbot is given contextual information on the current data within Control Drift to accurately assist with various workflows.
 - **Code Studio:** Craft simulation payloads and detection rules within the console. The studio supports syntax highlighting for Sigma, YARA, Splunk SPL, and Azure KQL. 
 - **AI-Augmented Simulation Launcher:** TTP auto-mapping, simulation design auto-generation, and executive report generation are all available after configuring an AI integration.
 
