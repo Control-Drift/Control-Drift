@@ -6,17 +6,17 @@ This document outlines how Control Drift structures, tracks, and calculates metr
 
 Control Drift utilizes three main data structures to track security posture effectively:
 
-### A. 'Simulations'
+### A. Simulations
 A **Simulation** is an aggregate collection or "campaign" of multiple events (e.g., "Q3 Ransomware Campaign").
 - **Purpose:** Groups related executions together.
 - **Data Tracked:** A JSONB summary block containing the execution strategy, attached base64 image evidence, tags, target environments, and the nested array of execution results.
 
-### B. 'Events'
+### B. Events
 An **Event** represents a single executed instance of one or multiple TTPs.
 - **Purpose:** Captures the ground-truth outcome of a red-team action. 
 - **Data Tracked:** The MITRE TTP(s) tested, the finding/outcome (e.g., `Prevented`, 'Alerted', `Logged`, `Missed`), and the specific Coverage Rating (`Optimal`, `Partial`, `Minimal`, `None`).
 
-### C. 'Gaps'
+### C. Gaps
 A **Gap** is a ticketing construct that represents a missing control or coverage blind spot identified during an Event.
 - **Purpose:** Tracks the lifecycle of remediation efforts.
 - **Data Tracked:** Status (`Open`, `In Progress`, `Resolved`, `Risk Accepted`), Severity (`Critical`, `High`, `Medium`, `Low`), assigned stakeholders, and creation/resolution timestamps for metrics tracking.
