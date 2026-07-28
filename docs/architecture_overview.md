@@ -1,4 +1,4 @@
-# Data Logic & Event Model
+# Architecture Overview
 
 This document outlines how Control Drift structures, tracks, and calculates metrics across the platform. It is based directly on the application's underlying logic and React Context architecture.
 
