@@ -1,4 +1,4 @@
-# Control Drift - Product Roadmap & Brainstorming
+# Control Drift - Platform Roadmap & Brainstorming
 
 This document outlines future features, ideas, and structural improvements planned for Control Drift.
 
