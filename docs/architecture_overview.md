@@ -21,7 +21,7 @@ A **Gap** is a ticketing construct that represents a missing control or coverage
 - **Purpose:** Tracks the lifecycle of remediation efforts.
 - **Data Tracked:** Status (`Open`, `In Progress`, `Resolved`, `Risk Accepted`), Severity (`Critical`, `High`, `Medium`, `Low`), assigned stakeholders, and creation/resolution timestamps for metrics tracking.
 
-## 2. Coverage Rating System
+## 2. Metrics
 
 Control Drift dynamically calculates several critical metrics in the `Dashboard` to provide an accurate, real-time assessment of defensive readiness.
 
