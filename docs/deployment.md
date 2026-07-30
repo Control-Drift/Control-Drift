@@ -52,15 +52,17 @@ Once the script finishes, everything is running! The deployment script automatic
 
 ## Accessing the Platform
 
-Your deployment is now complete! You can access the services at:
+Your deployment is now complete and fully secured behind an Nginx TLS reverse proxy! You can access the services at:
 
-- **Control Drift Frontend**: `http://<SERVER_IP>:80`
-- **Supabase API Gateway (Backend/Kong)**: `http://<SERVER_IP>:8000`
-- **Supabase Studio (Database Admin UI)**: `http://<SERVER_IP>:3000`
-- **LiteLLM Proxy**: `http://<SERVER_IP>:4000`
+- **Control Drift Frontend**: `https://<SERVER_IP>`
+- **Supabase API Gateway (Backend/Kong)**: `https://<SERVER_IP>/auth/v1` (and `/rest/v1`, etc.)
+- **Supabase Studio (Database Admin UI)**: `http://127.0.0.1:3000` (Restricted to localhost for security)
+- **LiteLLM Proxy**: `https://<SERVER_IP>/litellm/`
+
+*(Note: Because the scripts generate self-signed certificates for the Nginx proxy, your browser will show a "Not secure" warning on your first visit. You must explicitly tell your browser to proceed to the IP address. The connection itself is fully encrypted.)*
 
 ### Initial Login
-To access the application when connected to a database, your must provision accounts via the Supabase API Gateway (Backend/Kong) (http://<SERVER_IP>:8000).
+To access the application when connected to a database, you must provision accounts via the Supabase API Gateway (Backend/Kong) (`https://<SERVER_IP>/auth/v1`).
 
 ---
 
@@ -119,4 +121,40 @@ docker compose down
 
 # To start them back up
 docker compose up -d
+```
+
+---
+
+## Manual Security Configuration (Without Scripts)
+
+If you are deploying Control Drift manually and do not wish to use the automated setup scripts, you must manually secure your deployment to prevent exposing sensitive internal services (like Supabase Studio and the AI Proxy) to the public web.
+
+### 1. Bind Supabase Studio to Localhost
+By default, Supabase's `docker-compose.yml` binds Studio to `0.0.0.0:3000`. To restrict this, create a `docker-compose.override.yml` in the `supabase/docker/` directory:
+```yaml
+services:
+  studio:
+    ports:
+      - "127.0.0.1:3000:3000/tcp"
+```
+
+### 2. Generate TLS Certificates
+In the `deploy/` directory, create a `certs` folder and generate self-signed certificates (or drop in your own enterprise certificates):
+```bash
+mkdir certs
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+  -keyout certs/key.pem \
+  -out certs/cert.pem \
+  -subj "/C=US/ST=State/L=City/O=Security/CN=localhost"
+```
+
+### 3. Route Traffic Through Nginx
+Ensure your `deploy/docker-compose.yml` includes the `nginx.conf` and `certs` volume mounts for the `control-drift` frontend service, and that the LiteLLM proxy port `4000` is **not** exposed to the host network (only exposed internally within the `supabase_default` network).
+
+### 4. Update Supabase Environment Variables
+In `supabase/docker/.env`, update your external URLs to point to your Nginx proxy (Port 443) instead of Port 8000:
+```env
+API_EXTERNAL_URL=https://<SERVER_IP>/auth/v1
+SUPABASE_PUBLIC_URL=https://<SERVER_IP>
+ADDITIONAL_REDIRECT_URLS=https://<SERVER_IP>,https://localhost,http://127.0.0.1:3000,http://localhost:3000
 ```
