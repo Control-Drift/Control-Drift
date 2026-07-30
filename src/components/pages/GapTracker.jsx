@@ -819,7 +819,7 @@ export default function GapTracker() {
       {/* Validation Re-Test Modal */}
       {activeValidationGap && createPortal(
         <div className="animate-fade-in fixed-overlay" style={{  position: 'fixed', top: 0, left: 'var(--sidebar-width)', right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center'  }} onClick={() => { setActiveValidationGap(null); setValidationFiles([]); }}>
-          <div className="glass-panel" style={{  width: '500px', background: 'var(--bg-secondary)', border: '1px solid var(--accent-primary)', padding: '0'  }} onClick={e => e.stopPropagation()}>
+          <div className="glass-panel" style={{  width: '500px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid var(--accent-primary)', padding: '0'  }} onClick={e => e.stopPropagation()}>
             <div style={{  padding: '20px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(16, 185, 129, 0.05)'  }}>
                <h2 style={{  margin: 0, fontSize: '1.2rem', color: 'var(--text-primary)'  }}>Validate Remediation</h2>
                <button className="close-btn" onClick={() => { setActiveValidationGap(null); setValidationFiles([]); }}><X size={20} /></button>
@@ -919,7 +919,7 @@ export default function GapTracker() {
       {/* Risk Acceptance Modal */}
       {showRiskModal && createPortal(
         <div className="animate-fade-in fixed-overlay" style={{  position: 'fixed', top: 0, left: 'var(--sidebar-width)', right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center'  }} onClick={() => setShowRiskModal(false)}>
-          <div className="glass-panel" style={{  width: '500px', background: 'var(--bg-secondary)', border: '1px solid #8b5cf6', padding: '0'  }} onClick={e => e.stopPropagation()}>
+          <div className="glass-panel" style={{  width: '500px', maxHeight: '90vh', overflowY: 'auto', background: 'var(--bg-secondary)', border: '1px solid #8b5cf6', padding: '0'  }} onClick={e => e.stopPropagation()}>
             <div style={{  padding: '20px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(139, 92, 246, 0.05)'  }}>
                <h2 style={{  margin: 0, fontSize: '1.2rem', color: 'var(--text-primary)'  }}>Accept Risk</h2>
                <button className="close-btn" onClick={() => setShowRiskModal(false)}><X size={20} /></button>
@@ -1014,7 +1014,7 @@ export default function GapTracker() {
       {/* Gap Details Modal Overlay */}
       {selectedGapId && createPortal(
         <div className="animate-fade-in fixed-overlay" style={{  position: 'fixed', top: 0, left: 'var(--sidebar-width)', right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center'  }} onClick={() => setSelectedGapId(null)}>
-           <div className="glass-panel slide-in-staggered responsive-modal" style={{  background: 'rgba(10,11,16,0.6)', backdropFilter: 'blur(30px)', WebkitBackdropFilter: 'blur(30px)', border: '1px solid var(--glass-border)', boxShadow: '0 0 50px rgba(0,0,0,0.8)', overflowY: 'auto', maxHeight: '95vh', borderRadius: '12px', padding: '0', position: 'relative'  }} onClick={e => e.stopPropagation()}>
+           <div className="glass-panel slide-in-staggered responsive-modal" style={{  background: 'rgba(10,11,16,0.6)', backdropFilter: 'blur(30px)', WebkitBackdropFilter: 'blur(30px)', border: '1px solid var(--glass-border)', boxShadow: '0 0 50px rgba(0,0,0,0.8)', overflowY: 'auto', overflowX: 'hidden', maxHeight: '90vh', borderRadius: '12px', padding: '0', position: 'relative'  }} onClick={e => e.stopPropagation()}>
                <div style={{  padding: '20px'  }}>
                    <GapDetails gapIdProp={selectedGapId} onClose={() => setSelectedGapId(null)} onValidate={(gapObj) => { setSelectedGapId(null); setActiveValidationGap(gapObj); }} />
                </div>

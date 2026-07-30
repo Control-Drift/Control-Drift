@@ -1131,14 +1131,14 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
              <div>
                 <h3 style={{  margin: '0 0 15px 0', borderBottom: '1px solid var(--glass-border)', paddingBottom: '10px'  }}>Technical Findings</h3>
                  <div style={{ overflowX: 'auto', width: '100%' }}>
-                  <table style={{  width: '100%', minWidth: '700px', borderCollapse: 'collapse', fontSize: '0.85rem'  }}>
+                  <table style={{  width: '100%', minWidth: '700px', borderCollapse: 'collapse', fontSize: '0.85rem', tableLayout: 'fixed'  }}>
                   <thead>
                      <tr style={{  background: 'rgba(255,255,255,0.05)', textAlign: 'left'  }}>
-                        <th style={{  padding: '10px', borderBottom: '1px solid var(--glass-border)', width: '25%'  }}>Event</th>
-                        <th style={{  padding: '10px', borderBottom: '1px solid var(--glass-border)', width: '15%', textAlign: 'center'  }}>Outcome</th>
-                        <th style={{  padding: '10px', borderBottom: '1px solid var(--glass-border)', width: '15%', textAlign: 'center'  }}>Coverage Rating</th>
-                        <th style={{  padding: '10px', borderBottom: '1px solid var(--glass-border)', width: '10%', textAlign: 'center'  }}>Gap Severity</th>
-                        <th style={{  padding: '10px', borderBottom: '1px solid var(--glass-border)', width: '35%'  }}>Notes</th>
+                        <th style={{  padding: '10px', borderBottom: '1px solid var(--glass-border)', width: '26%'  }}>Event</th>
+                        <th style={{  padding: '10px', borderBottom: '1px solid var(--glass-border)', width: '26%', textAlign: 'center'  }}>Outcome</th>
+                        <th style={{  padding: '10px', borderBottom: '1px solid var(--glass-border)', width: '9%', textAlign: 'center'  }}>Coverage Rating</th>
+                        <th style={{  padding: '10px', borderBottom: '1px solid var(--glass-border)', width: '12%', textAlign: 'center'  }}>Gap Severity</th>
+                        <th style={{  padding: '10px', borderBottom: '1px solid var(--glass-border)', width: '27%'  }}>Notes</th>
                      </tr>
                   </thead>
                   <tbody>
@@ -1200,7 +1200,7 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                                  
                                  return (
                                    <tr key={i} style={{  borderBottom: '1px solid rgba(255,255,255,0.05)'  }}>
-                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '25%'  }}>
+                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '26%'  }}>
                                          <strong style={{  fontSize: '1.05rem', color: 'var(--text-primary)', display: 'block', marginBottom: '8px'  }}>
                                             {proc.name || 'Unnamed Event'}
                                             {proc.outcome?.includes(' ➔ ') && (
@@ -1231,7 +1231,7 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                                             </div>
                                          )}
                                       </td>
-                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '15%', textAlign: 'center'  }}>
+                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '26%', textAlign: 'center'  }}>
                                          <div style={{  display: 'flex', gap: '15px', alignItems: 'flex-start', flexWrap: 'wrap', justifyContent: 'center'  }}>
                                              <div style={{ textAlign: 'center' }}>
                                                 <div style={{  fontSize: '0.65rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '2px'  }}>Expected</div>
@@ -1252,11 +1252,11 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                                          </div>
                                          {(proc.expectedOutcome || 'N/A') !== outStr && outStr !== 'Untested' && outStr !== 'N/A' && outStr && <div style={{  marginTop: '8px', fontSize: '0.7rem', color: 'var(--danger)', fontStyle: 'italic', textAlign: 'center', width: '100%'  }}>Control Drift</div>}
                                       </td>
-                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '15%', textAlign: 'center'  }}>
+                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '9%', textAlign: 'center'  }}>
                                          <div style={{  fontSize: '0.65rem', color: 'transparent', textTransform: 'uppercase', marginBottom: '2px', userSelect: 'none'  }}>Spacer</div>
                                          <span style={{  display: 'inline-block', minWidth: '80px', textAlign: 'center', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', background: proc.coverageRating === 'Optimal' ? 'rgba(16, 185, 129, 0.15)' : proc.coverageRating === 'Partial' ? 'rgba(245, 158, 11, 0.15)' : proc.coverageRating === 'Minimal' ? 'rgba(249, 115, 22, 0.15)' : proc.coverageRating === 'None' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255,255,255,0.1)', color: proc.coverageRating === 'Optimal' ? 'var(--success)' : proc.coverageRating === 'Partial' ? 'var(--warning)' : proc.coverageRating === 'Minimal' ? 'var(--minimal)' : proc.coverageRating === 'None' ? 'var(--danger)' : 'var(--text-secondary)', border: `1px solid ${proc.coverageRating === 'Optimal' ? 'rgba(16, 185, 129, 0.3)' : proc.coverageRating === 'Partial' ? 'rgba(245, 158, 11, 0.3)' : proc.coverageRating === 'Minimal' ? 'rgba(249, 115, 22, 0.3)' : proc.coverageRating === 'None' ? 'rgba(239, 68, 68, 0.3)' : 'rgba(255,255,255,0.2)'}`  }}>{proc.coverageRating || 'N/A'}</span>
                                       </td>
-                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '10%', textAlign: 'center'  }}>
+                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '12%', textAlign: 'center'  }}>
                                          <div style={{  fontSize: '0.65rem', color: 'transparent', textTransform: 'uppercase', marginBottom: '2px', userSelect: 'none'  }}>Spacer</div>
                                          {proc.severity && proc.severity !== 'N/A' && proc.severity !== 'Auto-Calculate' ? (
                                              <span style={{  display: 'inline-block', minWidth: '80px', textAlign: 'center', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(255,255,255,0.05)', color: String(proc.severity).toLowerCase() === 'critical' ? 'var(--severity-critical)' : String(proc.severity).toLowerCase() === 'high' ? 'var(--severity-high)' : String(proc.severity).toLowerCase() === 'medium' ? 'var(--severity-medium)' : String(proc.severity).toLowerCase() === 'low' ? 'var(--severity-low)' : 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.1)'  }}>{proc.severity}</span>
@@ -1264,7 +1264,7 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                                              <span style={{  display: 'inline-block', minWidth: '80px', textAlign: 'center', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(255,255,255,0.05)', color: 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.1)'  }}>N/A</span>
                                          )}
                                       </td>
-                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '35%'  }}>
+                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '27%'  }}>
                                          <div style={{  marginBottom: '8px'  }}><strong style={{  color: 'var(--danger)'  }}>Red Team Notes:</strong> <div style={{ color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', wordBreak: 'break-all', overflowWrap: 'anywhere', fontSize: '0.8rem', marginTop: '4px' }}>{renderNotes(proc.execNotes)}</div></div>
                                          <div><strong style={{  color: '#3b82f6'   }}>Blue Team Notes:</strong> <div style={{ color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', wordBreak: 'break-all', overflowWrap: 'anywhere', fontSize: '0.8rem', marginTop: '4px' }}>{renderNotes(proc.detNotes)}</div></div>
                                       </td>
@@ -1278,22 +1278,22 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                                 const isMin = ex.status === 'minimal';
                                 return (
                                    <tr key={i} style={{  borderBottom: '1px solid rgba(255,255,255,0.05)'   }}>
-                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '30%'  }}>
+                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '26%'  }}>
                                          <strong style={{  color: 'var(--text-primary)'  }}>{ex.ttp}</strong>
                                          <div style={{  fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px'  }}>{getTTPName(ex.ttp)}</div>
                                          <div style={{  fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px'  }}>Legacy Record</div>
                                       </td>
-                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '15%'  }}>
+                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '26%', textAlign: 'center'  }}>
                                           <span style={{  display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', background: ex.status === 'high' ? 'rgba(16, 185, 129, 0.15)' : ex.status === 'medium' ? 'rgba(245, 158, 11, 0.15)' : ex.status === 'minimal' ? 'rgba(249, 115, 22, 0.15)' : 'rgba(239, 68, 68, 0.15)', color: ex.status === 'high' ? 'var(--success)' : ex.status === 'medium' ? 'var(--warning)' : ex.status === 'minimal' ? 'var(--minimal)' : 'var(--danger)', border: `1px solid ${ex.status === 'high' ? 'rgba(16, 185, 129, 0.3)' : ex.status === 'medium' ? 'rgba(245, 158, 11, 0.3)' : ex.status === 'minimal' ? 'rgba(249, 115, 22, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`  }}>
                                              {(ex.finding?.includes(':') ? ex.finding.split(':')[1]?.trim() : ex.finding) || ex.status || 'N/A'}
                                           </span>
                                       </td>
-                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '15%'  }}>
+                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '9%', textAlign: 'center'  }}>
                                           <span style={{  display: 'inline-block', padding: '2px 8px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', textTransform: 'uppercase', background: ex.status === 'high' ? 'rgba(16, 185, 129, 0.15)' : ex.status === 'medium' ? 'rgba(245, 158, 11, 0.15)' : ex.status === 'minimal' ? 'rgba(249, 115, 22, 0.15)' : 'rgba(239, 68, 68, 0.15)', color: ex.status === 'high' ? 'var(--success)' : ex.status === 'medium' ? 'var(--warning)' : ex.status === 'minimal' ? 'var(--minimal)' : 'var(--danger)', border: `1px solid ${ex.status === 'high' ? 'rgba(16, 185, 129, 0.3)' : ex.status === 'medium' ? 'rgba(245, 158, 11, 0.3)' : ex.status === 'minimal' ? 'rgba(249, 115, 22, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`  }}>
                                              {ex.status === 'high' ? 'Optimal' : ex.status === 'medium' ? 'Partial' : ex.status === 'minimal' ? 'Minimal' : 'None'}
                                           </span>
                                       </td>
-                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '10%'  }}>
+                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '12%', textAlign: 'center'  }}>
                                          {ex.severity && ex.severity !== 'N/A' ? (
                                              <span style={{  display: 'inline-block', padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem', fontWeight: 'bold', background: 'rgba(255,255,255,0.05)', color: ex.severity === 'Critical' ? 'var(--severity-critical)' : ex.severity === 'High' ? 'var(--severity-high)' : ex.severity === 'Medium' ? 'var(--severity-medium)' : ex.severity === 'Low' ? 'var(--severity-low)' : 'var(--text-muted)', border: '1px solid rgba(255,255,255,0.1)'  }}>
                                                  {ex.severity}
@@ -1302,7 +1302,7 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                                              <span style={{  color: 'var(--text-muted)', fontSize: '0.8rem'  }}>N/A</span>
                                          )}
                                       </td>
-                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '30%'  }}>
+                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '27%'  }}>
                                          <div><span style={{  color: 'var(--text-secondary)'  }}>{ex.remediation || 'N/A'}</span></div>
                                          {(() => {
                                              let rawPayload = '';

@@ -936,7 +936,7 @@ Do not include markdown code block wrappers, return ONLY the raw JSON string.\nG
 
             {selectedGap && createPortal(
                 <div className="animate-fade-in fixed-overlay" style={{ position: 'fixed', top: 0, left: 'var(--sidebar-width)', right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center' }} onClick={() => setSelectedGap(null)}>
-                    <div className="glass-panel slide-in-staggered responsive-modal" style={{ background: 'rgba(10,11,16,0.6)', backdropFilter: 'blur(30px)', WebkitBackdropFilter: 'blur(30px)', border: '1px solid var(--glass-border)', boxShadow: '0 0 50px rgba(0,0,0,0.8)', overflow: 'hidden', borderRadius: '12px', padding: '0', position: 'relative' }} onClick={e => e.stopPropagation()}>
+                    <div className="glass-panel slide-in-staggered responsive-modal" style={{ background: 'rgba(10,11,16,0.6)', backdropFilter: 'blur(30px)', WebkitBackdropFilter: 'blur(30px)', border: '1px solid var(--glass-border)', boxShadow: '0 0 50px rgba(0,0,0,0.8)', overflowY: 'auto', overflowX: 'hidden', maxHeight: '90vh', borderRadius: '12px', padding: '0', position: 'relative' }} onClick={e => e.stopPropagation()}>
                         
                         {/* Modal Cyber styling */}
                         <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '3px', background: `linear-gradient(90deg, transparent, ${getSeverityColor(selectedGap.severity)}, transparent)` }} />

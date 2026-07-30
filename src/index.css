@@ -78,11 +78,27 @@
   color: var(--accent-secondary); /* Fallback */
 }
 
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 html, body {
   margin: 0;
   padding: 0;
   width: 100vw;
   height: 100vh;
+}
+
+@media (max-height: 1080px) {
+  html {
+    font-size: 15px;
+  }
+}
+
+@media (max-height: 900px) {
+  html {
+    font-size: 14px;
+  }
 }
 
 #root {
@@ -102,22 +118,6 @@ body {
 
 html {
   font-size: 16px;
-}
-
-/* Hardcoded px values ignore rem scaling, so we must use physical zoom for 1080p */
-@media screen and (max-height: 1080px), screen and (max-width: 1920px) {
-  body {
-    zoom: 0.9;
-    /* Required for some browser coordinate mapping */
-    transform-origin: top left; 
-  }
-}
-
-/* Further scale down for very small laptop screens */
-@media screen and (max-height: 900px), screen and (max-width: 1440px) {
-  body {
-    zoom: 0.8;
-  }
 }
 
 body.sidebar-collapsed {
@@ -374,13 +374,20 @@ select.ai-input option {
 
 .main-content {
   flex: 1;
-  padding: 40px;
+  padding: 20px 40px;
   overflow-y: auto;
   overflow-x: hidden;
   position: relative;
   min-width: 0; /* Fixes flexbox blowout bug */
+  min-height: 0; /* Fixes vertical flexbox blowout bug */
   display: flex;
   flex-direction: column;
+}
+
+@media (max-width: 1920px) {
+  .main-content {
+    padding: 20px;
+  }
 }
 
 .dashboard-grid {

@@ -804,7 +804,7 @@ function Scene({ mitreData, activeTactic, setActiveTactic, handleTechClick, quic
       })}
 
       {hoveredTech && (
-        <Html position={hoveredTech.position.clone().multiplyScalar(1.05)} center zIndexRange={[100, 0]} style={{  pointerEvents: 'none'  }}>
+        <Html position={hoveredTech.position.clone().multiplyScalar(1.05)} center zIndexRange={[2000, 0]} style={{  pointerEvents: 'none'  }}>
            <div style={{ 
               background: 'rgba(5, 5, 8, 0.95)',
               padding: '16px',

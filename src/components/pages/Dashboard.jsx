@@ -680,8 +680,8 @@ export default function Dashboard() {
   const isRemoteConnected = !!dbAdapter && !isDbLoading && dbConfig?.provider !== 'local';
 
   return (
-    <div className="animate-fade-in" style={{ height: '100%', paddingRight: '10px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px', flexWrap: 'wrap', gap: '20px' }}>
+    <div className="animate-fade-in" style={{ flex: 1, minHeight: 0, paddingRight: '10px', display: 'flex', flexDirection: 'column', overflowY: 'auto', overflowX: 'hidden' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px', flexWrap: 'wrap', gap: '20px', flexShrink: 0 }}>
         <div>
           <h1 className="iridescent-text" style={{ fontSize: '2.5rem', marginBottom: '10px', marginTop: 0 }}>Dashboard</h1>
           <p style={{ color: 'var(--text-secondary)', margin: 0, fontSize: '1.1rem' }}>High-level overview of your global security posture.</p>
@@ -768,7 +768,7 @@ export default function Dashboard() {
           </div>
       </div>
       
-      <div className="slide-in-staggered dashboard-grid" style={{ marginBottom: '40px' }}>
+      <div className="slide-in-staggered dashboard-grid" style={{ marginBottom: '15px', flexShrink: 0 }}>
         {/* Remediation Resolution Rate Card */}
         <div className="glass-panel hover-lift" style={{ padding: '30px', position: 'relative' }}>
           <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', borderRadius: 'inherit', pointerEvents: 'none' }}>
@@ -859,9 +859,9 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="slide-in-staggered dashboard-grid" style={{ marginBottom: '40px' }}>
+      <div className="slide-in-staggered dashboard-grid" style={{ marginBottom: '15px', flex: 1.2, minHeight: 0 }}>
          {/* Kill Chain Exposure Card (Master-Detail) */}
-         <div className="glass-panel hover-lift" style={{ padding: '30px', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', minHeight: '380px', height: '380px' }}>
+         <div className="glass-panel hover-lift" style={{ padding: '20px 30px', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', height: '100%' }}>
             {!expandedPhaseSubject ? (
                 <>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', marginBottom: '15px', zIndex: 2 }}>
@@ -873,7 +873,7 @@ export default function Dashboard() {
                         </h3>
                     </div>
                     
-                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: '300px' }}>
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                         {/* Master View (The Chain) */}
                         <div style={{ flex: '0 0 auto', display: 'flex', flexDirection: 'column', justifyContent: 'center', position: 'relative', padding: '10px 10px 25px 10px', overflowX: 'auto' }}>
                             {/* The glowing track line */}
@@ -1088,7 +1088,7 @@ export default function Dashboard() {
                     }
 
                     return (
-                        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: '300px' }}>
+                        <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', marginBottom: '15px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
                                     <button 
@@ -1204,15 +1204,15 @@ export default function Dashboard() {
             )}
          </div>
 
-         {/* Risk Trend Over Time (Area Chart) */}
-         <div className="glass-panel hover-lift animate-fade-in" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '380px' }}>
+         {/* Top Focus Gaps */}
+         <div className="glass-panel hover-lift animate-fade-in" style={{ padding: '20px 30px', display: 'flex', flexDirection: 'column', height: '100%' }}>
             <h3 style={{ margin: '0 0 25px 0', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Readiness Score Trend
                 <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>Historical tracking of your Global Readiness Score over time, plotting the outcomes of past adversary simulations against your current baseline.</div>}>
                    <span style={{ cursor: 'help', color: 'var(--text-muted)', display: 'flex' }}><Info size={14} /></span>
                 </Tooltip>
             </h3>
-            <div style={{ flex: 1, minHeight: '250px' }}>
+            <div style={{ flex: 1, minHeight: 0 }}>
                 <div className="animate-reveal-right" style={{ width: '100%', height: '100%' }}>
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={areaData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
@@ -1250,7 +1250,7 @@ export default function Dashboard() {
          </div>
 
          {/* Top Security Controls */}
-         <div className="glass-panel hover-lift animate-fade-in" style={{ padding: '30px', display: 'flex', flexDirection: 'column', height: '380px', animationDelay: '0.1s' }}>
+         <div className="glass-panel hover-lift animate-fade-in" style={{ padding: '20px 30px', display: 'flex', flexDirection: 'column', height: '100%', animationDelay: '0.1s' }}>
             <h3 style={{ margin: '0 0 25px 0', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 Top Security Controls
                 <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>Performance metrics for your deployed security tools. Efficacy is calculated based on successful defenses against tested techniques.</div>}>
