@@ -155,6 +155,8 @@ $UserAiModel = Read-Host "Enter AI Model Name"
 
 $UserAiEndpoint = Read-Host "Enter Target AI Endpoint URL (e.g. http://192.168.1.100:1234/v1, leave blank for default)"
 $UserAiEndpoint = $UserAiEndpoint -replace "/chat/completions/?$", ""
+$UserAiEndpoint = $UserAiEndpoint -replace "localhost", "host.docker.internal"
+$UserAiEndpoint = $UserAiEndpoint -replace "127\.0\.0\.1", "host.docker.internal"
 
 $UserApiKey = Read-Host "Enter API Key (Leave blank if none)"
 

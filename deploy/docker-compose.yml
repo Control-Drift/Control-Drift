@@ -24,6 +24,8 @@ services:
   litellm:
     image: ghcr.io/berriai/litellm:main-latest
     container_name: control-drift-proxy
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       # Master keys securely loaded on the server
       - OPENAI_API_KEY=${OPENAI_API_KEY:-sk-dummy}

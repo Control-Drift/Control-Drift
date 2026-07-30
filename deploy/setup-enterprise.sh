@@ -150,6 +150,10 @@ read -p "Enter Target AI Endpoint URL (e.g. http://192.168.1.100:1234/v1, leave 
 user_ai_endpoint=${user_ai_endpoint%/chat/completions}
 user_ai_endpoint=${user_ai_endpoint%/chat/completions/}
 
+# Automatically map localhost to host.docker.internal for docker bridge routing
+user_ai_endpoint=${user_ai_endpoint//localhost/host.docker.internal}
+user_ai_endpoint=${user_ai_endpoint//127.0.0.1/host.docker.internal}
+
 read -p "Enter API Key (Leave blank if none): " user_api_key
 
 echo "[*] Generating AI Proxy Config..."
