@@ -3,6 +3,9 @@
 
 set -euo pipefail
 
+# Ensure we are always running from the deploy directory (where the script lives)
+cd "$(dirname "$0")"
+
 # Error handler
 trap 'echo "Error: Script failed on line $LINENO. Deployment halted." >&2' ERR
 
