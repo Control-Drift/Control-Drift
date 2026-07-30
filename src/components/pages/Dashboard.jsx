@@ -680,7 +680,7 @@ export default function Dashboard() {
   const isRemoteConnected = !!dbAdapter && !isDbLoading && dbConfig?.provider !== 'local';
 
   return (
-    <div className="animate-fade-in" style={{ flex: 1, minHeight: 0, paddingRight: '10px', display: 'flex', flexDirection: 'column', overflowY: 'auto', overflowX: 'hidden' }}>
+    <div className="animate-fade-in" style={{ flex: 1, height: '100%', minHeight: 0, paddingRight: '10px', display: 'flex', flexDirection: 'column', overflowY: 'auto', overflowX: 'hidden' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px', flexWrap: 'wrap', gap: '20px', flexShrink: 0 }}>
         <div>
           <h1 className="iridescent-text" style={{ fontSize: '2.5rem', marginBottom: '10px', marginTop: 0 }}>Dashboard</h1>
@@ -859,7 +859,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="slide-in-staggered dashboard-grid" style={{ marginBottom: '15px', flex: 1.2, minHeight: 0 }}>
+      <div className="slide-in-staggered dashboard-grid" style={{ marginBottom: '15px', flex: 1, minHeight: '400px', gridAutoRows: '1fr' }}>
          {/* Kill Chain Exposure Card (Master-Detail) */}
          <div className="glass-panel hover-lift" style={{ padding: '20px 30px', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden', height: '100%' }}>
             {!expandedPhaseSubject ? (
