@@ -22,3 +22,4 @@ supabase/
 *.njsproj
 *.sln
 *.sw?
+deploy/certs/

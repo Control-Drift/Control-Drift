@@ -31,6 +31,18 @@ fi
 read -p "Enter the IP address or domain for this server (default: localhost): " SERVER_IP
 SERVER_IP=${SERVER_IP:-localhost}
 
+echo "[*] Setting up SSL certificates..."
+mkdir -p certs
+if [ ! -f certs/cert.pem ]; then
+  openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout certs/key.pem \
+    -out certs/cert.pem \
+    -subj "/C=US/ST=State/L=City/O=Security/CN=${SERVER_IP}" >/dev/null 2>&1
+  echo "  --> Generated self-signed certificates in /certs"
+else
+  echo "  --> Existing certificates found, skipping generation."
+fi
+
 echo "[*] Force-removing any remaining Supabase containers from previous failed runs..."
 docker ps -a --filter "name=supabase-" -q | xargs -r docker rm -f -v >/dev/null 2>&1 || true
 docker ps -a --filter "name=realtime-dev.supabase-realtime" -q | xargs -r docker rm -f -v >/dev/null 2>&1 || true
@@ -56,10 +68,10 @@ cd supabase/docker
 
 echo "[*] Copying default Supabase configuration..."
 cp .env.example .env
-sed -i "s|^API_EXTERNAL_URL=.*|API_EXTERNAL_URL=http://${SERVER_IP}:8000/auth/v1|g" .env
-sed -i "s|^SUPABASE_PUBLIC_URL=.*|SUPABASE_PUBLIC_URL=http://${SERVER_IP}:8000|g" .env
-sed -i "s|^SITE_URL=.*|SITE_URL=http://${SERVER_IP}:3000|g" .env
-sed -i "s|^ADDITIONAL_REDIRECT_URLS=.*|ADDITIONAL_REDIRECT_URLS=http://${SERVER_IP},http://${SERVER_IP}:80,http://${SERVER_IP}:3000,http://localhost:3000,http://localhost:80|g" .env
+sed -i "s|^API_EXTERNAL_URL=.*|API_EXTERNAL_URL=https://${SERVER_IP}/auth/v1|g" .env
+sed -i "s|^SUPABASE_PUBLIC_URL=.*|SUPABASE_PUBLIC_URL=https://${SERVER_IP}|g" .env
+sed -i "s|^SITE_URL=.*|SITE_URL=http://127.0.0.1:3000|g" .env
+sed -i "s|^ADDITIONAL_REDIRECT_URLS=.*|ADDITIONAL_REDIRECT_URLS=https://${SERVER_IP},https://localhost,http://127.0.0.1:3000,http://localhost:3000|g" .env
 sed -i 's/^COMPOSE_FILE=/#COMPOSE_FILE=/' .env
 echo "GOTRUE_MAILER_AUTOCONFIRM=true" >> .env
 
@@ -67,12 +79,12 @@ echo "GOTRUE_MAILER_AUTOCONFIRM=true" >> .env
 # without breaking internal networking or the pg_isready healthcheck
 sed -i 's/- ${POSTGRES_PORT}:5432/- 54320:5432/g' docker-compose.yml
 
-echo "[*] Exposing Supabase Studio and Injecting Schema..."
+echo "[*] Exposing Supabase Studio (Localhost Only) and Injecting Schema..."
 cat << EOF > docker-compose.override.yml
 services:
   studio:
     ports:
-      - "3000:3000/tcp"
+      - "127.0.0.1:3000:3000/tcp"
   db:
     healthcheck:
       start_period: 1800s
@@ -105,13 +117,13 @@ fi
 echo "[+] Database is healthy!"
 
 echo "[*] Injecting Control Drift Database Schema..."
-docker exec -i supabase-db psql -U postgres -d postgres < ../../deploy/schema.sql
+docker exec -i supabase-db psql -U postgres -d postgres < ../../schema.sql
 echo "[+] Schema injected successfully!"
 
 cd ../../
 
 echo "[*] Generating Control Drift Config..."
-rm -rf deploy/config.json 2>/dev/null || true
+rm -rf config.json 2>/dev/null || true
 ANON_KEY=$(grep '^ANON_KEY=' supabase/docker/.env | cut -d '=' -f2)
 
 echo ""
@@ -138,9 +150,9 @@ user_ai_endpoint=${user_ai_endpoint%/chat/completions/}
 read -p "Enter API Key (Leave blank if none): " user_api_key
 
 echo "[*] Generating AI Proxy Config..."
-rm -rf deploy/litellm-config.yaml 2>/dev/null || true
+rm -rf litellm-config.yaml 2>/dev/null || true
 
-cat <<EOF > deploy/litellm-config.yaml
+cat <<EOF > litellm-config.yaml
 litellm_settings:
   master_key: dummy
 model_list:
@@ -150,15 +162,15 @@ model_list:
 EOF
 
 if [ -n "$user_ai_endpoint" ]; then
-  echo "      api_base: $user_ai_endpoint" >> deploy/litellm-config.yaml
+  echo "      api_base: $user_ai_endpoint" >> litellm-config.yaml
 fi
 
 if [ -n "$user_api_key" ]; then
-  echo "      api_key: $user_api_key" >> deploy/litellm-config.yaml
+  echo "      api_key: $user_api_key" >> litellm-config.yaml
 fi
 
 # Add default fallbacks
-cat <<EOF >> deploy/litellm-config.yaml
+cat <<EOF >> litellm-config.yaml
   - model_name: gpt-4o
     litellm_params:
       model: openai/gpt-4o
@@ -167,16 +179,16 @@ cat <<EOF >> deploy/litellm-config.yaml
       model: anthropic/claude-3-5-sonnet-20240620
 EOF
 
-cat <<EOF > deploy/config.json
+cat <<EOF > config.json
 {
   "database": {
     "provider": "supabase",
-    "endpoint": "http://${SERVER_IP}:8000",
+    "endpoint": "https://${SERVER_IP}",
     "apiKey": "${ANON_KEY}"
   },
   "ai": {
     "enabled": true,
-    "endpointUrl": "http://${SERVER_IP}:4000/v1/chat/completions",
+    "endpointUrl": "https://${SERVER_IP}/litellm/v1/chat/completions",
     "model": "${user_ai_model}",
     "proxy": true
   }
@@ -184,7 +196,6 @@ cat <<EOF > deploy/config.json
 EOF
 
 echo "[*] Starting Control Drift and AI Proxy..."
-cd deploy
 docker compose pull litellm
 docker compose up -d --build
 docker compose restart litellm
@@ -205,7 +216,7 @@ echo -e "\n[*] Supabase is ready!"
 
 echo "[*] Waiting for Control Drift frontend..."
 retry_count=0
-until curl -s -o /dev/null -w "%{http_code}" http://localhost:80 | grep -q "200"; do
+until [ "$(docker inspect --format="{{.State.Status}}" control-drift 2>/dev/null)" = "running" ]; do
   if [ $retry_count -ge $max_retries ]; then
     echo "Error: Control Drift frontend failed to start. Check docker logs."
     exit 1
@@ -219,7 +230,8 @@ echo -e "\n[*] Control Drift is ready!"
 echo "========================================================="
 echo " Deployment Complete!"
 echo "---------------------------------------------------------"
-echo " Supabase Studio: http://localhost:3000"
-echo " LiteLLM Proxy:   http://localhost:4000"
-echo " Control Drift:   http://localhost:80"
+echo " Control Drift:   https://${SERVER_IP}"
+echo " Supabase API:    https://${SERVER_IP}/rest/v1"
+echo " AI Proxy API:    https://${SERVER_IP}/litellm"
+echo " (Supabase Studio is locked down to 127.0.0.1:3000)"
 echo "========================================================="

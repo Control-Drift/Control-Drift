@@ -5,6 +5,10 @@ if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdenti
     Exit 1
 }
 
+if ($PSScriptRoot) {
+    Set-Location -Path $PSScriptRoot
+}
+
 Write-Host "========================================================="
 Write-Host " Control Drift - Enterprise Setup"
 Write-Host "========================================================="
@@ -29,6 +33,17 @@ try {
 $ServerIP = Read-Host "Enter the IP address or domain for this server (default: localhost)"
 if ([string]::IsNullOrWhiteSpace($ServerIP)) {
     $ServerIP = "localhost"
+}
+
+Write-Host "[*] Setting up SSL certificates..."
+New-Item -ItemType Directory -Force -Path "certs" | Out-Null
+if (-not (Test-Path "certs/cert.pem")) {
+    $oldErr = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
+    docker run --rm -v "$((Get-Location).Path)/certs:/certs" alpine/openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /certs/key.pem -out /certs/cert.pem -subj "/C=US/ST=State/L=City/O=Security/CN=${ServerIP}" 2>$null
+    $ErrorActionPreference = $oldErr
+    Write-Host "  --> Generated self-signed certificates in /certs"
+} else {
+    Write-Host "  --> Existing certificates found, skipping generation."
 }
 
 Write-Host "[*] Force-removing any remaining Supabase containers from previous failed runs..."
@@ -64,19 +79,19 @@ Set-Location supabase/docker
 
 Write-Host "[*] Copying default Supabase configuration..."
 Copy-Item .env.example .env
-(Get-Content .env) -replace '^API_EXTERNAL_URL=.*', "API_EXTERNAL_URL=http://${ServerIP}:8000/auth/v1" -replace '^SUPABASE_PUBLIC_URL=.*', "SUPABASE_PUBLIC_URL=http://${ServerIP}:8000" -replace '^SITE_URL=.*', "SITE_URL=http://${ServerIP}:3000" -replace '^ADDITIONAL_REDIRECT_URLS=.*', "ADDITIONAL_REDIRECT_URLS=http://${ServerIP},http://${ServerIP}:80,http://${ServerIP}:3000,http://localhost:3000,http://localhost:80" -replace '^COMPOSE_FILE=', '#COMPOSE_FILE=' | Set-Content .env
+(Get-Content .env) -replace '^API_EXTERNAL_URL=.*', "API_EXTERNAL_URL=https://${ServerIP}/auth/v1" -replace '^SUPABASE_PUBLIC_URL=.*', "SUPABASE_PUBLIC_URL=https://${ServerIP}" -replace '^SITE_URL=.*', "SITE_URL=http://127.0.0.1:3000" -replace '^ADDITIONAL_REDIRECT_URLS=.*', "ADDITIONAL_REDIRECT_URLS=https://${ServerIP},https://localhost,http://127.0.0.1:3000,http://localhost:3000" -replace '^COMPOSE_FILE=', '#COMPOSE_FILE=' | Set-Content .env
 Add-Content -Path .env -Value "GOTRUE_MAILER_AUTOCONFIRM=true"
 
 # Safely remap the external supavisor port to 54320 to avoid host collisions, 
 # without breaking internal networking or the pg_isready healthcheck
 (Get-Content docker-compose.yml) -replace '- \$\{POSTGRES_PORT\}:5432', '- 54320:5432' | Set-Content docker-compose.yml
 
-Write-Host "[*] Exposing Supabase Studio and Injecting Schema..."
+Write-Host "[*] Exposing Supabase Studio (Localhost Only) and Injecting Schema..."
 $overrideConfig = @"
 services:
   studio:
     ports:
-      - `"3000:3000/tcp`"
+      - `"127.0.0.1:3000:3000/tcp`"
   db:
     healthcheck:
       start_period: 1800s
@@ -86,12 +101,15 @@ Set-Content -Path docker-compose.override.yml -Value $overrideConfig
 Write-Host "[*] Preparing to start Supabase stack..."
 
 Write-Host "[*] Starting Supabase backend stack..."
+$oldErr = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
 docker compose pull
 docker compose up -d
+$ErrorActionPreference = $oldErr
 
 Write-Host "[*] Waiting up to 30 minutes for database initialization and health checks (this takes a very long time on low-spec servers)..."
 $WaitTime = 0
 $IsHealthy = $false
+$oldErr = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
 while ($WaitTime -lt 1800) {
     Start-Sleep -Seconds 5
     $WaitTime += 5
@@ -102,6 +120,7 @@ while ($WaitTime -lt 1800) {
         break
     }
 }
+$ErrorActionPreference = $oldErr
 if (-not $IsHealthy) {
     Write-Error "Error: supabase-db failed to become healthy within 30 minutes."
     Exit 1
@@ -109,13 +128,13 @@ if (-not $IsHealthy) {
 Write-Host "[+] Database is healthy!"
 
 Write-Host "[*] Injecting Control Drift Database Schema..."
-Get-Content ../../deploy/schema.sql | docker exec -i supabase-db psql -U postgres -d postgres
+Get-Content ../../schema.sql | docker exec -i supabase-db psql -U postgres -d postgres
 Write-Host "[+] Schema injected successfully!"
 
 Set-Location ../../
 
 Write-Host "[*] Generating Control Drift Config..."
-if (Test-Path deploy/config.json) { Remove-Item -Recurse -Force deploy/config.json }
+if (Test-Path config.json) { Remove-Item -Recurse -Force config.json }
 $AnonKey = (Select-String -Path supabase/docker/.env -Pattern "^ANON_KEY=(.*)$").Matches.Groups[1].Value
 
 Write-Host ""
@@ -140,7 +159,7 @@ $UserAiEndpoint = $UserAiEndpoint -replace "/chat/completions/?$", ""
 $UserApiKey = Read-Host "Enter API Key (Leave blank if none)"
 
 Write-Host "[*] Generating AI Proxy Config..."
-if (Test-Path deploy/litellm-config.yaml) { Remove-Item -Recurse -Force deploy/litellm-config.yaml }
+if (Test-Path litellm-config.yaml) { Remove-Item -Recurse -Force litellm-config.yaml }
 
 $litellmConfigLines = @(
     "litellm_settings:",
@@ -168,30 +187,31 @@ $litellmConfigLines += @(
     "      model: anthropic/claude-3-5-sonnet-20240620"
 )
 
-$litellmConfigLines -join "`n" | Out-File -FilePath deploy/litellm-config.yaml -Encoding ASCII
+$litellmConfigLines -join "`n" | Out-File -FilePath litellm-config.yaml -Encoding ASCII
 
 $appConfig = @"
 {
   "database": {
     "provider": "supabase",
-    "endpoint": "http://${ServerIP}:8000",
+    "endpoint": "https://${ServerIP}",
     "apiKey": "$AnonKey"
   },
   "ai": {
     "enabled": true,
-    "endpointUrl": "http://${ServerIP}:4000/v1/chat/completions",
+    "endpointUrl": "https://${ServerIP}/litellm/v1/chat/completions",
     "model": "$UserAiModel",
     "proxy": true
   }
 }
 "@
-$appConfig | Out-File -FilePath deploy/config.json -Encoding ASCII
+$appConfig | Out-File -FilePath config.json -Encoding ASCII
 
 Write-Host "[*] Starting Control Drift and AI Proxy..."
-Set-Location deploy
+$oldErr = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
 docker compose pull litellm
 docker compose up -d --build
 docker compose restart litellm
+$ErrorActionPreference = $oldErr
 
 Write-Host "[*] Waiting for Supabase API to initialize (this may take a minute)..." -NoNewline
 $maxRetries = 30
@@ -224,23 +244,18 @@ Write-Host "[*] Supabase is ready!"
 Write-Host "[*] Waiting for Control Drift frontend..." -NoNewline
 $retryCount = 0
 $driftReady = $false
+$oldErr = $ErrorActionPreference; $ErrorActionPreference = 'Continue'
 while (-not $driftReady -and $retryCount -lt $maxRetries) {
-    try {
-        $response = Invoke-WebRequest -Uri "http://localhost:80" -Method Get -UseBasicParsing -ErrorAction SilentlyContinue
-        if ($response.StatusCode -eq 200) {
-            $driftReady = $true
-            break
-        }
-    } catch {
-        if ($_.Exception.Response.StatusCode -eq 200) {
-            $driftReady = $true
-            break
-        }
+    $status = docker inspect --format="{{.State.Status}}" control-drift 2>$null
+    if ($status -match "running") {
+        $driftReady = $true
+        break
     }
     Write-Host "." -NoNewline
     Start-Sleep -Seconds 5
     $retryCount++
 }
+$ErrorActionPreference = $oldErr
 Write-Host ""
 if (-not $driftReady) {
     Write-Error "Error: Control Drift frontend failed to start. Check docker logs."
@@ -251,7 +266,8 @@ Write-Host "[*] Control Drift is ready!"
 Write-Host "========================================================="
 Write-Host " Deployment Complete!"
 Write-Host "---------------------------------------------------------"
-Write-Host " Supabase Studio: http://localhost:3000"
-Write-Host " LiteLLM Proxy:   http://localhost:4000"
-Write-Host " Control Drift:   http://localhost:80"
+Write-Host " Control Drift:   https://${ServerIP}"
+Write-Host " Supabase API:    https://${ServerIP}/rest/v1"
+Write-Host " AI Proxy API:    https://${ServerIP}/litellm"
+Write-Host " (Supabase Studio is locked down to 127.0.0.1:3000)"
 Write-Host "========================================================="

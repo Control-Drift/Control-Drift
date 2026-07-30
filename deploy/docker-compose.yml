@@ -11,9 +11,11 @@ services:
     container_name: control-drift
     ports:
       - "80:80"
+      - "443:443"
     volumes:
       # Mount the configuration file directly so admins can edit it without rebuilding
       - ./config.json:/usr/share/nginx/html/config.json
+      - ./certs:/etc/nginx/ssl
     restart: always
 
   # -----------------------------------------------------------
@@ -22,8 +24,6 @@ services:
   litellm:
     image: ghcr.io/berriai/litellm:main-latest
     container_name: control-drift-proxy
-    ports:
-      - "4000:4000"
     environment:
       # Master keys securely loaded on the server
       - OPENAI_API_KEY=${OPENAI_API_KEY:-sk-dummy}
@@ -33,3 +33,8 @@ services:
       - ./litellm-config.yaml:/app/config.yaml
     command: ["--config", "/app/config.yaml", "--port", "4000"]
     restart: always
+
+networks:
+  default:
+    name: supabase_default
+    external: true
