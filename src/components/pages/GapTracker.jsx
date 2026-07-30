@@ -1014,7 +1014,7 @@ export default function GapTracker() {
       {/* Gap Details Modal Overlay */}
       {selectedGapId && createPortal(
         <div className="animate-fade-in fixed-overlay" style={{  position: 'fixed', top: 0, left: 'var(--sidebar-width)', right: 0, bottom: 0, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', zIndex: 9999, display: 'flex', alignItems: 'center', justifyContent: 'center'  }} onClick={() => setSelectedGapId(null)}>
-           <div className="glass-panel slide-in-staggered responsive-modal" style={{  background: 'rgba(10,11,16,0.6)', backdropFilter: 'blur(30px)', WebkitBackdropFilter: 'blur(30px)', border: '1px solid var(--glass-border)', boxShadow: '0 0 50px rgba(0,0,0,0.8)', overflow: 'hidden', borderRadius: '12px', padding: '0', position: 'relative'  }} onClick={e => e.stopPropagation()}>
+           <div className="glass-panel slide-in-staggered responsive-modal" style={{  background: 'rgba(10,11,16,0.6)', backdropFilter: 'blur(30px)', WebkitBackdropFilter: 'blur(30px)', border: '1px solid var(--glass-border)', boxShadow: '0 0 50px rgba(0,0,0,0.8)', overflowY: 'auto', maxHeight: '95vh', borderRadius: '12px', padding: '0', position: 'relative'  }} onClick={e => e.stopPropagation()}>
                <div style={{  padding: '20px'  }}>
                    <GapDetails gapIdProp={selectedGapId} onClose={() => setSelectedGapId(null)} onValidate={(gapObj) => { setSelectedGapId(null); setActiveValidationGap(gapObj); }} />
                </div>

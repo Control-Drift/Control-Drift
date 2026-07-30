@@ -104,6 +104,22 @@ html {
   font-size: 16px;
 }
 
+/* Hardcoded px values ignore rem scaling, so we must use physical zoom for 1080p */
+@media screen and (max-height: 1080px), screen and (max-width: 1920px) {
+  body {
+    zoom: 0.9;
+    /* Required for some browser coordinate mapping */
+    transform-origin: top left; 
+  }
+}
+
+/* Further scale down for very small laptop screens */
+@media screen and (max-height: 900px), screen and (max-width: 1440px) {
+  body {
+    zoom: 0.8;
+  }
+}
+
 body.sidebar-collapsed {
   --sidebar-width: 5rem;
 }
