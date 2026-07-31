@@ -17,7 +17,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../AppContext';
-import { ArrowLeft, ArrowRight, Clock, Target, Crosshair, AlertCircle, Edit3, Link as LinkIcon, Sparkles, Terminal, X, User, FileText, Shield, ShieldAlert, ChevronDown, Info, CheckSquare, Check, Plus, CornerDownLeft, Activity, Code, Eye, EyeOff, Server } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Clock, Target, Crosshair, AlertCircle, Edit3, Link as LinkIcon, Sparkles, Terminal, X, User, FileText, Shield, ShieldCheck, ShieldAlert, ChevronDown, Info, CheckSquare, Check, Plus, CornerDownLeft, Activity, Code, Eye, EyeOff, Server } from 'lucide-react';
 import ValidationOutcomeDropdown from '../dropdowns/ValidationOutcomeDropdown';
 import { useToast } from '../ui/Toast';
 import CodeStudio from '../pages/CodeStudio';
