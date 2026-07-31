@@ -125,6 +125,16 @@ docker compose up -d
 
 ---
 
+## Supply Chain Security
+
+Control Drift incorporates rigorous, out-of-the-box safeguards to protect both the IT administrator during deployment and the end-user during active usage from NPM software supply chain attacks (e.g., poisoned open-source packages). 
+
+1. **Deployment Sandboxing**: The `npm ci` build step is completely isolated within an ephemeral Alpine Linux Docker container. Even if a compromised package attempts to execute a malicious install script, it is physically trapped in the sterile build container with no access to the host machine's credentials or SSH keys.
+2. **Cryptographic Dependency Pinning**: The deployment scripts use `npm ci` (Clean Install) rather than `npm install`. This strictly enforces the exact cryptographic hashes recorded in the `package-lock.json`, mathematically ensuring that your deployment only downloads packages that were actively tested and committed to the repository, entirely ignoring upstream poisoned updates.
+3. **Strict Content Security Policy (CSP)**: The frontend is deployed behind a highly restrictive Nginx reverse proxy that injects a `connect-src 'self'` CSP header. Because the AI Proxy and Database are routed locally through the Nginx layer, the browser strictly forbids the application from establishing network connections to any external domains. This effectively eliminates the ability of a poisoned package to exfiltrate stolen session tokens, security gaps, or AI data out to a hacker's remote drop server.
+
+---
+
 ## Manual Security Configuration (Without Scripts)
 
 If you are deploying Control Drift manually and do not wish to use the automated setup scripts, you must manually secure your deployment to prevent exposing sensitive internal services (like Supabase Studio and the AI Proxy) to the public web.
