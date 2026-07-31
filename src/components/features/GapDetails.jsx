@@ -134,8 +134,16 @@ const FormattedOutcome = ({ outcome, strikeThrough = false }) => {
                          return <div key={i} style={{  marginBottom: '10px', display: 'flex', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px'  }}><strong style={{  color: '#3b82f6', width: '170px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px'  }}><Shield size={14} /> Blue Team Notes:</strong> <span style={{ flex: 1, color: 'var(--text-primary)', lineHeight: '1.5' }}>{line.substring(10).trim()}</span></div>;
                      } else if (line.startsWith('Expected:')) {
                          return <div key={i} style={{  marginBottom: '10px', display: 'flex', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px'  }}><strong style={{  color: 'var(--accent-secondary)', width: '130px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px'  }}><Check size={14} /> Expected:</strong> <span style={{ flex: 1, color: 'var(--text-primary)', lineHeight: '1.5' }}>{line.substring(9).trim()}</span></div>;
+                     } else if (line.startsWith('[System]')) {
+                         return (
+                             <div key={i} style={{ marginTop: '12px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '12px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--success)' }}>
+                                 <ShieldCheck size={18} />
+                                 <span style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>{line.trim()}</span>
+                             </div>
+                         );
                      }
-                     return <div key={i} style={{ marginBottom: '8px' }}>{line}</div>;
+                     if (!line.trim()) return null; // Skip rendering completely empty lines to prevent awkward spacing
+                     return <div key={i} style={{ marginBottom: '8px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{line}</div>;
                  })}
              </div>
         );
