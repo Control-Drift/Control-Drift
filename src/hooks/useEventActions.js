@@ -129,7 +129,7 @@ export function useEventActions({
                            ...gapToResolve,
                            status: 'Resolved',
                            resolvedDate: new Date().toISOString(),
-                           resolutionNotes: (gapToResolve.resolutionNotes || '') + '\n[System] Auto-resolved via successful Purple Team test.'
+                           resolutionNotes: (gapToResolve.resolutionNotes || '') + '\n[System] Gap closed after successful re-test.'
                        };
                        await dbAdapter.updateGap(gapToResolve.id, updatedGap);
                        setGaps(prev => prev.map(g => g.id === gapToResolve.id ? updatedGap : g));
@@ -147,7 +147,7 @@ export function useEventActions({
                         const gapTTPs = (gap.ttp || '').split(',').map(t => t.trim());
                         if (gapTTPs.length === 1 && gapTTPs[0] === ttp && gap.status !== 'Resolved') {
                             gapResolved = true;
-                            return { ...gap, status: 'Resolved', resolvedDate: new Date().toISOString(), resolutionNotes: (gap.resolutionNotes || '') + '\n[System] Auto-resolved by subsequent successful execution.' };
+                            return { ...gap, status: 'Resolved', resolvedDate: new Date().toISOString(), resolutionNotes: (gap.resolutionNotes || '') + '\n[System] Gap closed after successful re-test.' };
                         }
                         return gap;
                     });
@@ -386,7 +386,7 @@ export function useEventActions({
                     await dbAdapter.updateGap(gapObj.id, {
                         status: 'Resolved',
                         resolvedDate: validationDate || new Date().toISOString(),
-                        details: (gapObj.details || '') + '\n\n[System] Auto-resolved via inline validation.'
+                        details: (gapObj.details || '') + '\n\n[System] Gap closed after successful re-test.'
                     });
                 } else {
                     await dbAdapter.updateGap(gapObj.id, {
@@ -409,7 +409,7 @@ export function useEventActions({
             if (shouldResolveGap) {
                 newGaps = latestGaps.map(gap => {
                     if (String(gap.id) === String(gapObj.id) && gap.status !== 'Resolved') {
-                        return { ...gap, status: 'Resolved', resolvedDate: validationDate || new Date().toISOString(), details: (gap.details || '') + '\n\n[System] Auto-resolved via inline validation.' };
+                        return { ...gap, status: 'Resolved', resolvedDate: validationDate || new Date().toISOString(), details: (gap.details || '') + '\n\n[System] Gap closed after successful re-test.' };
                     }
                     return gap;
                 });

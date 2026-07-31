@@ -17,7 +17,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../AppContext';
-import { ArrowLeft, ArrowRight, Clock, Target, Crosshair, AlertCircle, Edit3, Link as LinkIcon, Sparkles, Terminal, X, User, FileText, Shield, ShieldCheck, ShieldAlert, ChevronDown, Info, CheckSquare, Check, Plus, CornerDownLeft, Activity, Code, Eye, EyeOff, Server } from 'lucide-react';
+import { ArrowLeft, ArrowRight, Clock, Target, Crosshair, AlertCircle, Edit3, Link as LinkIcon, Sparkles, Terminal, X, User, FileText, Shield, CheckCircle2, ShieldAlert, ChevronDown, Info, CheckSquare, Check, Plus, CornerDownLeft, Activity, Code, Eye, EyeOff, Server } from 'lucide-react';
 import ValidationOutcomeDropdown from '../dropdowns/ValidationOutcomeDropdown';
 import { useToast } from '../ui/Toast';
 import CodeStudio from '../pages/CodeStudio';
@@ -137,8 +137,8 @@ const FormattedOutcome = ({ outcome, strikeThrough = false }) => {
                      } else if (line.startsWith('[System]')) {
                          return (
                              <div key={i} style={{ marginTop: '12px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '12px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--success)' }}>
-                                 <ShieldCheck size={18} />
-                                 <span style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>{line.trim()}</span>
+                                 <CheckCircle2 size={18} />
+                                 <span style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>System: Gap closed after successful re-test.</span>
                              </div>
                          );
                      }
