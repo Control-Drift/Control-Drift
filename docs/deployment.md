@@ -137,7 +137,7 @@ Control Drift incorporates out-of-the-box safeguards to protect both the adminis
 
 ## Manual Security Configuration (Without Scripts)
 
-If you are deploying Control Drift manually and do not wish to use the automated setup scripts, you must manually secure your deployment to prevent exposing sensitive internal services (like Supabase Studio and the AI Proxy) to the public web.
+If you are deploying Control Drift manually and do not wish to use the automated setup scripts, you must manually secure your deployment to prevent exposing sensitive internal services (like Supabase Studio and the AI Proxy) to the network.
 
 ### 1. Bind Supabase Studio to Localhost
 By default, Supabase's `docker-compose.yml` binds Studio to `0.0.0.0:3000`. To restrict this, create a `docker-compose.override.yml` in the `supabase/docker/` directory:
