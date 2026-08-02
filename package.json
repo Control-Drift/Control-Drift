@@ -1,6 +1,6 @@
 {
   "name": "control-drift",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "description": "An AI-powered, offline-first security adversary simulation and control posture tracking dashboard.",
   "author": "Control Drift Contributors",
   "license": "Apache-2.0",
