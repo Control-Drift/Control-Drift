@@ -447,7 +447,7 @@ export default function Dashboard() {
                                if (!tacticExposure[tacticName]) tacticExposure[tacticName] = { tested: new Set(), missed: new Set() };
                                
                                if (isGap) {
-                                   if (item.status === 'Open' || item.status === 'In Progress') {
+                                   if (item.status === 'Open' || item.status === 'In Progress' || item.status === 'Risk Accepted') {
                                        tacticExposure[tacticName].tested.add(ttp);
                                        tacticExposure[tacticName].missed.add(ttp);
                                    } else if (item.status === 'Resolved') {
@@ -470,7 +470,7 @@ export default function Dashboard() {
                 
                 trackExposure(allExercises, false);
                 trackExposure(allGaps.filter(g => g.status === 'Resolved'), true);
-                trackExposure(allGaps.filter(g => g.status === 'Open' || g.status === 'In Progress'), true);
+                trackExposure(allGaps.filter(g => g.status === 'Open' || g.status === 'In Progress' || g.status === 'Risk Accepted'), true);
                 
                 const killChainPhases = {
                     "Initial Access": ["Initial Access"],

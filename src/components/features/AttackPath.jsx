@@ -1070,8 +1070,8 @@ Do not include markdown code block wrappers, return ONLY the raw JSON string.\nG
                                                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '4px' }}>Outcome</div>
                                                 <div style={{ fontSize: '1.1rem', color: (() => {
                                                     const str = selectedGap.outcome || '';
-                                                    const clean = str.replace('✓', '').trim();
-                                                    const finalOut = clean.includes('➔') ? clean.split('➔')[1].trim() : clean;
+                                                    const clean = str.replace(/✓/g, '').trim();
+                                                    const finalOut = clean.includes('➔') ? clean.split('➔')[1].trim() : clean.includes('->') ? clean.split('->')[1].trim() : clean;
                                                     if (finalOut === 'Prevented & Alerted') return 'var(--success)';
                                                     if (finalOut.includes('Prevented')) return '#06b6d4';
                                                     if (finalOut === 'Alerted') return '#3b82f6';
@@ -1089,11 +1089,15 @@ Do not include markdown code block wrappers, return ONLY the raw JSON string.\nG
                                         {(selectedGap.details || selectedGap.finding) && (
                                             <div style={{ color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: '1.6', whiteSpace: 'pre-wrap', marginTop: '10px' }}>
                                                 {String(selectedGap.details || selectedGap.finding || '').split('\n').map((line, i) => {
-                                                    if (line.startsWith('Execution:')) {
-                                                        return <div key={i} style={{  marginBottom: '10px', display: 'flex', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px'  }}><strong style={{  color: 'var(--danger)', width: '170px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px'  }}><Crosshair size={14} /> Red Team Notes:</strong> <span style={{ flex: 1, color: 'var(--text-primary)', lineHeight: '1.5' }}>{line.substring(10).trim()}</span></div>;
-                                                    } else if (line.startsWith('Detection:')) {
-                                                        return <div key={i} style={{  marginBottom: '10px', display: 'flex', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px'  }}><strong style={{  color: '#3b82f6', width: '170px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px'  }}><Shield size={14} /> Blue Team Notes:</strong> <span style={{ flex: 1, color: 'var(--text-primary)', lineHeight: '1.5' }}>{line.substring(10).trim()}</span></div>;
+                                                    const trimmedLine = line.trim();
+                                                    if (trimmedLine.startsWith('Execution:')) {
+                                                        return <div key={i} style={{  marginBottom: '10px', display: 'flex', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px'  }}><strong style={{  color: 'var(--danger)', width: '170px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px'  }}><Crosshair size={14} /> Red Team Notes:</strong> <span style={{ flex: 1, color: 'var(--text-primary)', lineHeight: '1.5' }}>{line.substring(line.indexOf('Execution:') + 10).trim()}</span></div>;
+                                                    } else if (trimmedLine.startsWith('Detection:')) {
+                                                        return <div key={i} style={{  marginBottom: '10px', display: 'flex', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px'  }}><strong style={{  color: '#3b82f6', width: '170px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px'  }}><Shield size={14} /> Blue Team Notes:</strong> <span style={{ flex: 1, color: 'var(--text-primary)', lineHeight: '1.5' }}>{line.substring(line.indexOf('Detection:') + 10).trim()}</span></div>;
+                                                    } else if (trimmedLine.startsWith('[System]')) {
+                                                        return null;
                                                     }
+                                                    if (!trimmedLine) return null;
                                                     return <div key={i} style={{ marginBottom: '8px' }}>{line}</div>;
                                                 })}
                                             </div>

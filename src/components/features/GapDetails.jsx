@@ -26,9 +26,10 @@ import RichMarkdownEditor from '../ui/RichMarkdownEditor';
 const FormattedOutcome = ({ outcome, strikeThrough = false }) => {
     if (!outcome) return <span className="status-unknown" style={{ padding: '4px 10px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold' }}>Unknown</span>;
     
-    const isRetest = outcome.includes('->') || outcome.includes('➔');
+    const cleanOutcome = outcome.replace(/✓/g, '').trim();
+    const isRetest = cleanOutcome.includes('->') || cleanOutcome.includes('➔');
     if (isRetest) {
-        const parts = outcome.split(/->|➔/);
+        const parts = cleanOutcome.split(/->|➔/);
         return (
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                 <FormattedOutcome outcome={parts[0].trim()} strikeThrough={true} />
@@ -39,14 +40,14 @@ const FormattedOutcome = ({ outcome, strikeThrough = false }) => {
     }
 
     let stat = 'na';
-    const lower = outcome.toLowerCase().trim();
+    const lower = cleanOutcome.toLowerCase();
     if (lower === 'prevented & alerted' || lower === 'optimal') stat = 'high';
     else if (lower.includes('prevented')) stat = 'prevented';
     else if (lower.includes('alerted')) stat = 'alerted';
     else if (lower.includes('logged') || lower.includes('partial')) stat = 'medium';
     else if (lower.includes('missed') || lower.includes('none')) stat = 'low';
     
-    return <span className={`status-${stat}`} style={{ padding: '4px 10px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: '1', textDecoration: strikeThrough ? 'line-through' : 'none', opacity: strikeThrough ? 0.7 : 1 }}>{outcome.replace('✓', '').trim()}</span>;
+    return <span className={`status-${stat}`} style={{ padding: '4px 10px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: '1', textDecoration: strikeThrough ? 'line-through' : 'none', opacity: strikeThrough ? 0.7 : 1 }}>{cleanOutcome}</span>;
 };
 
     const renderTechnicalDetails = (remediationStr, gap, proc) => {
@@ -128,21 +129,17 @@ const FormattedOutcome = ({ outcome, strikeThrough = false }) => {
                      </div>
                  </div>
                  {remediationStr.split('\n').map((line, i) => {
-                     if (line.startsWith('Execution:')) {
-                         return <div key={i} style={{  marginBottom: '10px', display: 'flex', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px'  }}><strong style={{  color: 'var(--danger)', width: '170px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px'  }}><Crosshair size={14} /> Red Team Notes:</strong> <span style={{ flex: 1, color: 'var(--text-primary)', lineHeight: '1.5' }}>{line.substring(10).trim()}</span></div>;
-                     } else if (line.startsWith('Detection:')) {
-                         return <div key={i} style={{  marginBottom: '10px', display: 'flex', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px'  }}><strong style={{  color: '#3b82f6', width: '170px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px'  }}><Shield size={14} /> Blue Team Notes:</strong> <span style={{ flex: 1, color: 'var(--text-primary)', lineHeight: '1.5' }}>{line.substring(10).trim()}</span></div>;
-                     } else if (line.startsWith('Expected:')) {
-                         return <div key={i} style={{  marginBottom: '10px', display: 'flex', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px'  }}><strong style={{  color: 'var(--accent-secondary)', width: '130px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px'  }}><Check size={14} /> Expected:</strong> <span style={{ flex: 1, color: 'var(--text-primary)', lineHeight: '1.5' }}>{line.substring(9).trim()}</span></div>;
-                     } else if (line.startsWith('[System]')) {
-                         return (
-                             <div key={i} style={{ marginTop: '12px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '12px', borderRadius: '8px', display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--success)' }}>
-                                 <CheckCircle2 size={18} />
-                                 <span style={{ fontSize: '0.9rem', fontWeight: 'bold' }}>System: Gap closed after successful re-test.</span>
-                             </div>
-                         );
+                     const trimmedLine = line.trim();
+                     if (trimmedLine.startsWith('Execution:')) {
+                         return <div key={i} style={{  marginBottom: '10px', display: 'flex', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px'  }}><strong style={{  color: 'var(--danger)', width: '170px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px'  }}><Crosshair size={14} /> Red Team Notes:</strong> <span style={{ flex: 1, color: 'var(--text-primary)', lineHeight: '1.5' }}>{line.substring(line.indexOf('Execution:') + 10).trim()}</span></div>;
+                     } else if (trimmedLine.startsWith('Detection:')) {
+                         return <div key={i} style={{  marginBottom: '10px', display: 'flex', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px'  }}><strong style={{  color: '#3b82f6', width: '170px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px'  }}><Shield size={14} /> Blue Team Notes:</strong> <span style={{ flex: 1, color: 'var(--text-primary)', lineHeight: '1.5' }}>{line.substring(line.indexOf('Detection:') + 10).trim()}</span></div>;
+                     } else if (trimmedLine.startsWith('Expected:')) {
+                         return <div key={i} style={{  marginBottom: '10px', display: 'flex', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px'  }}><strong style={{  color: 'var(--accent-secondary)', width: '130px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px'  }}><Check size={14} /> Expected:</strong> <span style={{ flex: 1, color: 'var(--text-primary)', lineHeight: '1.5' }}>{line.substring(line.indexOf('Expected:') + 9).trim()}</span></div>;
+                     } else if (trimmedLine.startsWith('[System]')) {
+                         return null;
                      }
-                     if (!line.trim()) return null; // Skip rendering completely empty lines to prevent awkward spacing
+                     if (!trimmedLine) return null; // Skip rendering completely empty lines to prevent awkward spacing
                      return <div key={i} style={{ marginBottom: '8px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{line}</div>;
                  })}
              </div>
