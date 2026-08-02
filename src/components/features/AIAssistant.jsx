@@ -240,7 +240,7 @@ CRITICAL RULES FOR MITRE ATT&CK MAPPING:
           border: isFullScreen ? 'none' : '1px solid var(--glass-border)',
           background: isFullScreen ? 'rgba(5, 5, 8, 0.98)' : 'rgba(10, 11, 16, 0.95)',
           transition: isDragging ? 'none' : 'all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)',
-          zIndex: 100,
+          zIndex: 99999,
           opacity: isOpen ? 1 : 0,
           pointerEvents: isOpen ? 'auto' : 'none',
           transform: isOpen ? 'scale(1) translateY(0)' : 'scale(0.95) translateY(20px)',
