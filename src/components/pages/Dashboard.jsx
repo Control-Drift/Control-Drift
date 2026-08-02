@@ -16,7 +16,7 @@
 
 import React from 'react';
 import { useAppContext } from '../../AppContext';
-import { Activity, Target, ShieldAlert, Shield, ArrowRight, ArrowLeft, Info, Key, Terminal, Ghost, Network, Clock, ShieldCheck, Database, Globe, BrainCircuit } from 'lucide-react';
+import { Activity, Target, ShieldAlert, Shield, ArrowRight, ArrowLeft, Info, Key, Terminal, Ghost, Network, Clock, ShieldCheck, Database, Globe, BrainCircuit, ChevronDown } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import UnifiedPosturePill from '../ui/UnifiedPosturePill';
 import TagDropdown from '../dropdowns/TagDropdown';
@@ -160,6 +160,83 @@ const getNormalizedPosture = (ex) => {
     return { outcome, coverage };
 };
 
+const CustomTimeframeDropdown = ({ value, onChange }) => {
+    const [isOpen, setIsOpen] = React.useState(false);
+    const dropdownRef = React.useRef(null);
+    const options = ['30 Days', '90 Days', '6 Months', '1 Year', 'Max'];
+
+    React.useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    return (
+        <div ref={dropdownRef} style={{ position: 'relative', display: 'inline-block' }}>
+            <button 
+                onClick={() => setIsOpen(!isOpen)}
+                style={{ 
+                    display: 'flex', alignItems: 'center', gap: '8px', 
+                    background: 'rgba(10, 11, 16, 0.6)', backdropFilter: 'blur(10px)',
+                    border: isOpen ? '1px solid var(--accent-secondary)' : '1px solid rgba(255,255,255,0.1)', 
+                    borderRadius: '8px', padding: '6px 12px', 
+                    color: 'var(--text-primary)', cursor: 'pointer',
+                    boxShadow: isOpen ? '0 0 10px rgba(236, 72, 153, 0.2)' : 'none',
+                    transition: 'all 0.2s ease',
+                    minWidth: '110px', justifyContent: 'space-between'
+                }}
+            >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Clock size={14} color="var(--accent-secondary)" />
+                    <span style={{ fontSize: '0.85rem', fontWeight: 'bold' }}>{value}</span>
+                </div>
+                <ChevronDown size={14} color="var(--text-muted)" style={{ transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.2s ease' }} />
+            </button>
+
+            {isOpen && (
+                <div className="animate-fade-in" style={{ 
+                    position: 'absolute', top: 'calc(100% + 6px)', right: 0, 
+                    background: 'rgba(15, 17, 26, 0.95)', backdropFilter: 'blur(16px)',
+                    border: '1px solid var(--glass-border)', borderRadius: '8px',
+                    padding: '6px', zIndex: 1000,
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.5)',
+                    width: '100%', minWidth: '140px',
+                    display: 'flex', flexDirection: 'column', gap: '2px'
+                }}>
+                    {options.map((opt) => {
+                        const isActive = value === opt;
+                        return (
+                            <button
+                                key={opt}
+                                onClick={() => { onChange(opt); setIsOpen(false); }}
+                                style={{
+                                    display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '8px',
+                                    width: '100%', padding: '8px 10px',
+                                    background: isActive ? 'rgba(236, 72, 153, 0.15)' : 'transparent',
+                                    border: 'none', borderRadius: '6px',
+                                    color: isActive ? 'var(--accent-secondary)' : 'var(--text-primary)',
+                                    cursor: 'pointer', textAlign: 'left',
+                                    fontSize: '0.85rem', fontWeight: isActive ? 'bold' : 'normal',
+                                    transition: 'all 0.2s ease'
+                                }}
+                                onMouseEnter={(e) => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
+                                onMouseLeave={(e) => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
+                            >
+                                <Clock size={14} color={isActive ? "var(--accent-secondary)" : "var(--text-muted)"} style={{ opacity: isActive ? 1 : 0.5 }} />
+                                {opt}
+                            </button>
+                        );
+                    })}
+                </div>
+            )}
+        </div>
+    );
+};
+
 export default function Dashboard() {
   const { events: contextExercises, allEventsData, gaps: contextGaps, mitreData, dbAdapter, dbConfig, isDbLoading, aiSettings, setActiveAiContext, activeTagFilter, isAiActive, setActiveSecurityControlFilter, simulationSummaries } = useAppContext();
   const navigate = useNavigate();
@@ -178,6 +255,8 @@ export default function Dashboard() {
       mitreCoveragePercentage: 0
   });
   const [topSecurityControls, setTopSecurityControls] = React.useState([]);
+  const [topTTPs, setTopTTPs] = React.useState([]);
+  const [trendTimeframe, setTrendTimeframe] = React.useState('30 Days');
   const [isLoading, setIsLoading] = React.useState(true);
   const [activePhaseSubject, setActivePhaseSubject] = React.useState("Pre-Attack");
   const [expandedPhaseSubject, setExpandedPhaseSubject] = React.useState(null);
@@ -265,18 +344,27 @@ export default function Dashboard() {
                                  };
                                  const trTtpStr = getTtpString(tr);
                                  
-                                 if (allExercises.some(ex => {
-                                     if (!ex || !tr) return false;
-                                     if (tr.id && ex.id === tr.id) return true;
-                                     const exTtpStr = getTtpString(ex);
-                                     const trTtpsArr = Array.isArray(tr.ttps) ? tr.ttps : trTtpStr.split(',').map(s => s.trim());
-                                     const isTtpMatch = trTtpsArr.some(t => t && exTtpStr.includes(t));
-                                     const exEffectiveDate = ex.date || ex.created_at || '';
-                                     const trEffectiveDate = tr.date || sim.timestamp || sim.date || sim.created_at || (sim.details && sim.details.date) || '';
-                                     return isTtpMatch && normalizeDate(exEffectiveDate) === normalizeDate(trEffectiveDate) && (ex.simulation === sim.name || ex.simulation === sim.id || ex.simId === sim.id || !ex.simulation);
-                                 })) {
-                                     return;
-                                 }
+                                  const existingIndex = allExercises.findIndex(ex => {
+                                      if (!ex || !tr) return false;
+                                      if (tr.id && ex.id === tr.id) return true;
+                                      const exTtpStr = getTtpString(ex);
+                                      const trTtpsArr = Array.isArray(tr.ttps) ? tr.ttps : trTtpStr.split(',').map(s => s.trim());
+                                      const isTtpMatch = trTtpsArr.some(t => t && exTtpStr.includes(t));
+                                      const exEffectiveDate = ex.date || ex.created_at || '';
+                                      const trEffectiveDate = tr.date || sim.timestamp || sim.date || sim.created_at || (sim.details && sim.details.date) || '';
+                                      return isTtpMatch && normalizeDate(exEffectiveDate) === normalizeDate(trEffectiveDate) && (ex.simulation === sim.name || ex.simulation === sim.id || ex.simId === sim.id || !ex.simulation);
+                                  });
+
+                                  if (existingIndex !== -1) {
+                                      // Merge dynamic updates from simulationSummaries (like validation re-tests) into the static historical event
+                                      allExercises[existingIndex] = {
+                                          ...allExercises[existingIndex],
+                                          outcome: tr.outcome || allExercises[existingIndex].outcome,
+                                          coverageRating: tr.coverageRating || allExercises[existingIndex].coverageRating,
+                                          validationDate: tr.validationDate || allExercises[existingIndex].validationDate,
+                                      };
+                                      return;
+                                  }
                                 
                                 allExercises.push({
                                     ...tr,
@@ -499,10 +587,43 @@ export default function Dashboard() {
                     };
                 });
 
-               const simulationsByName = {};
+               const trendEvents = [];
                allExercises.forEach(ex => {
                    if (ex.status?.toLowerCase() === 'na' || ex.coverageRating === 'N/A') return;
                    
+                   if (ex.outcome && ex.outcome.includes(' ➔ ')) {
+                       const [originalOutcome, newOutcome] = ex.outcome.split(' ➔ ');
+                       let origCoverage = 'None';
+                       const lowerOrig = originalOutcome.toLowerCase().trim();
+                       if (lowerOrig === 'logged') origCoverage = 'Partial';
+                       else if (lowerOrig.includes('prevented') || lowerOrig.includes('alerted')) origCoverage = 'Optimal';
+                       else if (lowerOrig === 'missed') origCoverage = 'None';
+                       
+                       trendEvents.push({
+                           ...ex,
+                           coverageRating: origCoverage,
+                           outcome: originalOutcome.trim()
+                       });
+                       
+                       trendEvents.push({
+                           ...ex,
+                           date: ex.validationDate || ex.date,
+                           simulation: `${ex.simulation} (Re-Test)`,
+                           outcome: newOutcome.trim(),
+                           isRetest: true
+                       });
+                   } else {
+                       trendEvents.push(ex);
+                   }
+               });
+
+               const safeDate = (dateStr) => {
+                   const d = new Date(dateStr);
+                   return isNaN(d.getTime()) ? new Date() : d;
+               };
+
+               const eventsByDate = {};
+               trendEvents.forEach(ex => {
                    let calcStatus = 'unknown';
                    if (ex.coverageRating && ex.coverageRating !== 'N/A') {
                        calcStatus = ex.coverageRating === 'Optimal' ? 'high' : ex.coverageRating === 'Partial' ? 'medium' : ex.coverageRating === 'Minimal' ? 'minimal' : ex.coverageRating === 'None' ? 'low' : 'unknown';
@@ -510,24 +631,33 @@ export default function Dashboard() {
                        calcStatus = ex.status;
                    }
 
-                   if (!simulationsByName[ex.simulation]) simulationsByName[ex.simulation] = { date: ex.date, high: 0, medium: 0, minimal: 0, total: 0 };
-                   simulationsByName[ex.simulation].total += 1;
-                   if (calcStatus === 'high') simulationsByName[ex.simulation].high += 1;
-                   if (calcStatus === 'medium') simulationsByName[ex.simulation].medium += 1;
-                   if (calcStatus === 'minimal') simulationsByName[ex.simulation].minimal += 1;
-               });
-               const safeDate = (dateStr) => {
-                   const d = new Date(dateStr);
-                   return isNaN(d.getTime()) ? new Date() : d;
-               };
+                   const d = safeDate(ex.date || new Date().toISOString());
+                   const dateKey = d.toLocaleDateString('default', { month: 'short', day: 'numeric' });
 
-               const historicalScores = Object.values(simulationsByName).sort((a,b) => safeDate(a.date) - safeDate(b.date)).map(c => {
-                   const score = Math.round(((c.high + (c.medium * 0.5) + (c.minimal * 0.25)) / c.total) * 100);
-                   return {
-                       name: safeDate(c.date).toLocaleDateString('default', { month: 'short', day: 'numeric' }),
-                       score: score
-                   };
+                   if (!eventsByDate[dateKey]) eventsByDate[dateKey] = { date: d, high: 0, medium: 0, minimal: 0, total: 0 };
+                   eventsByDate[dateKey].total += 1;
+                   if (calcStatus === 'high') eventsByDate[dateKey].high += 1;
+                   if (calcStatus === 'medium') eventsByDate[dateKey].medium += 1;
+                   if (calcStatus === 'minimal') eventsByDate[dateKey].minimal += 1;
                });
+
+               const cutoffDate = new Date();
+               if (trendTimeframe === '30 Days') cutoffDate.setDate(cutoffDate.getDate() - 30);
+               else if (trendTimeframe === '90 Days') cutoffDate.setDate(cutoffDate.getDate() - 90);
+               else if (trendTimeframe === '6 Months') cutoffDate.setMonth(cutoffDate.getMonth() - 6);
+               else if (trendTimeframe === '1 Year') cutoffDate.setFullYear(cutoffDate.getFullYear() - 1);
+               else if (trendTimeframe === 'Max') cutoffDate.setFullYear(2000);
+               
+               const historicalScores = Object.values(eventsByDate)
+                   .filter(c => c.date >= cutoffDate)
+                   .sort((a,b) => a.date - b.date)
+                   .map(c => {
+                       const score = Math.round(((c.high + (c.medium * 0.5) + (c.minimal * 0.25)) / c.total) * 100);
+                       return {
+                           name: c.date.toLocaleDateString('default', { month: 'short', day: 'numeric' }),
+                           score: score
+                       };
+                   });
                
                const currentDate = new Date().toLocaleString('default', { month: 'short', day: 'numeric' });
                let areaData = historicalScores;
@@ -545,10 +675,10 @@ export default function Dashboard() {
                
                // Ensure the latest node on the trend graph explicitly matches the current true GRS
                if (areaData.length > 0) {
-                   if (areaData[areaData.length - 1].name === currentDate) {
-                       areaData[areaData.length - 1].score = grsScore;
-                   } else {
+                   if (areaData[areaData.length - 1].name !== currentDate) {
                        areaData.push({ name: currentDate, score: grsScore });
+                   } else {
+                       areaData.push({ name: 'Live', score: grsScore });
                    }
                }
 
@@ -601,13 +731,6 @@ export default function Dashboard() {
                    areaData,
                    mitreCoveragePercentage
                });
-                const resolvedTTPs = new Set();
-                allGaps.forEach(g => {
-                    if (g.status === 'Resolved' || g.status === 'Risk Accepted') {
-                        if (g.ttp) g.ttp.split(',').forEach(t => resolvedTTPs.add(t.trim()));
-                    }
-                });
-
                 const controlStats = {};
                 const processedEventKeys = new Set();
                 
@@ -625,13 +748,6 @@ export default function Dashboard() {
 
                     const { outcome } = getNormalizedPosture(ex);
                     let isPositive = outcome === 'Prevented' || outcome === 'Alerted';
-                    
-                    if (!isPositive && ex.ttp) {
-                        const ttps = ex.ttp.split(',').map(t => t.trim());
-                        if (ttps.some(t => resolvedTTPs.has(t))) {
-                            isPositive = true;
-                        }
-                    }
                     
                     const rawControls = Array.isArray(ex.securityControls) ? ex.securityControls : [];
                     const controls = [...new Set(rawControls)];
@@ -657,7 +773,7 @@ export default function Dashboard() {
        } finally {
            setIsLoading(false);
        }
-  }, [dbAdapter, allEventsData, contextGaps, mitreData, activeTagFilter]);
+   }, [dbAdapter, allEventsData, contextGaps, mitreData, activeTagFilter, trendTimeframe]);
 
   React.useEffect(() => {
       loadDashboardData();
@@ -1206,11 +1322,14 @@ export default function Dashboard() {
 
          {/* Top Focus Gaps */}
          <div className="glass-panel hover-lift animate-fade-in" style={{ padding: '20px 30px', display: 'flex', flexDirection: 'column', height: '100%' }}>
-            <h3 style={{ margin: '0 0 25px 0', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                Readiness Score Trend
-                <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>Historical tracking of your Global Readiness Score over time, plotting the outcomes of past adversary simulations against your current baseline.</div>}>
-                   <span style={{ cursor: 'help', color: 'var(--text-muted)', display: 'flex' }}><Info size={14} /></span>
-                </Tooltip>
+            <h3 style={{ margin: '0 0 25px 0', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    Readiness Score Trend
+                    <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>Historical tracking of your Global Readiness Score over time, plotting the outcomes of past adversary simulations against your current baseline.</div>}>
+                       <span style={{ cursor: 'help', color: 'var(--text-muted)', display: 'flex' }}><Info size={14} /></span>
+                    </Tooltip>
+                </div>
+                <CustomTimeframeDropdown value={trendTimeframe} onChange={setTrendTimeframe} />
             </h3>
             <div style={{ flex: 1, minHeight: 0 }}>
                 <div className="animate-reveal-right" style={{ width: '100%', height: '100%' }}>
