@@ -1,4 +1,4 @@
-# Author's Note: The Philosophy Behind Control Drift
+# The Philosophy Behind Control Drift
 
 In a cybersecurity market flooded with multi-million dollar, AI-powered Autonomous Penetration Testing platforms and enterprise Breach and Attack Simulation (BAS) tools, where does Control Drift fit into the modern era of continuous validation?
 
@@ -13,7 +13,7 @@ If you look closely at the direction the industry is moving, there is a dangerou
 
 Here is why that approach will fail, and why empowering the analyst is actually the winning move:
 
-1. **The "Black Box" Blindspot:** If you completely automate your defense, your security team loses their fundamental understanding of how the environment they are responsible for defending actually works. When (not if) an adversary’s AI finds a novel loophole that your defensive AI missed, your team won't know how to stop it because they’ve spent the last three years letting a machine do the thinking for them. Empowering analysts to "go deep" ensures that when the automation fails, you still have operators who know how to read the raw telemetry and stop the bleeding.
+1. **The "Black Box" Blindspot:** If you completely automate your defenses, your security team loses their fundamental understanding of how the environment they are responsible for defending actually works. When (not if) an adversary’s AI finds a novel loophole that your defensive AI missed, your team won't know how to stop it because they’ve spent the last three years letting a machine do the thinking for them. Empowering analysts to "go deep" ensures that when the automation fails, you still have operators who know how to read the raw telemetry and stop the bleeding.
 2. **Context is King:** AI is incredible at parsing data and writing code, but it lacks business context. An AI doesn't inherently understand that a specific legacy server needs to stay online because it processes payroll, or that a strange lateral movement is actually just the domain admin working late on a weekend. A human analyst has that intuition and context. The goal isn't to replace the human; the goal is to give the human a better set of tools.
 
 ---
