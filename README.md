@@ -22,13 +22,9 @@
 
 "Control Drift" occurs when the *expectation* of a security control's effectiveness does not meet the *reality* of its performance. This can happen when an established control (such as an EDR/AV policy, firewall rule, or endpoint configuration) silently degrades or breaks over time due to environment changes, misconfigurations, or software updates. Beyond just detecting this degradation, proactively identifying control drift allows security teams to expose inherent architectural shortcomings and highlight exactly where current controls fail to meet their defensive expectations.
 
-Traditional Breach and Attack Simulation (BAS) tools and purple-teaming platforms are often weighed down by massive infrastructure requirements, clunky user interfaces, and bloated feature sets that make discovering and tracking these gaps a chore, rather than an engaging experience.
-
-Control Drift is built as a lightweight, open-source alternative. It strips away the friction of heavy infrastructure, giving security teams an accessible and visually intuitive environment to get hands-on with threat emulation and track their defensive gaps.
-
 ## Why Control Drift?
 
-While other purple-teaming frameworks and posture management tools exist, Control Drift was engineered to solve the pain points inherent in legacy and SaaS platforms:
+While commercial BAS and autonomous pentesting platforms excel at continuous, automated scoring, Control Drift provides an analyst-first environment to execute targeted threat simulations, test nuanced procedural variations, and deeply investigate unexpected defensive behavior. By combining large-scale automation with deep, practitioner-led validation, organizations can build a significantly more complete and mature threat-informed defense program.
 
 ### 1. Zero-Infrastructure Start
 Unlike heavy, legacy platforms that require multi-container Docker stacks, databases, and message brokers just to boot up, **Control Drift can run entirely in your browser.** By utilizing IndexedDB for a local-first experience, you can clone the repository, run `npm run dev`, and start logging gaps immediately. An enterprise setup can be deployed by attaching a Supabase or REST API backend with zero code changes.
