@@ -16,5 +16,8 @@ This document outlines future features, ideas, and structural improvements plann
 ## 3. UI/UX Enhancements
 - *(Brainstorming)* Custom reporting exports (PDF/HTML) for executive audiences that summarize the Global Readiness Score and active remediation efforts.
 
+## 4. Metric Enhancements
+- **Completed** Factor active gap severity ratings into the global readiness score.
+
 ---
 *Note: This is a living document. Ideas here are not guaranteed for release but represent the current direction and brainstorming of the project.*

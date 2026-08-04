@@ -359,6 +359,9 @@ select.ai-input option {
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   flex-shrink: 0;
 }
+.nav-item svg {
+  flex-shrink: 0;
+}
 .nav-item:hover {
   background: var(--glass-bg);
   color: var(--text-primary);

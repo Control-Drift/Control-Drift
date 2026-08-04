@@ -424,46 +424,85 @@ export default function Dashboard() {
                let points = 0;
                const processedTTPs = new Set();
 
-                // 1. Active gaps preserve their underlying coverage score (do not reset to 0)
+                // Helper to get severity weight
+                const getSeverityWeight = (severity) => {
+                    if (severity === 'Critical') return 10;
+                    if (severity === 'High') return 5;
+                    if (severity === 'Medium') return 2;
+                    if (severity === 'Low') return 1;
+                    return 1;
+                };
+
+                // Group gaps by TTP to find the worst active severity per TTP
+                const ttpActiveGaps = new Map();
+                const ttpClosedGaps = new Map();
+                
                 allGaps.forEach(g => {
-                    if (g.status === 'Open' || g.status === 'In Progress') {
-                        if (g.ttp) {
-                            g.ttp.split(',').forEach(t => {
-                                const ttpId = t.trim();
-                                if (!processedTTPs.has(ttpId)) {
-                                    totalValidated++;
-                                    processedTTPs.add(ttpId);
-                                    
-                                    const posture = getNormalizedPosture(g);
-                                    if (posture.coverage === 'Optimal') points += 1.0;
-                                    else if (posture.coverage === 'Partial') points += 0.5;
-                                    else if (posture.coverage === 'Minimal') points += 0.25;
+                    if (g.ttp) {
+                        g.ttp.split(',').forEach(t => {
+                            const ttpId = t.trim();
+                            if (g.status === 'Open' || g.status === 'In Progress') {
+                                if (!ttpActiveGaps.has(ttpId)) {
+                                    ttpActiveGaps.set(ttpId, []);
                                 }
-                            });
+                                ttpActiveGaps.get(ttpId).push(g);
+                            } else if (g.status === 'Resolved' || g.status === 'Risk Accepted') {
+                                if (!ttpClosedGaps.has(ttpId)) {
+                                    ttpClosedGaps.set(ttpId, []);
+                                }
+                                ttpClosedGaps.get(ttpId).push(g);
+                            }
+                        });
+                    }
+                });
+                
+                // 1. Process TTPs with active gaps (weighted by severity)
+                ttpActiveGaps.forEach((gaps, ttpId) => {
+                    if (!processedTTPs.has(ttpId)) {
+                        processedTTPs.add(ttpId);
+                        
+                        // Find the gap with the highest severity weight
+                        let worstGap = gaps[0];
+                        let maxWeight = getSeverityWeight(worstGap.severity);
+                        
+                        for (let i = 1; i < gaps.length; i++) {
+                            const weight = getSeverityWeight(gaps[i].severity);
+                            if (weight > maxWeight) {
+                                maxWeight = weight;
+                                worstGap = gaps[i];
+                            }
+                        }
+                        
+                        totalValidated += maxWeight;
+                        
+                        let basePoints = 0;
+                        const posture = getNormalizedPosture(worstGap);
+                        if (posture.coverage === 'Optimal') basePoints = 1.0;
+                        else if (posture.coverage === 'Partial') basePoints = 0.5;
+                        else if (posture.coverage === 'Minimal') basePoints = 0.25;
+                        
+                        points += (basePoints * maxWeight);
+                    }
+                });
+
+                // 1.5. Process TTPs with closed gaps (standard weight of 1)
+                ttpClosedGaps.forEach((gaps, ttpId) => {
+                    if (!processedTTPs.has(ttpId)) {
+                        processedTTPs.add(ttpId);
+                        
+                        // If any of the closed gaps is "Resolved", we give full credit
+                        // If all are "Risk Accepted", we give 0 credit (prevents artificial inflation)
+                        const isResolved = gaps.some(g => g.status === 'Resolved');
+                        
+                        totalValidated += 1; // Standard weight for resolved/accepted
+                        if (isResolved) {
+                            points += 1.0;
+                        } else {
+                            points += 0.0;
                         }
                     }
                 });
-               
-               // 1.5. Closed gaps provide credit for their associated TTPs (overriding older MITRE data)
-               allGaps.forEach(g => {
-                   if (g.status === 'Resolved' || g.status === 'Risk Accepted') {
-                       if (g.ttp) {
-                           g.ttp.split(',').forEach(t => {
-                               const ttpId = t.trim();
-                               if (!processedTTPs.has(ttpId)) {
-                                   totalValidated++;
-                                   processedTTPs.add(ttpId);
-                                   if (g.status === 'Risk Accepted') {
-                                       points += 0; // No credit for accepted risk (prevents artificial score inflation)
-                                   } else {
-                                       points += 1.0; // Full credit for resolving the gap
-                                   }
-                               }
-                           });
-                       }
-                   }
-               });
-               
+                
                // 2. Add points from MITRE data for any validated TTPs that DO NOT have active gaps
                if (mitreData) {
                    for (const tactic in mitreData) {

@@ -32,10 +32,14 @@ The GRS is not a simple ratio of passes to fails. It is a precise mathematical r
    - `Partial` (Medium): 0.5 points
    - `Minimal`: 0.25 points
    - `None`: 0 points
-2. **Gap Overrides:**
-   - **Active Gaps (Open/In Progress):** Preserve their underlying coverage score (they do not automatically reset to 0, granting partial credit if the control partially logged the attack).
-   - **Resolved Gaps:** Provide full credit (1.0 points) for their associated TTPs, instantly boosting the score.
-   - **Risk Accepted Gaps:** Provide **0 points**. Control Drift strictly prevents artificial score inflation; accepting a risk removes the gap from the queue but does not grant defensive credit.
+2. **Gap Severity Weighting:**
+   - Instead of treating every TTP equally, the GRS calculation applies a strict severity weight to the denominator for any TTP with an active gap. This ensures that a single high-impact failure plummets the overall score much faster than a low-impact failure. 
+   - Weights: **Critical=10**, **High=5**, **Medium=2**, **Low=1**.
+   - If a TTP has multiple active gaps, the maximum severity weight is applied.
+3. **Gap Overrides:**
+   - **Active Gaps (Open/In Progress):** Preserve their underlying coverage score, multiplied by their severity weight.
+   - **Resolved Gaps:** Revert the TTP to a standard weight of 1 and provide full credit (1.0 points), instantly bouncing the score back up.
+   - **Risk Accepted Gaps:** Provide **0 points** (with a standard weight of 1). Control Drift strictly prevents artificial score inflation; accepting a risk removes the gap from the queue but does not grant defensive credit.
 
 ### Advanced Metrics
 - **Mean Time to Remediate (MTTR):** Calculates the exact time delta (in seconds) between a Gap's `createdDate` and `resolvedDate`, averaged across all valid Resolved gaps, and formats the output into days and hours.

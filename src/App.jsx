@@ -16,7 +16,7 @@
 
 import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Target, Shield, FileText, Settings as SettingsIcon, Activity, ListTodo, ChevronLeft, ChevronRight, Command, Menu, X, Globe } from 'lucide-react';
+import { LayoutDashboard, Crosshair, Shield, FileText, Settings as SettingsIcon, Activity, ListTodo, ChevronLeft, ChevronRight, Command, Menu, X, Globe } from 'lucide-react';
 import CustomLogo from './components/ui/CustomLogo';
 
 import AIAssistant from './components/features/AIAssistant';
@@ -125,7 +125,7 @@ function AppContent() {
                          <LayoutDashboard size={20} /><span className="nav-label">Dashboard</span>
                        </NavLink>
                        <NavLink to="/simulation" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={handleNavClick}>
-                         <Target size={20} /><span className="nav-label">Simulation Launcher</span>
+                         <Crosshair size={20} /><span className="nav-label">Simulation Launcher</span>
                        </NavLink>
                        <NavLink to="/posture" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={handleNavClick}>
                          <Globe size={20} /><span className="nav-label">Heat Globe</span>
