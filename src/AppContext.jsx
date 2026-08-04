@@ -306,6 +306,7 @@ export const AppProvider = ({ children }) => {
     // The loadData function orchestrates loading all entities
     const loadData = useCallback(async (adapter) => {
         if (!adapter) return;
+        
         await exData.loadAllData(adapter);
         await gapsData.fetchGaps(adapter);
         await simsData.fetchSimulations(adapter);

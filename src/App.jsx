@@ -97,7 +97,7 @@ function AppContent() {
                    <div style={{ zoom: 1.5, marginBottom: '30px' }}>
                        <CustomLogo />
                    </div>
-                   <div style={{ color: 'var(--text-secondary)' }}>Establishing connection...</div>
+                   <div style={{ color: 'var(--text-secondary)', fontFamily: '"Orbitron", sans-serif', letterSpacing: '1px' }}>Establishing connection...</div>
                </div>
            )}
            {/* Background Animations Removed */}
