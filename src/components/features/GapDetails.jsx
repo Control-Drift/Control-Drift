@@ -305,9 +305,21 @@ export default function GapDetails({ gapIdProp, onClose, onValidate }) {
     }, [gap]);
 
     useEffect(() => {
-        if (activeTab === 'Code Studio' && gap) {
-            setActiveAiContext({ ttp: gap.ttp, finding: gap.finding });
+        if (gap) {
+            setActiveAiContext({ 
+                view: activeTab === 'Code Studio' ? 'Gap Code Studio' : 'Gap Details',
+                gap: {
+                    id: gap.id,
+                    title: gap.title,
+                    ttp: gap.ttp,
+                    finding: gap.finding,
+                    status: gap.status,
+                    severity: gap.severity,
+                    remediation: gap.remediation
+                }
+            });
         }
+        return () => setActiveAiContext(null);
     }, [activeTab, gap, setActiveAiContext]);
 
     if (!gap) {

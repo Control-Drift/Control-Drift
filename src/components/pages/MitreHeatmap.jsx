@@ -1228,18 +1228,7 @@ export default function MitreHeatmap() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  React.useEffect(() => {
-     setActiveAiContext({
-         view: 'Security Posture (MITRE ATT&CK Heatmap)',
-         description: 'Interactive 3D visualization of the MITRE ATT&CK matrix showing technique coverage and testing status.',
-         mitreCoverageSummary: mitreData ? Object.entries(mitreData).map(([tacticName, tactic]) => ({
-             tactic: tacticName,
-             totalTechniques: tactic.techniques.length,
-             testedTechniques: tactic.techniques.filter(t => t.inScope).length
-         })) : []
-     });
-     return () => setActiveAiContext(null);
-  }, [setActiveAiContext, mitreData]);
+
 
 
   const handleTechClick = useCallback((tech) => {
@@ -1327,6 +1316,19 @@ export default function MitreHeatmap() {
      }
      return resolved;
   }, [mitreData, activeEnvironmentFilter]);
+
+  React.useEffect(() => {
+     setActiveAiContext({
+         view: 'Security Posture (MITRE ATT&CK Heatmap)',
+         description: 'Interactive 3D visualization of the MITRE ATT&CK matrix showing technique coverage and testing status.',
+         mitreCoverageSummary: resolvedMitreData ? Object.entries(resolvedMitreData).map(([tacticName, tactic]) => ({
+             tactic: tacticName,
+             totalTechniques: tactic.techniques.filter(t => t.status !== 'na').length,
+             testedTechniques: tactic.techniques.filter(t => t.hasTests).length
+         })) : []
+     });
+     return () => setActiveAiContext(null);
+  }, [setActiveAiContext, resolvedMitreData]);
 
   React.useEffect(() => {
       if (selectedTech && resolvedMitreData && selectedTech.tactic) {

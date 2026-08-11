@@ -126,12 +126,21 @@ export default function Reports() {
   const [simulationSearchTerm, setSimulationSearchTerm] = useState('');
 
   useEffect(() => {
-    setActiveAiContext({
-      view: 'Reports',
-      description: 'Historical archive of past adversary simulations, with executive summaries and specific procedures executed.'
-    });
+    if (selectedSimulation && simulationList[selectedSimulation]) {
+        setActiveAiContext({
+            view: 'Report Drilldown',
+            description: 'Viewing a specific adversary simulation report.',
+            simulationName: selectedSimulation,
+            simulationDetails: simulationList[selectedSimulation]
+        });
+    } else {
+        setActiveAiContext({
+            view: 'Reports',
+            description: 'Historical archive of past adversary simulations, with executive summaries and specific procedures executed.'
+        });
+    }
     return () => setActiveAiContext(null);
-  }, [setActiveAiContext]);
+  }, [setActiveAiContext, selectedSimulation, simulationList]);
 
   const loadSimulations = useCallback(async () => {
       setIsSimulationsLoading(true);
