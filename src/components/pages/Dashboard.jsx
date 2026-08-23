@@ -714,11 +714,7 @@ export default function Dashboard() {
                
                // Ensure the latest node on the trend graph explicitly matches the current true GRS
                if (areaData.length > 0) {
-                   if (areaData[areaData.length - 1].name !== currentDate) {
-                       areaData.push({ name: currentDate, score: grsScore });
-                   } else {
-                       areaData.push({ name: 'Live', score: grsScore });
-                   }
+                   areaData[areaData.length - 1].score = grsScore;
                }
 
                let mitreCoveragePercentage = 0;
