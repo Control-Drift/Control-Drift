@@ -45,6 +45,7 @@ export class GenericAPIAdapter extends AiAdapter {
         const apiOptions = { ...options };
         delete apiOptions.imageData;
         delete apiOptions.maxTokens;
+        delete apiOptions.useSearch;
 
         const bodyParams = { model: targetModel, messages, ...apiOptions };
         if (maxTokens) bodyParams.max_tokens = maxTokens;
@@ -107,6 +108,7 @@ export class GenericAPIAdapter extends AiAdapter {
         const apiOptions = { ...options };
         delete apiOptions.imageData;
         delete apiOptions.maxTokens;
+        delete apiOptions.useSearch;
 
         const bodyParams = {
             model: targetModel,

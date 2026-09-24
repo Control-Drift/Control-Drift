@@ -699,22 +699,35 @@ export default function Dashboard() {
                    });
                
                const currentDate = new Date().toLocaleString('default', { month: 'short', day: 'numeric' });
+               const startDateName = trendTimeframe === 'Max' ? 'Baseline' : cutoffDate.toLocaleDateString('default', { month: 'short', day: 'numeric' });
+
                let areaData = historicalScores;
                if (areaData.length === 0) {
                    areaData = [
-                       { name: 'Baseline', score: 0 },
+                       { name: startDateName, score: grsScore },
                        { name: currentDate, score: grsScore },
                    ];
                } else if (areaData.length === 1) {
                    areaData = [
-                       { name: 'Baseline', score: 0 },
+                       { name: startDateName, score: areaData[0].score },
                        ...areaData
                    ];
+               } else {
+                   if (areaData[0].name !== startDateName) {
+                       areaData = [
+                           { name: startDateName, score: areaData[0].score },
+                           ...areaData
+                       ];
+                   }
                }
                
                // Ensure the latest node on the trend graph explicitly matches the current true GRS
                if (areaData.length > 0) {
-                   areaData[areaData.length - 1].score = grsScore;
+                   if (areaData[areaData.length - 1].name !== currentDate) {
+                       areaData.push({ name: currentDate, score: grsScore });
+                   } else {
+                       areaData[areaData.length - 1].score = grsScore;
+                   }
                }
 
                let mitreCoveragePercentage = 0;
