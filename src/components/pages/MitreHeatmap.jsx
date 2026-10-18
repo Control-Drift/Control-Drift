@@ -19,7 +19,7 @@ import { createPortal } from 'react-dom';
 import { useAppContext } from '../../AppContext';
 import { X, Clock, Activity, Target, ArrowRight, Ban, RotateCcw, Search, Eye, EyeOff, Wrench, Key, Terminal, Anchor, ChevronsUp, Ghost, Unlock, Network, Package, Zap, Focus, Fingerprint, Info, Shield, ShieldAlert, ShieldCheck, PlaneTakeoff, ExternalLink, Send, LineChart as LucideLineChart, ChevronDown, ChevronRight, Siren, CornerDownRight } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { SatelliteStationIcon, StealthBomberIcon, HeavyTransportIcon } from '../ui/CustomIcons';
+import { SatelliteStationIcon, StealthBomberIcon, HeavyTransportIcon, BomberIcon, DistortionIcon, TACTIC_ICONS } from '../ui/CustomIcons';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { TrackballControls, OrbitControls, Html, Stars, PerformanceMonitor } from '@react-three/drei';
 import { EffectComposer, Bloom } from '@react-three/postprocessing';
@@ -28,7 +28,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import EnvironmentDropdown from '../dropdowns/EnvironmentDropdown';
 import SecurityControlFilterDropdown from '../dropdowns/SecurityControlFilterDropdown';
 import UnifiedPosturePill from '../ui/UnifiedPosturePill';
-import { calculateAverageStatus } from '../../lib/mitreUtils';
+import { calculateAverageStatus, calculateConfidenceAndDecay } from '../../lib/mitreUtils';
 
 // Subcomponents
 import HeatmapHeader from './MitreHeatmap/HeatmapHeader';
@@ -281,41 +281,6 @@ function PulsingWireframe({ radius }) {
   );
 }
 
-
-const BomberIcon = ({ size = 24, color = "currentColor", ...props }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M12 3 L22 15 L17 15 L12 19 L7 15 L2 15 Z" fill={color} fillOpacity="0.2" />
-    <path d="M12 3 L12 19" strokeOpacity="0.5" />
-  </svg>
-);
-
-const DistortionIcon = ({ size = 24, color = "currentColor", ...props }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M3 12h3l3 -7l4 14l5 -7h3" />
-    <path d="M2 5h4" />
-    <path d="M18 19h4" />
-  </svg>
-);
-
-const TACTIC_ICONS = {
-  "Reconnaissance": Eye,
-  "Resource Development": Wrench,
-  "Initial Access": Key,
-  "Execution": Terminal,
-  "Persistence": Anchor,
-  "Privilege Escalation": ChevronsUp,
-  "Defense Evasion": Ghost,
-  "Credential Access": Unlock,
-  "Discovery": Search,
-  "Lateral Movement": Network,
-  "Collection": Package,
-  "Command and Control": SatelliteStationIcon,
-  "Exfiltration": HeavyTransportIcon,
-  "Impact": Zap,
-  "Defense Impairment": DistortionIcon,
-  "Stealth": StealthBomberIcon
-};
-
 const TacticNode = React.memo(function TacticNode({ position, tactic, info, isActive, onClick, isVisible = true, globeRef }) {
   const color = statusColors[info.status] || statusColors.unknown;
   const [isHovered, setIsHovered] = useState(false);
@@ -399,6 +364,8 @@ const TechNode = React.memo(function TechNode({ node, isHovered, onClick, onHove
   const { position, info } = node;
   const color = statusColors[info.status] || statusColors.unknown;
   const isTested = info.status !== 'unknown' && info.status !== 'na';
+  const w = isTested ? (info.visualWeight ?? 1.0) : 0;
+  const decay = isTested ? (info.decayFactor ?? 1.0) : 0;
   
   const groupRef = useRef();
   const solidMatRef = useRef();
@@ -412,20 +379,24 @@ const TechNode = React.memo(function TechNode({ node, isHovered, onClick, onHove
     testedFade.current = THREE.MathUtils.lerp(testedFade.current, isTested ? 1 : 0, delta * 8);
 
     if (groupRef.current) {
-      const baseScale = 1 + Math.sin(state.clock.elapsedTime * 4) * 0.15;
+      const weightScale = isTested ? (0.75 + 0.40 * w) : 1.0;
+      const baseScale = (1 + Math.sin(state.clock.elapsedTime * 4) * 0.15) * weightScale;
       groupRef.current.scale.setScalar(baseScale * Math.max(0, 1 - hoverScale.current * 1.5));
       groupRef.current.rotation.y += delta;
     }
 
     if (solidMatRef.current) {
-      solidMatRef.current.opacity = isVisible ? testedFade.current : 0.1 * testedFade.current;
-      solidMatRef.current.emissiveIntensity = testedFade.current * 6.0;
+      solidMatRef.current.opacity = isVisible ? testedFade.current * (0.30 + 0.70 * w) : 0.1 * testedFade.current;
+      solidMatRef.current.emissiveIntensity = testedFade.current * (1.2 + 5.3 * w);
       solidMatRef.current.color.set(color);
       solidMatRef.current.emissive.set(color);
     }
 
     if (wireMatRef.current) {
-      wireMatRef.current.opacity = isVisible ? (0.45 * (1 - testedFade.current)) : 0.08 * (1 - testedFade.current);
+      const wireOpacity = isTested
+        ? 0.65 * (1 - decay)
+        : 0.45 * (1 - testedFade.current);
+      wireMatRef.current.opacity = isVisible ? wireOpacity : 0.08 * (1 - testedFade.current);
       wireMatRef.current.color.set(color);
       wireMatRef.current.emissive.set(color);
     }
@@ -475,7 +446,7 @@ const TechNode = React.memo(function TechNode({ node, isHovered, onClick, onHove
           <octahedronGeometry args={[0.035, 0]} />
           <meshStandardMaterial ref={solidMatRef} transparent depthWrite={false} />
         </mesh>
-        <mesh>
+        <mesh scale={[1.25, 1.25, 1.25]}>
            <octahedronGeometry args={[0.035, 0]} />
            <meshStandardMaterial ref={wireMatRef} wireframe transparent depthWrite={false} emissiveIntensity={1.0} blending={THREE.AdditiveBlending} />
         </mesh>
@@ -510,16 +481,21 @@ const MacroTechSpecks = React.memo(function MacroTechSpecks({ nodes, quickFilter
      nodes.forEach((n, i) => {
         const color = statusColors[n.info.status] || statusColors.unknown;
         const isTested = n.info.status !== 'unknown' && n.info.status !== 'na';
+        const w = isTested ? (n.info.visualWeight ?? 1.0) : 0;
+        const decay = isTested ? (n.info.decayFactor ?? 1.0) : 0;
+
         let isVisible = true;
         if (quickFilter === 'critical') isVisible = (n.info.status === 'low' || n.info.status === 'minimal');
         if (quickFilter === 'tested') isVisible = isTested;
+        if (quickFilter === 'drifting') isVisible = isTested && Boolean(n.info.needsRetest);
         if (quickFilter === 'untested') isVisible = n.info.status === 'unknown';
 
         const baseColor = new THREE.Color(color);
         if (!isVisible) {
            baseColor.multiplyScalar(0.02);
         } else if (isTested) {
-           baseColor.multiplyScalar(8.0); // Medium bloom glow for tested nodes
+           // Modulate bloom glow by combined confidence & temporal decay weight
+           baseColor.multiplyScalar(1.8 + 8.2 * w);
         } else {
            baseColor.multiplyScalar(0.25); // Very dim translucent look for untested
         }
@@ -536,10 +512,20 @@ const MacroTechSpecks = React.memo(function MacroTechSpecks({ nodes, quickFilter
 
         if (isVisible) {
             if (isTested) {
-                dummy.scale.set(0.03, 0.03, 0.03); // Just the right size
+                const s = 0.020 + 0.015 * w;
+                dummy.scale.set(s, s, s);
                 dummy.updateMatrix();
                 solidRef.current.setMatrixAt(i, dummy.matrix);
                 solidRef.current.setColorAt(i, colorObj);
+
+                // Render outer decaying wireframe halo when temporal decay is present
+                if (decay < 0.85) {
+                    const wireScale = s * 1.4;
+                    dummy.scale.set(wireScale, wireScale, wireScale);
+                    dummy.updateMatrix();
+                    wireRef.current.setMatrixAt(i, dummy.matrix);
+                    wireRef.current.setColorAt(i, colorObj);
+                }
             } else {
                 dummy.scale.set(0.012, 0.012, 0.012);
                 dummy.updateMatrix();
@@ -566,7 +552,7 @@ const MacroTechSpecks = React.memo(function MacroTechSpecks({ nodes, quickFilter
          </instancedMesh>
          <instancedMesh ref={wireRef} args={[null, null, nodes.length]}>
             <octahedronGeometry args={[1, 0]} />
-            <meshStandardMaterial toneMapped={false} transparent opacity={0.3} wireframe={true} blending={THREE.AdditiveBlending} depthWrite={false} />
+            <meshStandardMaterial toneMapped={false} transparent opacity={0.35} wireframe={true} blending={THREE.AdditiveBlending} depthWrite={false} />
          </instancedMesh>
      </group>
   );
@@ -766,6 +752,7 @@ function Scene({ mitreData, activeTactic, setActiveTactic, handleTechClick, quic
          let isVisible = true;
          if (quickFilter === 'critical') isVisible = node.info.techniques.some(t => t.status === 'low' || t.status === 'minimal');
          if (quickFilter === 'tested') isVisible = node.info.techniques.some(t => t.status !== 'unknown' && t.status !== 'na');
+         if (quickFilter === 'drifting') isVisible = node.info.techniques.some(t => t.status !== 'unknown' && t.status !== 'na' && t.needsRetest);
          if (quickFilter === 'untested') isVisible = node.info.techniques.some(t => t.status === 'unknown');
 
          return (
@@ -788,6 +775,7 @@ function Scene({ mitreData, activeTactic, setActiveTactic, handleTechClick, quic
          let isVisible = true;
          if (quickFilter === 'critical') isVisible = (node.info.status === 'low' || node.info.status === 'minimal');
          if (quickFilter === 'tested') isVisible = node.info.status !== 'unknown' && node.info.status !== 'na';
+         if (quickFilter === 'drifting') isVisible = node.info.status !== 'unknown' && node.info.status !== 'na' && Boolean(node.info.needsRetest);
          if (quickFilter === 'untested') isVisible = node.info.status === 'unknown';
 
          return (
@@ -815,7 +803,7 @@ function Scene({ mitreData, activeTactic, setActiveTactic, handleTechClick, quic
               backdropFilter: 'blur(12px)',
               transform: 'translate(-50%, -100%) translateY(-25px)',
               color: '#fff',
-              minWidth: '220px',
+              minWidth: '240px',
               animation: 'tooltipFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards'
             }}>
               <div style={{  display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '10px'  }}>
@@ -825,6 +813,30 @@ function Scene({ mitreData, activeTactic, setActiveTactic, handleTechClick, quic
                 </div>
               </div>
               <div style={{  fontSize: '13px', color: '#fff', maxWidth: '280px', whiteSpace: 'normal', lineHeight: '1.4', marginBottom: '12px'  }}>{hoveredTech.info.name}</div>
+
+              {hoveredTech.info.status !== 'unknown' && hoveredTech.info.status !== 'na' && hoveredTech.info.confidenceLabel && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', background: 'rgba(255,255,255,0.04)', padding: '8px 10px', borderRadius: '8px', marginBottom: '10px', border: hoveredTech.info.needsRetest ? '1px solid rgba(245, 158, 11, 0.4)' : '1px solid rgba(255,255,255,0.08)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', fontSize: '0.7rem' }}>
+                    <span style={{ color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Depth</span>
+                    <span style={{ fontWeight: 700, color: hoveredTech.info.confidenceLabel === 'High' ? '#10b981' : hoveredTech.info.confidenceLabel === 'Medium' ? '#38bdf8' : '#f59e0b' }}>
+                      {hoveredTech.info.confidenceLabel} ({hoveredTech.info.executionCount || hoveredTech.info.totalCount || 1} {(hoveredTech.info.executionCount || hoveredTech.info.totalCount || 1) === 1 ? 'Test' : 'Tests'})
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', fontSize: '0.7rem' }}>
+                    <span style={{ color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>State</span>
+                    <span style={{ fontWeight: 700, color: hoveredTech.info.needsRetest ? '#f59e0b' : hoveredTech.info.driftStatus === 'Aging' ? '#eab308' : '#10b981' }}>
+                      {hoveredTech.info.daysSinceLastTest !== null && hoveredTech.info.daysSinceLastTest !== undefined
+                        ? `${hoveredTech.info.driftStatus} • ${hoveredTech.info.daysSinceLastTest === 0 ? 'Tested today' : `${hoveredTech.info.daysSinceLastTest}d ago`}`
+                        : hoveredTech.info.driftStatus}
+                    </span>
+                  </div>
+                  {hoveredTech.info.needsRetest && (
+                    <div style={{ fontSize: '0.68rem', color: '#fbbf24', background: 'rgba(245, 158, 11, 0.14)', padding: '4px 8px', borderRadius: '4px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', marginTop: '2px' }}>
+                      <Clock size={11} /> Decayed (&gt;{hoveredTech.info.effectiveStaleDays || 90}d) — Evolve Procedure
+                    </div>
+                  )}
+                </div>
+              )}
               
               {(() => {
                 if (hoveredTech.info.status === 'na') return null;
@@ -1247,6 +1259,87 @@ export default function MitreHeatmap() {
      const resolved = JSON.parse(JSON.stringify(mitreData));
      delete resolved['Reconnaissance'];
      delete resolved['Resource Development'];
+
+     const enrichConfidenceAndDecay = (item, isParent = true) => {
+         if (!item.hasTests || item.status === 'unknown' || item.status === 'na') {
+             Object.assign(item, calculateConfidenceAndDecay(0, null), {
+                 executionCount: 0,
+                 lastTestedDate: null
+             });
+             return;
+         }
+
+         let execCount = 0;
+         let latestDate = null;
+         const updateLatestDate = (d) => {
+             if (!d) return;
+             if (!latestDate || new Date(d) > new Date(latestDate)) {
+                 latestDate = d;
+             }
+         };
+
+         const historyList = Array.isArray(item.history) ? item.history : [];
+         const countedSims = new Set();
+         historyList.forEach(ex => {
+             const matchesEnv = activeEnvironmentFilter === 'All' ||
+                 ex.environment === activeEnvironmentFilter ||
+                 (Array.isArray(ex.environment) && ex.environment.includes(activeEnvironmentFilter));
+             if (!matchesEnv) return;
+
+             updateLatestDate(ex.date);
+
+             const simSummary = simulationSummaries?.[ex.simulation];
+             let countedFromSim = false;
+             if (simSummary && Array.isArray(simSummary.testResults) && simSummary.testResults.length > 0) {
+                 if (countedSims.has(ex.simulation)) {
+                     countedFromSim = true;
+                 } else {
+                     const matchingProcs = simSummary.testResults.filter(p => {
+                         const procEnv = p.environment || simSummary.environment || 'Windows Workstation';
+                         const procMatchesEnv = activeEnvironmentFilter === 'All' ||
+                             procEnv === activeEnvironmentFilter ||
+                             (Array.isArray(procEnv) && procEnv.includes(activeEnvironmentFilter));
+                         if (!procMatchesEnv) return false;
+                         return (p.ttps || []).some(id => isParent ? (id === item.id || id.startsWith(`${item.id}.`)) : id === item.id);
+                     });
+                     if (matchingProcs.length > 0) {
+                         execCount += matchingProcs.length;
+                         matchingProcs.forEach(p => {
+                             if (p.validationDate) updateLatestDate(p.validationDate);
+                         });
+                         countedFromSim = true;
+                         countedSims.add(ex.simulation);
+                     }
+                 }
+             }
+
+             if (!countedFromSim) {
+                 if (ex.remediation && ex.remediation.includes('Event:')) {
+                     const eventLines = ex.remediation.split('\n\n').filter(r => r.trim() && r.startsWith('Event:'));
+                     execCount += Math.max(1, eventLines.length);
+                 } else {
+                     execCount += 1;
+                 }
+             }
+         });
+
+         if (execCount === 0) {
+             execCount = item.totalCount || 1;
+         }
+         if (!latestDate && item.preventedStats) {
+             if (activeEnvironmentFilter !== 'All') {
+                 updateLatestDate(item.preventedStats[activeEnvironmentFilter]?.lastTestedDate);
+             } else {
+                 Object.values(item.preventedStats).forEach(s => updateLatestDate(s?.lastTestedDate));
+             }
+         }
+
+         const conf = calculateConfidenceAndDecay(execCount, latestDate, { status: item.status });
+         Object.assign(item, conf, {
+             executionCount: execCount,
+             lastTestedDate: latestDate
+         });
+     };
      
      for (const tactic in resolved) {
          const techs = resolved[tactic].techniques;
@@ -1280,6 +1373,7 @@ export default function MitreHeatmap() {
              tacticTotal += techs[i].totalCount;
              techs[i].preventedPercentage = techs[i].totalCount > 0 ? Math.round((techs[i].preventedCount / techs[i].totalCount) * 100) : 0;
              techs[i].hasTests = techs[i].totalCount > 0;
+             enrichConfidenceAndDecay(techs[i], true);
 
              if (techs[i].subTechniques) {
                  techs[i].subTechniques.forEach(sub => {
@@ -1299,6 +1393,7 @@ export default function MitreHeatmap() {
                      sub.totalCount = subTot;
                      sub.preventedPercentage = subTot > 0 ? Math.round((subPrev / subTot) * 100) : 0;
                      sub.hasTests = subTot > 0;
+                     enrichConfidenceAndDecay(sub, false);
                  });
              }
          }
@@ -1315,20 +1410,66 @@ export default function MitreHeatmap() {
          }
      }
      return resolved;
-  }, [mitreData, activeEnvironmentFilter]);
+  }, [mitreData, activeEnvironmentFilter, simulationSummaries]);
 
   React.useEffect(() => {
+     const driftingTechniques = [];
+     const lowConfidenceTechniques = [];
+     if (resolvedMitreData) {
+         Object.entries(resolvedMitreData).forEach(([tacticName, tactic]) => {
+             (tactic.techniques || []).forEach(tech => {
+                 if (tech.status !== 'unknown' && tech.status !== 'na') {
+                     if (tech.needsRetest || tech.driftStatus === 'Decayed') {
+                         driftingTechniques.push({
+                             id: tech.id,
+                             name: tech.name,
+                             tactic: tacticName,
+                             status: tech.status,
+                             daysSinceLastTest: tech.daysSinceLastTest,
+                             driftStatus: tech.driftStatus,
+                             visualWeight: tech.visualWeight
+                         });
+                     }
+                     if (tech.confidenceLabel === 'Low') {
+                         lowConfidenceTechniques.push({
+                             id: tech.id,
+                             name: tech.name,
+                             tactic: tacticName,
+                             executionCount: tech.executionCount || tech.totalCount || 1,
+                             confidenceLabel: tech.confidenceLabel
+                         });
+                     }
+                 }
+             });
+         });
+     }
+
      setActiveAiContext({
          view: 'Security Posture (MITRE ATT&CK Heatmap)',
-         description: 'Interactive 3D visualization of the MITRE ATT&CK matrix showing technique coverage and testing status.',
+         description: 'Interactive 3D visualization of the MITRE ATT&CK matrix showing technique coverage, baseline confidence, and temporal control drift status.',
          mitreCoverageSummary: resolvedMitreData ? Object.entries(resolvedMitreData).map(([tacticName, tactic]) => ({
              tactic: tacticName,
              totalTechniques: tactic.techniques.filter(t => t.status !== 'na').length,
-             testedTechniques: tactic.techniques.filter(t => t.hasTests).length
-         })) : []
+             testedTechniques: tactic.techniques.filter(t => t.hasTests).length,
+             driftingTechniquesCount: tactic.techniques.filter(t => t.needsRetest).length
+         })) : [],
+         driftingTechniques,
+         lowConfidenceTechniques,
+         selectedTechnique: selectedTech ? {
+             id: selectedTech.id,
+             name: selectedTech.name,
+             tactic: selectedTech.tactic,
+             status: selectedTech.status,
+             confidenceLabel: selectedTech.confidenceLabel,
+             executionCount: selectedTech.executionCount || selectedTech.totalCount || 0,
+             driftStatus: selectedTech.driftStatus,
+             daysSinceLastTest: selectedTech.daysSinceLastTest,
+             needsRetest: selectedTech.needsRetest,
+             visualWeight: selectedTech.visualWeight
+         } : null
      });
      return () => setActiveAiContext(null);
-  }, [setActiveAiContext, resolvedMitreData]);
+  }, [setActiveAiContext, resolvedMitreData, selectedTech]);
 
   React.useEffect(() => {
       if (selectedTech && resolvedMitreData && selectedTech.tactic) {
@@ -1345,7 +1486,7 @@ export default function MitreHeatmap() {
               }
               if (updatedTech) {
                   const history = updatedTech.history || exercisesByTtp[updatedTech.id] || [];
-                  if (updatedTech.status !== selectedTech.status || history.length !== selectedTech.history.length || JSON.stringify(history) !== JSON.stringify(selectedTech.history)) {
+                  if (updatedTech.status !== selectedTech.status || updatedTech.visualWeight !== selectedTech.visualWeight || history.length !== selectedTech.history.length || JSON.stringify(history) !== JSON.stringify(selectedTech.history)) {
                       setSelectedTech(prev => ({ ...prev, ...updatedTech, history }));
                   }
               }
@@ -1453,6 +1594,7 @@ export default function MitreHeatmap() {
 
   let mitreCoveragePercentage = 0;
   let testedInScopeCount = 0;
+  const driftingTechIds = new Set();
   if (resolvedMitreData && Object.keys(resolvedMitreData).length > 0) {
       let totalInScope = 0;
       Object.keys(resolvedMitreData).forEach(tacticName => {
@@ -1460,12 +1602,16 @@ export default function MitreHeatmap() {
           resolvedMitreData[tacticName].techniques.forEach(tech => {
               if (tech.environments?.[activeEnvironmentFilter] !== 'na') {
                   totalInScope++;
-                  if (tech.status !== 'unknown' && tech.status !== 'na') testedInScopeCount++;
+                  if (tech.status !== 'unknown' && tech.status !== 'na') {
+                      testedInScopeCount++;
+                      if (tech.needsRetest) driftingTechIds.add(tech.id);
+                  }
               }
           });
       });
       if (totalInScope > 0) mitreCoveragePercentage = Math.round((testedInScopeCount / totalInScope) * 100);
   }
+  const driftingCount = driftingTechIds.size;
 
   return (
     <div className="mitre-heatmap-root" style={{ position: 'relative', width: '100%', flex: 1, minHeight: 0, background: 'radial-gradient(circle at center, #0a0b12 0%, #030305 100%)', overflow: 'hidden' }}>
@@ -1477,6 +1623,7 @@ export default function MitreHeatmap() {
            activeInfo={activeInfo}
            mitreCoveragePercentage={mitreCoveragePercentage}
            dashboardTotalValidated={dashboardTotalValidated}
+           driftingCount={driftingCount}
          />
 
       {/* Tactics Quick-Nav Sidebar */}
@@ -1491,6 +1638,7 @@ export default function MitreHeatmap() {
         setQuickFilter={setQuickFilter}
         resolvedMitreData={resolvedMitreData}
         statusColors={statusColors}
+        driftingCount={driftingCount}
       />
       </div>
 
@@ -1543,11 +1691,23 @@ export default function MitreHeatmap() {
                    </div>
                    <div style={{  display: 'flex', flexDirection: 'column', gap: '12px', flex: 1  }}>
                        <div>
-                           <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                                <h2 style={{  margin: 0, color: '#fff', fontSize: '1.5rem', fontFamily: 'monospace', letterSpacing: '1px'  }}>{selectedTech.id}</h2>
                                <div style={{  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', fontSize: '0.75rem', fontWeight: '600', letterSpacing: '0.5px', textTransform: 'uppercase', background: 'rgba(255,255,255,0.05)', padding: '4px 10px', borderRadius: '6px', border: `1px solid ${statusColors[selectedTech.status] || '#fff'}60`, color: statusColors[selectedTech.status] || '#fff'  }}>
                                  {selectedTech.status === 'unknown' ? 'Untested' : selectedTech.status === 'high' ? 'Optimal Coverage' : selectedTech.status === 'medium' ? 'Partial Coverage' : selectedTech.status === 'minimal' ? 'Minimal Coverage' : selectedTech.status === 'low' ? 'No Coverage' : selectedTech.status}
                                </div>
+                               {selectedTech.status !== 'unknown' && selectedTech.status !== 'na' && selectedTech.confidenceLabel && (
+                                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.72rem', fontWeight: 600, padding: '4px 10px', borderRadius: '6px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.3)', color: selectedTech.confidenceLabel === 'High' ? '#10b981' : selectedTech.confidenceLabel === 'Medium' ? '#38bdf8' : '#f59e0b' }} title="Validation Depth based on cumulative procedure executions (higher depth extends freshness lifespan)">
+                                   Depth: {selectedTech.confidenceLabel} ({selectedTech.executionCount || selectedTech.totalCount || 1})
+                                 </div>
+                               )}
+                               {selectedTech.status !== 'unknown' && selectedTech.status !== 'na' && selectedTech.driftStatus && (
+                                 <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.72rem', fontWeight: 600, padding: '4px 10px', borderRadius: '6px', background: selectedTech.needsRetest ? 'rgba(245, 158, 11, 0.15)' : 'rgba(255, 255, 255, 0.05)', border: selectedTech.needsRetest ? '1px solid rgba(245, 158, 11, 0.45)' : '1px solid rgba(255, 255, 255, 0.12)', color: selectedTech.needsRetest ? '#fbbf24' : selectedTech.driftStatus === 'Aging' ? '#eab308' : '#10b981' }} title="Validation freshness state since last simulation">
+                                   <Clock size={12} />
+                                   State: {selectedTech.needsRetest ? 'Decayed (Re-test Needed)' : selectedTech.driftStatus}
+                                   {selectedTech.daysSinceLastTest !== null && selectedTech.daysSinceLastTest !== undefined ? ` • ${selectedTech.daysSinceLastTest === 0 ? 'Today' : `${selectedTech.daysSinceLastTest}d ago`}` : ''}
+                                 </div>
+                               )}
                            </div>
                            <h3 style={{  margin: '8px 0 0 0', color: 'var(--text-primary)', fontSize: '1.2rem', fontWeight: '500'  }}>{selectedTech.name}</h3>
                            <p style={{  margin: '4px 0 0 0', color: 'var(--accent-secondary)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.8  }}>
@@ -1556,9 +1716,48 @@ export default function MitreHeatmap() {
                        </div>
                    </div>
                </div>
-               <button onClick={() => { setSelectedTech(null); setActiveModalTab('history'); }} className="btn hover-lift" style={{  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '8px', borderRadius: '8px', color: 'var(--text-secondary)', cursor: 'pointer', flexShrink: 0  }}>
-                 <X size={20} />
-               </button>
+               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+                 {selectedTech.status !== 'unknown' && selectedTech.status !== 'na' && (selectedTech.needsRetest || selectedTech.driftStatus === 'Decayed' || selectedTech.driftStatus === 'Aging') && (
+                   <button
+                     onClick={() => {
+                       navigate('/simulation', {
+                         state: {
+                           retestTTP: {
+                             id: selectedTech.id,
+                             name: selectedTech.name,
+                             tactic: selectedTech.tactic,
+                             environment: activeEnvironmentFilter !== 'All' ? activeEnvironmentFilter : undefined,
+                             daysSinceLastTest: selectedTech.daysSinceLastTest,
+                             driftStatus: selectedTech.driftStatus
+                           }
+                         }
+                       });
+                     }}
+                     className="btn hover-lift"
+                     title="Launch a new simulation campaign pre-populated with this decayed TTP"
+                     style={{
+                       display: 'flex',
+                       alignItems: 'center',
+                       gap: '8px',
+                       padding: '8px 14px',
+                       borderRadius: '8px',
+                       fontSize: '0.8rem',
+                       fontWeight: 600,
+                       cursor: 'pointer',
+                       background: selectedTech.needsRetest ? 'rgba(245, 158, 11, 0.18)' : 'rgba(234, 179, 8, 0.14)',
+                       border: selectedTech.needsRetest ? '1px solid rgba(245, 158, 11, 0.55)' : '1px solid rgba(234, 179, 8, 0.45)',
+                       color: selectedTech.needsRetest ? '#fbbf24' : '#fde047',
+                       boxShadow: selectedTech.needsRetest ? '0 0 15px rgba(245, 158, 11, 0.2)' : 'none'
+                     }}
+                   >
+                     <PlaneTakeoff size={15} />
+                     <span>Re-Test in Simulation Launcher</span>
+                   </button>
+                 )}
+                 <button onClick={() => { setSelectedTech(null); setActiveModalTab('history'); }} className="btn hover-lift" style={{  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', padding: '8px', borderRadius: '8px', color: 'var(--text-secondary)', cursor: 'pointer', flexShrink: 0  }}>
+                   <X size={20} />
+                 </button>
+               </div>
             </div>
 
 

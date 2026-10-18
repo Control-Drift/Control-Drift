@@ -123,6 +123,8 @@ export function useEventsData(dbAdapter) {
                 const exMap = {};
                 validatedFull.forEach(ex => { exMap[ex.id] = ex; });
                 setAllEventsData(exMap);
+            } else {
+                setAllEventsData({});
             }
         } catch (e) {
             console.error("Failed to load all events data", e);

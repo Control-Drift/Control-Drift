@@ -45,26 +45,27 @@ While many commercial solutions attempt to completely automate the testing lifec
 
 ## Features
 
-- **Security Operations Dashboard**: Track real-time, meaningful metrics including your Global Readiness Score, Top Security Controls, and Remediation Burndown.
+- **Security Operations Dashboard**: Track real-time, meaningful metrics including your Global Readiness Score, Top Security Controls, Remediation Burndown, and the **TTP Decay Watchlist** for techniques needing re-validation.
   <br/>
   <img src="docs/assets/Dashboard.png" alt="Dashboard Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
-- **MITRE ATT&CK Heatmap**: Fully interactive 3D globe providing a visual representation of your security posture across the MITRE ATT&CK framework, dynamically updated based on simulation outcomes.
+- **MITRE ATT&CK Heatmap & 3D Globe**: Fully interactive 3D globe and 2D matrix providing an empirical representation of your security posture across the MITRE ATT&CK framework with **strict testing depth tiers** (Low, Medium, High) and automatic sub-technique rollups.
   <br/>
   <img src="docs/assets/heatmap.gif" alt="Heatmap Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
-- **Simulation Management**: Plan, execute, and log threat simulations in a highly streamlined manner using the intuitive 4-step Simulation Launcher.
+- **Simulation Launcher with Procedural Variation Memory**: Plan, design, execute, and log threat simulations in an intuitive 4-step launcher. Historical procedures are remembered to drive progressive attack variation rather than repetitive signature replays.
   <br/>
   <img src="docs/assets/Sim_Launcher.gif" alt="Simulation Launcher Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
+- **Adaptive Mastery-Based TTP Decay**: Dynamic retention curves adapt decay lifespans based on testing depth and consecutive validation streaks, pinpointing decayed controls with cracked shield indicators before posture degrades silently.
 - **End-to-end Gap Tracking & Remediation**: Track and prioritize gap remediation across your environment using the built-in Gap Tracker. Resolved gaps instantly update your global readiness metrics.
   <br/>
   <img src="docs/assets/Gap_Tracker.png" alt="Gap Tracker Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
-- **Attack Path Mapping**: Visualize attack paths aross your environment. Leverage your AI integration to automatically map viable attack paths based on your active gaps.
+- **Attack Path Mapping**: Visualize attack paths across your environment. Leverage your AI integration to automatically map viable attack paths based on your active gaps.
   <br/>
   <img src="docs/assets/attack_path.png" alt="Attack Path Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
-- **Integrated AI**: Plug-and-play AI integration to enhance workflows and introduce AI-powered features.
+- **Integrated AI**: Plug-and-play AI integration to enhance workflows, design varied emulation campaigns, and generate executive summaries.
 - **Code Studio**: An integrated, AI-assisted IDE for writing, editing, and managing detection rules (Sigma, YARA, Splunk SPL, Azure KQL) and emulation payloads directly in the browser.
 - **Flexible Data Adapters**: Start with `localStorage`/`IndexedDB` for quick testing, then migrate to a backend database (`Supabase`, `Firebase`) or a custom `REST API` when you're ready to scale.
 

@@ -21,7 +21,17 @@ import '@xyflow/react/dist/style.css';
 import { useAppContext } from '../../AppContext';
 import { useToast } from '../ui/Toast';
 import { CheckSquare, Square, Sparkles, Search, ChevronDown, ChevronLeft, ChevronRight, Edit3, FileText, Upload, Eye, Wrench, Key, Terminal, Anchor, ChevronsUp, Ghost, Unlock, Network, Package, Zap, Trash2, X, Users, Target, Info, Flag, ArrowRight, Plus, Database, Loader2, Save, Shield, Crosshair, AlertTriangle, Activity, PlaneTakeoff, ExternalLink, Send, Tag, Swords } from 'lucide-react';
-import { SatelliteStationIcon, StealthBomberIcon, HeavyTransportIcon } from '../ui/CustomIcons';
+import { SatelliteStationIcon, StealthBomberIcon, HeavyTransportIcon, BomberIcon, DistortionIcon, TACTIC_ICONS } from '../ui/CustomIcons';
+import { KILL_CHAIN_ORDER, lookupTTPName } from '../../lib/mitreUtils';
+import {
+    getHistoricalBaselineForTTP,
+    getHistoricalProceduresForTTPs,
+    formatHistoricalProceduresForAIPrompt,
+    scaffoldEventsFromDesignAndTTPs,
+    parseHarnessOutput,
+    getOutcomeCascadedFields,
+    normalizeOutcomeValue
+} from '../../lib/simulationAutomation';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import { useNavigate, useLocation } from 'react-router-dom';
 import RichMarkdownEditor from '../ui/RichMarkdownEditor';
@@ -42,52 +52,10 @@ import Step1BasicDetails from './SimulationWizard/Step1BasicDetails';
 import Step2Design from './SimulationWizard/Step2Design';
 import Step3Execute from './SimulationWizard/Step3Execute';
 import Step4Report from './SimulationWizard/Step4Report';
-
-const KILL_CHAIN_ORDER = [
-  "Reconnaissance", "Resource Development", "Initial Access", "Execution", 
-  "Persistence", "Privilege Escalation", "Defense Evasion", "Credential Access", 
-  "Discovery", "Lateral Movement", "Collection", "Command and Control", 
-  "Exfiltration", "Impact", "Defense Impairment", "Stealth"
-];
-
-const BomberIcon = ({ size = 24, color = "currentColor", ...props }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M12 3 L22 15 L17 15 L12 19 L7 15 L2 15 Z" fill={color} fillOpacity="0.2" />
-    <path d="M12 3 L12 19" strokeOpacity="0.5" />
-  </svg>
-);
-
-const DistortionIcon = ({ size = 24, color = "currentColor", ...props }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
-    <path d="M3 12h3l3 -7l4 14l5 -7h3" />
-    <path d="M2 5h4" />
-    <path d="M18 19h4" />
-  </svg>
-);
-
-const TACTIC_ICONS = {
-  "Reconnaissance": Eye,
-  "Resource Development": Wrench,
-  "Initial Access": Key,
-  "Execution": Terminal,
-  "Persistence": Anchor,
-  "Privilege Escalation": ChevronsUp,
-  "Defense Evasion": Ghost,
-  "Credential Access": Unlock,
-  "Discovery": Search,
-  "Lateral Movement": Network,
-  "Collection": Package,
-  "Command and Control": SatelliteStationIcon,
-  "Exfiltration": HeavyTransportIcon,
-  "Impact": Zap,
-  "Defense Impairment": DistortionIcon,
-  "Stealth": StealthBomberIcon
-};
 import TTPSelector from '../features/TTPSelector';
 
 const getOutcomeStyle = (outcome) => {
     if (outcome === 'Prevented & Alerted' || outcome === 'Prevented') return { color: 'var(--success)', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)' };
-    if (outcome === 'Prevented') return { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.3)' };
     if (outcome === 'Alerted') return { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.3)' };
     if (outcome === 'Logged') return { color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)' };
     if (outcome === 'Missed') return { color: 'var(--danger)', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.3)' };
@@ -231,7 +199,7 @@ export default function SimulationWizard() {
   const navigate = useNavigate();
   const location = useLocation();
   const [expandedImage, setExpandedImage] = useState(null);
-  const { completeExercise, mitreData, isMitreLoading, generateAIContent, generateAIContentStream, saveSimulationSummary, addSimulationEvidence, removeSimulationEvidence, simulationEvidence, compressImage, aiSettings, setActiveAiContext, gaps, setGaps, createGap, confirmAction, simulationSummaries, isAiActive, addSecurityControl } = useAppContext();
+  const { completeExercise, events, mitreData, isMitreLoading, generateAIContent, generateAIContentStream, saveSimulationSummary, addSimulationEvidence, removeSimulationEvidence, simulationEvidence, compressImage, aiSettings, setActiveAiContext, gaps, setGaps, createGap, confirmAction, simulationSummaries, isAiActive, addSecurityControl } = useAppContext();
   const { addToast } = useToast();
   const [step, setStep] = useState(() => { const s = sessionStorage.getItem('wizard_step'); return s ? parseInt(s, 10) : 1; });
   
@@ -289,8 +257,114 @@ export default function SimulationWizard() {
   
   const hasUnsavedChanges = testResults.length > 0 || selectedTTPs.length > 0 || simulationDetails.name.trim() !== '';
 
+  const buildUniqueSimName = useCallback(
+      (baseName) => {
+          if (!simulationSummaries || !simulationSummaries[baseName]) return baseName;
+          const shortDate = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          let candidate = `${baseName} (${shortDate})`;
+          let n = 2;
+          while (simulationSummaries[candidate]) {
+              candidate = `${baseName} (${shortDate} #${n})`;
+              n++;
+          }
+          return candidate;
+      },
+      [simulationSummaries]
+  );
 
+  useEffect(() => {
+      if (location.state?.retestTTP) {
+          const retest = location.state.retestTTP;
+          const ttpName = retest.name || lookupTTPName(mitreData, retest.id);
+          const baseline = getHistoricalBaselineForTTP(retest.id, simulationSummaries, events);
+          const targetTtpObj = { id: retest.id, name: ttpName };
 
+          setSelectedTTPs([targetTtpObj]);
+          if (retest.tactic) setActiveMapTactic(retest.tactic);
+          if (retest.id && retest.id.includes('.')) setActiveMapTechnique(retest.id.split('.')[0]);
+
+          const envCats =
+              retest.environment
+                  ? [retest.environment]
+                  : baseline?.environmentCategory?.length > 0
+                  ? baseline.environmentCategory
+                  : ['Production'];
+
+          const uniqueName = buildUniqueSimName(`Procedural Evolution: ${retest.id}`);
+          setSimulationDetails({
+              name: uniqueName,
+              environmentCategory: envCats,
+              environment: envCats.join(', '),
+              goals: `Evolve procedural validation depth and refresh State for ${retest.id} (${ttpName || 'Technique'})${retest.daysSinceLastTest != null ? ` (${retest.daysSinceLastTest}d since last test)` : ''}. Design a new procedural variation, alternative interpreter flag, or evasion angle rather than repeating the exact prior payload.`,
+              participants: [{ id: 1, name: '', role: 'Purple Team' }]
+          });
+
+          const scaffolded = scaffoldEventsFromDesignAndTTPs({
+              simulationPayload: '',
+              selectedTTPs: [targetTtpObj],
+              existingTestResults: [],
+              simulationSummaries,
+              events,
+              mitreData
+          }).map(ev => ({ ...ev, isDecayRetest: true }));
+          setTestResults(scaffolded);
+          setSimulationPayload('');
+
+          if (retest.quickReplay) {
+              setStep(3);
+              addToast(
+                  `Pre-filled ${retest.id} from historical baseline (${baseline?.expectedOutcome || 'Alerted'}) for quick re-testing.`,
+                  'info'
+              );
+          } else {
+              setStep(2);
+              addToast(
+                  `Loaded ${retest.id} into Step 2 Design with prior variations shown—evolve the procedure or click "Generate Evolved Design"!`,
+                  'info'
+              );
+          }
+          navigate(location.pathname, { replace: true, state: {} });
+      } else if (location.state?.batchRetestTTPs && Array.isArray(location.state.batchRetestTTPs)) {
+          const batch = location.state.batchRetestTTPs;
+          const ttpObjs = batch.map(item => ({
+              id: item.id,
+              name: item.name || lookupTTPName(mitreData, item.id)
+          }));
+          const envSet = new Set();
+          batch.forEach(item => {
+              const b = getHistoricalBaselineForTTP(item.id, simulationSummaries, events);
+              (b?.environmentCategory || []).forEach(e => envSet.add(e));
+          });
+          const envCats = envSet.size > 0 ? Array.from(envSet) : ['Production'];
+          const uniqueName = buildUniqueSimName(`Chained Evolution Re-Test (${batch.length} TTPs)`);
+
+          setSelectedTTPs(ttpObjs);
+          setSimulationDetails({
+              name: uniqueName,
+              environmentCategory: envCats,
+              environment: envCats.join(', '),
+              goals: `Multi-TTP Chained Scenario Re-Validation across ${batch.length} aging/decayed techniques (${batch.map(b => b.id).join(', ')}). Combine these techniques into a cohesive multi-phase attack chain using evolved procedural variations to refresh State and increase Depth across all ${batch.length} TTPs in a single campaign.`,
+              participants: [{ id: 1, name: '', role: 'Purple Team' }]
+          });
+
+          const scaffolded = scaffoldEventsFromDesignAndTTPs({
+              simulationPayload: '',
+              selectedTTPs: ttpObjs,
+              existingTestResults: [],
+              simulationSummaries,
+              events,
+              mitreData
+          }).map(ev => ({ ...ev, isDecayRetest: true }));
+          setTestResults(scaffolded);
+          setSimulationPayload('');
+          setStep(2);
+          addToast(
+              `Bundled ${batch.length} decayed/aging TTPs into a Chained Scenario in Step 2! Click "Generate Evolved Design" to build a unified multi-phase harness.`,
+              'success'
+          );
+          navigate(location.pathname, { replace: true, state: {} });
+      }
+  }, [location, mitreData, simulationSummaries, events, buildUniqueSimName, addToast, navigate]);
 
   useEffect(() => {
      sessionStorage.setItem('wizard_step', step);
@@ -388,9 +462,28 @@ export default function SimulationWizard() {
   };
 
   const addProcedure = (initialTtpId) => {
+     const baseline = initialTtpId
+         ? getHistoricalBaselineForTTP(initialTtpId, simulationSummaries, events)
+         : null;
      setTestResults(prev => [
          ...prev,
-         { id: Date.now() + Math.random(), name: '', ttps: initialTtpId ? [initialTtpId] : [], eventType: 'Payload', payloadCode: '', expectedOutcome: '', outcome: '', coverageRating: 'N/A', execNotes: '', detNotes: '', severity: 'Auto-Calculate' }
+         {
+             id: Date.now() + Math.random(),
+             name: baseline?.name || '',
+             ttps: initialTtpId ? [initialTtpId] : [],
+             eventType: baseline?.eventType || 'Payload',
+             payloadCode: baseline?.payloadCode || '',
+             procedureSteps: baseline?.procedureSteps || '',
+             expectedOutcome: baseline?.expectedOutcome || '',
+             outcome: '',
+             coverageRating: 'N/A',
+             securityControls: baseline?.securityControls || [],
+             execNotes: '',
+             detNotes: '',
+             severity: 'Auto-Calculate',
+             isBaselinePrefilled: Boolean(baseline),
+             baselineSource: baseline?.previousSimulationName || null
+         }
      ]);
   };
 
@@ -406,7 +499,28 @@ export default function SimulationWizard() {
      setTestResults(prev => prev.map(p => {
          if (p.id === procId) {
              let updates = { [field]: value };
+             if (field === 'ttps' && Array.isArray(value) && value.length > 0) {
+                 // Auto-populate historical baseline memory if Expected Outcome or Security Controls aren't set yet
+                 const primaryTtp = value[0];
+                 const baseline = getHistoricalBaselineForTTP(primaryTtp, simulationSummaries, events);
+                 if (baseline) {
+                     if (!p.expectedOutcome) {
+                         updates.expectedOutcome = baseline.expectedOutcome;
+                         updates.isBaselinePrefilled = true;
+                         updates.baselineSource = baseline.previousSimulationName || null;
+                     }
+                     if ((!p.securityControls || p.securityControls.length === 0) && baseline.securityControls?.length > 0) {
+                         updates.securityControls = baseline.securityControls;
+                     }
+                     if (!p.payloadCode && baseline.payloadCode) {
+                         updates.payloadCode = baseline.payloadCode;
+                     }
+                 }
+             }
              if (field === 'outcome') {
+                 if (p.isHarnessImported && p.harnessConfidence && p.harnessConfidence !== 'Host-Confirmed') {
+                     updates.harnessConfidence = null;
+                 }
                  if (value === 'Missed' && p.severity !== 'Critical') {
                      updates.severity = 'High';
                  } else if (value === 'Logged' && p.severity !== 'Critical') {
@@ -420,6 +534,83 @@ export default function SimulationWizard() {
          return p;
      }));
   };
+
+  const handleAutoScaffoldEvents = useCallback(() => {
+      const scaffolded = scaffoldEventsFromDesignAndTTPs({
+          simulationPayload,
+          selectedTTPs,
+          existingTestResults: testResults,
+          simulationSummaries,
+          events,
+          mitreData
+      });
+      if (scaffolded.length === 0) {
+          addToast("All selected TTPs and design blocks are already represented in your Event Cards.", "info");
+          return;
+      }
+      setTestResults(prev => [...prev, ...scaffolded]);
+      const prefilledCount = scaffolded.filter(e => e.isBaselinePrefilled).length;
+      addToast(
+          `Scaffolded ${scaffolded.length} event(s)${prefilledCount > 0 ? ` (${prefilledCount} pre-filled from historical baseline memory)` : ''}!`,
+          'success'
+      );
+  }, [simulationPayload, selectedTTPs, testResults, simulationSummaries, events, mitreData, addToast]);
+
+  const handleImportHarnessOutput = useCallback(
+      (rawOutputText) => {
+          try {
+              const updated = parseHarnessOutput(
+                  rawOutputText,
+                  testResults,
+                  selectedTTPs,
+                  simulationSummaries,
+                  events
+              );
+              setTestResults(updated);
+              const summary = updated.summary || {};
+              if (summary.verifySiemCount > 0 || summary.errorCount > 0) {
+                  addToast(
+                      `Imported ${summary.totalImported || updated.length} event(s): ${summary.hostConfirmedCount || 0} host block(s) confirmed, ${summary.verifySiemCount || 0} unblocked step(s) flagged to verify in SIEM${summary.errorCount > 0 ? `, ${summary.errorCount} command error(s)` : ''}.`,
+                      'info'
+                  );
+              } else {
+                  addToast('Imported harness execution results into Simulation Events!', 'success');
+              }
+              return true;
+          } catch (err) {
+              addToast(err.message || 'Failed to parse harness output.', 'error');
+              return false;
+          }
+      },
+      [testResults, selectedTTPs, simulationSummaries, events, addToast]
+  );
+
+  const handleConfirmAllBaselinesHeld = useCallback(() => {
+      let confirmedCount = 0;
+      const dateStr = new Date().toLocaleDateString();
+      setTestResults(prev =>
+          prev.map(p => {
+              if (p.expectedOutcome && (!p.outcome || p.outcome === 'N/A' || p.outcome === '')) {
+                  confirmedCount++;
+                  const cascaded = getOutcomeCascadedFields(p.expectedOutcome, p.severity);
+                  return {
+                      ...p,
+                      outcome: p.expectedOutcome,
+                      coverageRating: cascaded.coverageRating,
+                      severity: cascaded.severity,
+                      detNotes:
+                          p.detNotes && p.detNotes.trim()
+                              ? p.detNotes
+                              : `Baseline held (${p.expectedOutcome}) — verified on ${dateStr}`
+                  };
+              }
+              return p;
+          })
+      );
+      if (confirmedCount > 0) {
+          addToast(`Confirmed baseline held for ${confirmedCount} event(s)!`, 'success');
+      }
+  }, [addToast]);
 
   const removeProcedure = (procId) => {
      confirmAction('Are you sure you want to remove this event?', () => {
@@ -543,11 +734,19 @@ export default function SimulationWizard() {
             return;
         }
 
-        const systemInstruction = 'You are an elite Defensive Security Engineer and Purple Team lead. The user wants to design a simulation for testing EDR telemetry. You must provide a highly structured Markdown response. First, provide a concise **Simulation Overview** explaining the techniques. Second, provide **Simulation Options**, listing distinct methods to safely simulate this activity. Finally, provide the **Recommended Unified Procedure**, containing the exact, ready-to-use benign code (in markdown code blocks) or explicit manual steps tailored for the target environment. NEVER write functional exploits; only benign commands that create the forensic footprint. IMPORTANT: Do NOT use markdown tables under any circumstances. Use bulleted lists instead. DO NOT introduce yourself. DO NOT echo this prompt. Begin immediately with the **Simulation Overview** section.';
+        const systemInstruction = `You are an elite Defensive Security Engineer and Purple Team lead. The user wants to design a simulation for testing EDR/SIEM telemetry.
+You must provide a highly structured Markdown response optimized for Control Drift's automated event scaffolding and self-logging harness compiler:
+1. First, provide a concise **Simulation Overview** explaining the attack chain and defensive validation goals (use inline backticks for command names here—do NOT use fenced triple-backtick code blocks in the overview).
+2. Second, under **Recommended Validation Procedures**, create one dedicated section per selected MITRE ATT&CK technique using the exact heading format:
+   \`### Phase N: <Descriptive Procedure Name> (<TTP_ID>)\`
+   Immediately below each Phase heading, provide a brief 1-2 sentence explanation of the expected telemetry, followed by **exactly one** fenced code block (\`\`\`powershell or \`\`\`bash) containing the ready-to-run, benign validation command(s) for that technique.
+NEVER write destructive exploits; only benign commands that safely generate the forensic/EDR footprint. IMPORTANT: Do NOT use markdown tables under any circumstances. DO NOT introduce yourself. Begin immediately with the **Simulation Overview** section.`;
         
         const ttpList = selectedTTPs.map(t => `${t.id} - ${t.name}`).join(', ');
+        const historyByTtp = getHistoricalProceduresForTTPs(selectedTTPs, simulationSummaries, events, mitreData);
+        const historyPromptBlock = formatHistoricalProceduresForAIPrompt(historyByTtp);
         
-        let prompt = `Target Environment: ${simulationDetails.environment || 'Unknown/Generic'}.\nSimulation Scenario: ${simulationDetails.goals || 'None'}\n\nDesign a unified defensive simulation strategy and validation payload combining the following identified techniques: ${ttpList}.`;
+        let prompt = `Target Environment: ${simulationDetails.environment || 'Unknown/Generic'}.\nSimulation Scenario: ${simulationDetails.goals || 'None'}\n\nDesign a unified defensive simulation strategy and validation payload combining the following identified techniques: ${ttpList}.${historyPromptBlock}`;
         
         if (coPilotInput.trim()) {
             prompt += `\n\nAdditionally, incorporate this specific request from the user: "${coPilotInput}"`;
@@ -888,27 +1087,7 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
          if (proc.ttps && Array.isArray(proc.ttps)) {
              proc.ttps.forEach(ttpId => {
                  if (!allMappedTTPs.has(ttpId)) {
-                     // Try to fetch name from mitreData if available
-                     let ttpName = 'Unknown Technique';
-                     if (mitreData) {
-                         for (const tactic of Object.values(mitreData)) {
-                             const tech = tactic.techniques.find(t => t.id === ttpId);
-                             if (tech) { 
-                                 ttpName = tech.name; 
-                                 break; 
-                             } else {
-                                 const parentId = ttpId.split('.')[0];
-                                 const parentTech = tactic.techniques.find(t => t.id === parentId);
-                                 if (parentTech && parentTech.subTechniques) {
-                                     const sub = parentTech.subTechniques.find(s => s.id === ttpId);
-                                     if (sub) {
-                                         ttpName = sub.name;
-                                         break;
-                                     }
-                                 }
-                             }
-                         }
-                     }
+                     const ttpName = lookupTTPName(mitreData, ttpId);
                      allMappedTTPs.set(ttpId, { id: ttpId, name: ttpName });
                  }
              });
@@ -1446,7 +1625,12 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
             setIsContextCollapsed={setIsContextCollapsed}
             simulationDetails={simulationDetails}
             selectedTTPs={selectedTTPs}
+            setSelectedTTPs={setSelectedTTPs}
             addToast={addToast}
+            testResults={testResults}
+            simulationSummaries={simulationSummaries}
+            events={events}
+            mitreData={mitreData}
           />
         )}
 
@@ -1472,6 +1656,11 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
             addSimulationEvidence={addSimulationEvidence}
             simulationDetails={simulationDetails}
             setExpandedImage={setExpandedImage}
+            onAutoScaffoldEvents={handleAutoScaffoldEvents}
+            onImportHarnessOutput={handleImportHarnessOutput}
+            onConfirmAllBaselinesHeld={handleConfirmAllBaselinesHeld}
+            mitreData={mitreData}
+            addToast={addToast}
           />
         )}
 

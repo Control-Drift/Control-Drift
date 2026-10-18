@@ -15,7 +15,7 @@
  */
 
 import React from 'react';
-import { Shield, Activity } from 'lucide-react';
+import { Shield, Activity, Clock } from 'lucide-react';
 import EnvironmentDropdown from '../../dropdowns/EnvironmentDropdown';
 import SecurityControlFilterDropdown from '../../dropdowns/SecurityControlFilterDropdown';
 import TagDropdown from '../../dropdowns/TagDropdown';
@@ -25,7 +25,8 @@ export default function HeatmapHeader({
   setActiveTactic, 
   activeInfo, 
   mitreCoveragePercentage, 
-  dashboardTotalValidated 
+  dashboardTotalValidated,
+  driftingCount = 0
 }) {
   return (
     <div className="heatmap-header responsive-row" style={{ padding: '12px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', pointerEvents: 'none', gap: '15px', flexShrink: 0 }}>
@@ -57,6 +58,12 @@ export default function HeatmapHeader({
                 <Activity size={14} />
                 Tested TTPs: {dashboardTotalValidated}
             </div>
+            {driftingCount > 0 && (
+              <div style={{ padding: '6px 14px', background: 'rgba(245, 158, 11, 0.12)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: '20px', fontSize: '0.85rem', color: '#fbbf24', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', boxShadow: '0 0 10px rgba(245, 158, 11, 0.15)' }} title="Techniques whose validation freshness has decayed and need re-testing">
+                  <Clock size={14} />
+                  Decayed TTPs: {driftingCount}
+              </div>
+            )}
         </div>
         <div className="heatmap-filters-container">
           <TagDropdown />

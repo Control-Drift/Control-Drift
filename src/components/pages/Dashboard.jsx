@@ -16,10 +16,13 @@
 
 import React from 'react';
 import { useAppContext } from '../../AppContext';
-import { Activity, Target, ShieldAlert, Shield, ArrowRight, ArrowLeft, Info, Key, Terminal, Ghost, Network, Clock, ShieldCheck, Database, Globe, BrainCircuit, ChevronDown } from 'lucide-react';
+import { Activity, Target, ShieldAlert, Shield, ArrowRight, ArrowLeft, Info, Key, Terminal, Ghost, Network, Clock, ShieldCheck, Database, Globe, BrainCircuit, ChevronDown, FileDown, PlaneTakeoff } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { PDFDownloadLink } from '@react-pdf/renderer';
 import UnifiedPosturePill from '../ui/UnifiedPosturePill';
 import TagDropdown from '../dropdowns/TagDropdown';
+import ExecutiveReportPDF from '../features/ExecutiveReportPDF';
+import { calculateConfidenceAndDecay } from '../../lib/mitreUtils';
 
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 
@@ -243,6 +246,7 @@ export default function Dashboard() {
   
   const [metrics, setMetrics] = React.useState({
       grsScore: 0,
+      driftingCount: 0,
       totalValidated: 0,
       totalGaps: 0,
       closedGaps: 0,
@@ -255,12 +259,16 @@ export default function Dashboard() {
       mitreCoveragePercentage: 0
   });
   const [topSecurityControls, setTopSecurityControls] = React.useState([]);
+  const [driftingTTPs, setDriftingTTPs] = React.useState([]);
+  const [openGapsList, setOpenGapsList] = React.useState([]);
+  const [rightCardTab, setRightCardTab] = React.useState('controls');
   const [topTTPs, setTopTTPs] = React.useState([]);
   const [trendTimeframe, setTrendTimeframe] = React.useState('30 Days');
   const [isLoading, setIsLoading] = React.useState(true);
   const [activePhaseSubject, setActivePhaseSubject] = React.useState("Pre-Attack");
   const [expandedPhaseSubject, setExpandedPhaseSubject] = React.useState(null);
   const [isMounted, setIsMounted] = React.useState(false);
+  const rightCardRef = React.useRef(null);
 
   React.useEffect(() => {
     setTimeout(() => setIsMounted(true), 150);
@@ -269,18 +277,20 @@ export default function Dashboard() {
   React.useEffect(() => {
     setActiveAiContext({
         view: 'Global Dashboard',
-        description: 'High-level overview of enterprise readiness, open gaps, and recent adversary simulations.',
+        description: 'High-level overview of enterprise readiness, temporal control drift, open gaps, and recent adversary simulations.',
         metrics: {
             grsScore: metrics.grsScore,
+            driftingCount: metrics.driftingCount,
             totalGaps: metrics.totalGaps,
             openGapsCount: metrics.openGapsCount,
             resolutionRate: metrics.resolutionRate,
             mitreCoveragePercentage: metrics.mitreCoveragePercentage
         },
+        driftingWatchlist: driftingTTPs.slice(0, 10).map(t => ({ id: t.id, name: t.name, tactic: t.tactic, daysSinceLastTest: t.daysSinceLastTest, driftStatus: t.driftStatus })),
         recentActivity: topSecurityControls.map(c => c.name)
     });
     return () => setActiveAiContext(null);
-  }, [setActiveAiContext, metrics, topSecurityControls]);
+  }, [setActiveAiContext, metrics, topSecurityControls, driftingTTPs]);
 
   const getTTPDetails = React.useCallback((id) => {
       if (!mitreData) return null;
@@ -419,10 +429,50 @@ export default function Dashboard() {
                    }
                }
 
+               // Build per-TTP test count & latest execution timestamp (including sub-technique -> parent family rollup)
+               const ttpStatsMap = new Map();
+               const recordTtpStat = (id, exTime, exDate) => {
+                   const prev = ttpStatsMap.get(id) || { count: 0, latestTime: 0, latestDate: null };
+                   prev.count += 1;
+                   if (exTime && !Number.isNaN(exTime) && exTime >= prev.latestTime) {
+                       prev.latestTime = exTime;
+                       prev.latestDate = exDate;
+                   }
+                   ttpStatsMap.set(id, prev);
+               };
+
+               allExercises.forEach(ex => {
+                   if (!ex || ex.status === 'unknown' || ex.status === 'na' || !ex.ttp) return;
+                   const exDate = ex.validationDate || ex.date || ex.created_at || null;
+                   const exTime = exDate ? new Date(exDate).getTime() : 0;
+                   const seenParentsInEx = new Set();
+                   ex.ttp.split(',').forEach(rawId => {
+                       const id = rawId.trim();
+                       if (!id) return;
+                       recordTtpStat(id, exTime, exDate);
+                       if (id.includes('.')) {
+                           const parentId = id.split('.')[0];
+                           if (parentId && !seenParentsInEx.has(parentId)) {
+                               seenParentsInEx.add(parentId);
+                               recordTtpStat(parentId, exTime, exDate);
+                           }
+                       }
+                   });
+               });
+
+               const getDecayForTtp = (ttpId, techObj = null) => {
+                   const stat = ttpStatsMap.get(ttpId);
+                   const count = stat?.count || techObj?.totalCount || 1;
+                   const lastDate = stat?.latestDate || techObj?.lastTestedDate || null;
+                   return calculateConfidenceAndDecay(count, lastDate, { status: techObj?.status });
+               };
+
                // Calculate GRS accurately from rolled-up MITRE data AND active gaps
                let totalValidated = 0;
                let points = 0;
+               let driftAdjustedPoints = 0;
                const processedTTPs = new Set();
+               const watchlistMap = new Map();
 
                 // Helper to get severity weight
                 const getSeverityWeight = (severity) => {
@@ -481,7 +531,9 @@ export default function Dashboard() {
                         else if (posture.coverage === 'Partial') basePoints = 0.5;
                         else if (posture.coverage === 'Minimal') basePoints = 0.25;
                         
+                        const decayInfo = getDecayForTtp(ttpId);
                         points += (basePoints * maxWeight);
+                        driftAdjustedPoints += (basePoints * maxWeight * (decayInfo.decayFactor || 1.0));
                     }
                 });
 
@@ -493,10 +545,16 @@ export default function Dashboard() {
                         // If any of the closed gaps is "Resolved", we give full credit
                         // If all are "Risk Accepted", we give 0 credit (prevents artificial inflation)
                         const isResolved = gaps.some(g => g.status === 'Resolved');
+                        const latestResolvedDate = gaps.reduce((latest, g) => {
+                            const d = g.resolvedDate || g.validationDate || g.createdDate;
+                            return d && (!latest || new Date(d) > new Date(latest)) ? d : latest;
+                        }, null);
+                        const decayInfo = calculateConfidenceAndDecay(gaps.length, latestResolvedDate);
                         
                         totalValidated += 1; // Standard weight for resolved/accepted
                         if (isResolved) {
                             points += 1.0;
+                            driftAdjustedPoints += (1.0 * (decayInfo.decayFactor || 1.0));
                         } else {
                             points += 0.0;
                         }
@@ -508,22 +566,64 @@ export default function Dashboard() {
                    for (const tactic in mitreData) {
                        if (tactic === 'Reconnaissance' || tactic === 'Resource Development') continue;
                        mitreData[tactic].techniques.forEach(tech => {
-                           if (!processedTTPs.has(tech.id) && tech.status && tech.status !== 'unknown' && tech.status !== 'na' && tech.status !== 'pending') {
-                                totalValidated++;
-                                processedTTPs.add(tech.id);
-                                if (tech.status === 'high') points += 1.0;
-                                else if (tech.status === 'medium') points += 0.5;
-                                else if (tech.status === 'minimal') points += 0.25;
+                           if (tech.status && tech.status !== 'unknown' && tech.status !== 'na' && tech.status !== 'pending') {
+                               const decayInfo = tech.driftStatus ? tech : getDecayForTtp(tech.id, tech);
+                               if (decayInfo.needsRetest || decayInfo.driftStatus === 'Decayed' || decayInfo.driftStatus === 'Aging') {
+                                   watchlistMap.set(tech.id, {
+                                       id: tech.id,
+                                       name: tech.name,
+                                       tactic,
+                                       status: tech.status,
+                                       daysSinceLastTest: decayInfo.daysSinceLastTest,
+                                       driftStatus: decayInfo.driftStatus,
+                                       confidenceLabel: decayInfo.confidenceLabel || 'Low',
+                                       testCount: decayInfo.testCount || tech.totalCount || 1,
+                                       effectiveStaleDays: decayInfo.effectiveStaleDays || 90,
+                                       decayFactor: decayInfo.decayFactor ?? 1.0,
+                                       needsRetest: Boolean(decayInfo.needsRetest)
+                                   });
+                               }
+                               if (!processedTTPs.has(tech.id)) {
+                                   totalValidated++;
+                                   processedTTPs.add(tech.id);
+                                   let base = 0;
+                                   if (tech.status === 'high') base = 1.0;
+                                   else if (tech.status === 'medium') base = 0.5;
+                                   else if (tech.status === 'minimal') base = 0.25;
+                                   points += base;
+                                   driftAdjustedPoints += base * (decayInfo.decayFactor ?? 1.0);
+                               }
                            }
                            
                            if (tech.subTechniques) {
                                tech.subTechniques.forEach(sub => {
-                                   if (!processedTTPs.has(sub.id) && sub.status && sub.status !== 'unknown' && sub.status !== 'na' && sub.status !== 'pending') {
-                                        totalValidated++;
-                                        processedTTPs.add(sub.id);
-                                        if (sub.status === 'high') points += 1.0;
-                                        else if (sub.status === 'medium') points += 0.5;
-                                        else if (sub.status === 'minimal') points += 0.25;
+                                   if (sub.status && sub.status !== 'unknown' && sub.status !== 'na' && sub.status !== 'pending') {
+                                       const subDecay = sub.driftStatus ? sub : getDecayForTtp(sub.id, sub);
+                                       if (subDecay.needsRetest || subDecay.driftStatus === 'Decayed' || subDecay.driftStatus === 'Aging') {
+                                           watchlistMap.set(sub.id, {
+                                               id: sub.id,
+                                               name: sub.name,
+                                               tactic,
+                                               status: sub.status,
+                                               daysSinceLastTest: subDecay.daysSinceLastTest,
+                                               driftStatus: subDecay.driftStatus,
+                                               confidenceLabel: subDecay.confidenceLabel || 'Low',
+                                               testCount: subDecay.testCount || sub.totalCount || 1,
+                                               effectiveStaleDays: subDecay.effectiveStaleDays || 90,
+                                               decayFactor: subDecay.decayFactor ?? 1.0,
+                                               needsRetest: Boolean(subDecay.needsRetest)
+                                           });
+                                       }
+                                       if (!processedTTPs.has(sub.id)) {
+                                           totalValidated++;
+                                           processedTTPs.add(sub.id);
+                                           let base = 0;
+                                           if (sub.status === 'high') base = 1.0;
+                                           else if (sub.status === 'medium') base = 0.5;
+                                           else if (sub.status === 'minimal') base = 0.25;
+                                           points += base;
+                                           driftAdjustedPoints += base * (subDecay.decayFactor ?? 1.0);
+                                       }
                                    }
                                });
                            }
@@ -531,7 +631,12 @@ export default function Dashboard() {
                    }
                }
                
-               const grsScore = totalValidated > 0 ? Math.round((points / totalValidated) * 100) : 0;
+               const grsScore = totalValidated > 0 ? Math.round((driftAdjustedPoints / totalValidated) * 100) : 0;
+               const sortedWatchlist = Array.from(watchlistMap.values()).sort((a, b) => {
+                   if (a.needsRetest !== b.needsRetest) return a.needsRetest ? -1 : 1;
+                   return (b.daysSinceLastTest || 0) - (a.daysSinceLastTest || 0);
+               });
+               const driftingCount = sortedWatchlist.filter(item => item.needsRetest).length;
                
                const applicableGaps = allGaps.filter(g => g.status !== 'Risk Accepted');
                const totalGaps = applicableGaps.length;
@@ -542,6 +647,7 @@ export default function Dashboard() {
 
                const severityWeights = { 'Critical': 10, 'High': 7, 'Medium': 3, 'Low': 1 };
                const residualRisk = open.reduce((acc, g) => acc + (severityWeights[g.severity] || 0), 0);
+               const sortedOpenGaps = [...open].sort((a, b) => (severityWeights[b.severity] || 0) - (severityWeights[a.severity] || 0));
                
                const resolved = allGaps.filter(g => g.status === 'Resolved' && g.resolvedDate && g.createdDate);
                const validResolved = resolved.filter(g => !isNaN(new Date(g.resolvedDate)) && !isNaN(new Date(g.createdDate)) && new Date(g.resolvedDate) >= new Date(g.createdDate));
@@ -766,8 +872,12 @@ export default function Dashboard() {
                    }
                }
 
+               setDriftingTTPs(sortedWatchlist);
+               setOpenGapsList(sortedOpenGaps);
+
                setMetrics({
                    grsScore,
+                   driftingCount,
                    totalValidated,
                    totalGaps,
                    closedGaps,
@@ -829,6 +939,7 @@ export default function Dashboard() {
 
   const {
       grsScore,
+      driftingCount,
       totalValidated,
       totalGaps,
       closedGaps,
@@ -852,6 +963,43 @@ export default function Dashboard() {
         </div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '15px', flexWrap: 'wrap' }}>
+            <PDFDownloadLink
+              document={
+                <ExecutiveReportPDF
+                  metrics={metrics}
+                  driftingTTPs={driftingTTPs}
+                  openGaps={openGapsList}
+                  topSecurityControls={topSecurityControls}
+                  activeTagFilter={activeTagFilter}
+                />
+              }
+              fileName={`Control_Drift_Executive_Posture_${new Date().toISOString().split('T')[0]}.pdf`}
+              style={{ textDecoration: 'none' }}
+            >
+              {({ loading }) => (
+                <button
+                  className="btn hover-lift"
+                  title="Download a CISO-ready Executive Security Posture PDF report"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    padding: '8px 16px',
+                    background: 'rgba(139, 92, 246, 0.15)',
+                    border: '1px solid rgba(139, 92, 246, 0.45)',
+                    borderRadius: '24px',
+                    color: '#c4b5fd',
+                    fontSize: '0.85rem',
+                    fontWeight: 'bold',
+                    cursor: 'pointer',
+                    boxShadow: '0 0 12px rgba(139, 92, 246, 0.2)'
+                  }}
+                >
+                  <FileDown size={16} />
+                  <span>{loading ? 'Preparing PDF...' : 'Export Executive PDF'}</span>
+                </button>
+              )}
+            </PDFDownloadLink>
             <TagDropdown />
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', background: 'rgba(10,11,16,0.6)', border: `1px solid ${isRemoteConnected ? 'rgba(16,185,129,0.3)' : 'rgba(255,255,255,0.1)'}`, borderRadius: '24px', boxShadow: isRemoteConnected ? '0 0 10px rgba(16,185,129,0.2)' : 'none' }}>
               <Database size={16} color={isRemoteConnected ? 'var(--success)' : 'var(--text-muted)'} />
@@ -871,7 +1019,7 @@ export default function Dashboard() {
           <div style={{ flex: 1 }}>
               <h2 style={{ margin: '0 0 10px 0', fontSize: '2.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '15px' }}>
                   <Shield size={32} color="var(--accent-primary)" /> Global Readiness Score
-                  <Tooltip content={<div style={{ whiteSpace: 'normal', width: '250px', fontSize: '0.85rem', fontWeight: 'normal', letterSpacing: 'normal' }}>Your overall enterprise security posture score, calculated from adversary simulation outcomes and open coverage gaps.</div>}>
+                  <Tooltip content={<div style={{ whiteSpace: 'normal', width: '270px', fontSize: '0.85rem', fontWeight: 'normal', letterSpacing: 'normal' }}>Unified enterprise readiness metric combining simulation coverage outcomes, active gap severity weighting, procedural test depth, and TTP validation decay.</div>}>
                      <span style={{ cursor: 'help', color: 'var(--text-muted)', display: 'flex', marginTop: '4px' }}><Info size={20} /></span>
                   </Tooltip>
               </h2>
@@ -899,6 +1047,31 @@ export default function Dashboard() {
                           Active Gaps
                       </div>
                       <div style={{ fontSize: '2.2rem', fontWeight: '900', color: 'var(--warning)', fontFamily: 'monospace', lineHeight: 1, textShadow: '0 0 15px rgba(245, 158, 11, 0.4)' }}>{openGapsCount}</div>
+                  </div>
+                  <div
+                      onClick={() => {
+                          setRightCardTab('drift');
+                          rightCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                      }}
+                      className="hover-lift"
+                      title="Click to inspect the TTP Decay Watchlist"
+                      style={{
+                          background: driftingCount > 0 ? 'rgba(245, 158, 11, 0.08)' : 'rgba(16, 185, 129, 0.05)',
+                          border: driftingCount > 0 ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid rgba(16, 185, 129, 0.25)',
+                          borderRadius: '12px',
+                          padding: '15px 25px',
+                          textAlign: 'center',
+                          cursor: 'pointer',
+                          boxShadow: driftingCount > 0 ? 'inset 0 0 20px rgba(245, 158, 11, 0.08)' : 'inset 0 0 20px rgba(16, 185, 129, 0.05)'
+                      }}
+                  >
+                      <div style={{ fontSize: '0.75rem', color: driftingCount > 0 ? '#fbbf24' : '#10b981', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '8px', opacity: 0.9, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                          <Clock size={12} /> Decayed TTPs
+                          <Tooltip content={<div style={{ whiteSpace: 'normal', width: '230px', fontSize: '0.85rem', color: '#fff', textTransform: 'none', letterSpacing: 'normal', fontWeight: 'normal' }}>Validated techniques whose freshness lifespan has decayed and need re-testing. Click to open the Watchlist.</div>}>
+                             <span style={{ cursor: 'help', color: driftingCount > 0 ? '#fbbf24' : '#10b981', display: 'flex' }}><Info size={12} /></span>
+                          </Tooltip>
+                      </div>
+                      <div style={{ fontSize: '2.2rem', fontWeight: '900', color: driftingCount > 0 ? '#fbbf24' : '#10b981', fontFamily: 'monospace', lineHeight: 1, textShadow: driftingCount > 0 ? '0 0 15px rgba(245, 158, 11, 0.4)' : 'none' }}>{driftingCount}</div>
                   </div>
               </div>
           </div>
@@ -1416,63 +1589,244 @@ export default function Dashboard() {
             </div>
          </div>
 
-         {/* Top Security Controls */}
-         <div className="glass-panel hover-lift animate-fade-in" style={{ padding: '20px 30px', display: 'flex', flexDirection: 'column', height: '100%', animationDelay: '0.1s' }}>
-            <h3 style={{ margin: '0 0 25px 0', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                Top Security Controls
-                <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>Performance metrics for your deployed security tools. Efficacy is calculated based on successful defenses against tested techniques.</div>}>
-                   <span style={{ cursor: 'help', color: 'var(--text-muted)', display: 'flex' }}><Info size={14} /></span>
-                </Tooltip>
-            </h3>
-            {topSecurityControls.length === 0 ? (
-               <div style={{ padding: '20px', textAlign: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
-                  <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No security controls mapped yet.</p>
-               </div>
-            ) : (
-               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, overflowY: 'auto', paddingRight: '5px' }}>
-                 {topSecurityControls.map((ctrl, i) => {
-                     const pct = ctrl.totalTTPs > 0 ? (ctrl.positiveOutcomes / ctrl.totalTTPs) : 0;
-                     const heatColor = pct >= 0.75 ? 'var(--success)' : pct >= 0.4 ? 'var(--warning)' : 'var(--danger)';
-                     const glowColor = pct >= 0.75 ? 'rgba(16, 185, 129, 0.2)' : pct >= 0.4 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)';
-                     return (
-                      <div 
-                        key={i} 
-                        className="hover-lift"
-                        style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', transition: 'all 0.2s' }}
-                        onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
-                        onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
-                      >
-                        <div style={{ flex: 1, marginRight: '15px' }}>
-                          <strong style={{ color: 'var(--text-primary)', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                              <Shield size={16} color={heatColor} />
-                              {ctrl.name}
-                          </strong>
-                          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
-                              {ctrl.positiveOutcomes} of {ctrl.totalTTPs} events triggered a defense
-                          </div>
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                           <button 
-                               onClick={() => { setActiveSecurityControlFilter(ctrl.name); navigate('/posture'); }}
-                               style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '6px', padding: '6px 12px', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.75rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }}
-                               onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-                               onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
-                           >
-                               <Globe size={14} /> See in Heatmap
-                           </button>
-                           <div style={{ position: 'relative', width: '56px', height: '56px' }}>
-                               <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)', filter: `drop-shadow(0 0 4px ${glowColor})` }}>
-                                   <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
-                                   <circle cx="18" cy="18" r="16" fill="none" stroke={heatColor} strokeWidth="3" strokeDasharray="100.5" strokeDashoffset={isMounted ? (100.5 - (pct * 100.5)) : 100.5} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1), stroke 1s ease-out' }} />
-                               </svg>
-                               <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
-                                   {Math.round(pct * 100)}%
+         {/* Top Security Controls / TTP Decay Watchlist (Tabbed to preserve 3-column symmetry) */}
+         <div ref={rightCardRef} className="glass-panel hover-lift animate-fade-in" style={{ padding: '20px 30px', display: 'flex', flexDirection: 'column', height: '100%', animationDelay: '0.1s' }}>
+            <div style={{ margin: '0 0 20px 0', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {rightCardTab === 'controls' ? 'Top Security Controls' : 'TTP Decay Watchlist'}
+                    </h3>
+                    <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>
+                        {rightCardTab === 'controls'
+                            ? 'Performance metrics for your deployed security tools. Efficacy is calculated based on successful defenses against tested techniques.'
+                            : 'Techniques whose validation freshness is Aging or Decayed based on their Depth lifespan cycle. Click Re-Test to launch an evolved validation campaign.'}
+                    </div>}>
+                       <span style={{ cursor: 'help', color: 'var(--text-muted)', display: 'flex' }}><Info size={14} /></span>
+                    </Tooltip>
+                </div>
+
+                {/* Segmented Tab Switcher + Batch Re-Test */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    {rightCardTab === 'drift' && driftingTTPs.length > 0 && (
+                        <button
+                            onClick={() => navigate('/simulation', {
+                                state: {
+                                    batchRetestTTPs: driftingTTPs.map(item => ({
+                                        id: item.id,
+                                        name: item.name,
+                                        tactic: item.tactic,
+                                        daysSinceLastTest: item.daysSinceLastTest,
+                                        driftStatus: item.driftStatus
+                                    }))
+                                }
+                            })}
+                            title="Launch a Chained Evolution Re-Test campaign for all decayed/aging TTPs"
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                padding: '5px 10px',
+                                borderRadius: '7px',
+                                fontSize: '0.73rem',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                background: 'rgba(245, 158, 11, 0.18)',
+                                border: '1px solid rgba(245, 158, 11, 0.45)',
+                                color: '#fbbf24',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <PlaneTakeoff size={12} />
+                            <span>Re-Test All ({driftingTTPs.length})</span>
+                        </button>
+                    )}
+
+                    <div style={{ display: 'flex', background: 'rgba(0,0,0,0.35)', padding: '3px', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
+                        <button
+                            onClick={() => setRightCardTab('controls')}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, transition: 'all 0.2s',
+                                background: rightCardTab === 'controls' ? 'rgba(139, 92, 246, 0.22)' : 'transparent',
+                                color: rightCardTab === 'controls' ? '#c4b5fd' : 'var(--text-muted)'
+                            }}
+                        >
+                            <Shield size={12} />
+                            <span>Controls</span>
+                        </button>
+                        <button
+                            onClick={() => setRightCardTab('drift')}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '5px', padding: '5px 10px', borderRadius: '6px', border: 'none', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, transition: 'all 0.2s',
+                                background: rightCardTab === 'drift' ? 'rgba(245, 158, 11, 0.22)' : 'transparent',
+                                color: rightCardTab === 'drift' ? '#fbbf24' : 'var(--text-muted)'
+                            }}
+                        >
+                            <Clock size={12} />
+                            <span>Decayed ({driftingTTPs.length})</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {rightCardTab === 'controls' ? (
+                topSecurityControls.length === 0 ? (
+                   <div style={{ padding: '20px', textAlign: 'center', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No security controls mapped yet.</p>
+                   </div>
+                ) : (
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, overflowY: 'auto', paddingRight: '5px' }}>
+                     {topSecurityControls.map((ctrl, i) => {
+                         const pct = ctrl.totalTTPs > 0 ? (ctrl.positiveOutcomes / ctrl.totalTTPs) : 0;
+                         const heatColor = pct >= 0.75 ? 'var(--success)' : pct >= 0.4 ? 'var(--warning)' : 'var(--danger)';
+                         const glowColor = pct >= 0.75 ? 'rgba(16, 185, 129, 0.2)' : pct >= 0.4 ? 'rgba(245, 158, 11, 0.2)' : 'rgba(239, 68, 68, 0.2)';
+                         return (
+                          <div 
+                            key={i} 
+                            className="hover-lift"
+                            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px', background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)', transition: 'all 0.2s' }}
+                            onMouseOver={e => e.currentTarget.style.background = 'rgba(255,255,255,0.06)'}
+                            onMouseOut={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                          >
+                            <div style={{ flex: 1, marginRight: '15px' }}>
+                              <strong style={{ color: 'var(--text-primary)', fontSize: '1.05rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <Shield size={16} color={heatColor} />
+                                  {ctrl.name}
+                              </strong>
+                              <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
+                                  {ctrl.positiveOutcomes} of {ctrl.totalTTPs} events triggered a defense
+                              </div>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                               <button 
+                                   onClick={() => { setActiveSecurityControlFilter(ctrl.name); navigate('/posture'); }}
+                                   style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--glass-border)', borderRadius: '6px', padding: '6px 12px', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '0.75rem', transition: 'all 0.2s', display: 'flex', alignItems: 'center', gap: '6px' }}
+                                   onMouseOver={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                                   onMouseOut={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
+                               >
+                                   <Globe size={14} /> See in Heatmap
+                               </button>
+                               <div style={{ position: 'relative', width: '56px', height: '56px' }}>
+                                   <svg viewBox="0 0 36 36" style={{ width: '100%', height: '100%', transform: 'rotate(-90deg)', filter: `drop-shadow(0 0 4px ${glowColor})` }}>
+                                       <circle cx="18" cy="18" r="16" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="3" />
+                                       <circle cx="18" cy="18" r="16" fill="none" stroke={heatColor} strokeWidth="3" strokeDasharray="100.5" strokeDashoffset={isMounted ? (100.5 - (pct * 100.5)) : 100.5} strokeLinecap="round" style={{ transition: 'stroke-dashoffset 1.5s cubic-bezier(0.16, 1, 0.3, 1), stroke 1s ease-out' }} />
+                                   </svg>
+                                   <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>
+                                       {Math.round(pct * 100)}%
+                                   </div>
                                </div>
-                           </div>
-                         </div>
-                      </div>
-                  )})}
-               </div>
+                             </div>
+                          </div>
+                      )})}
+                   </div>
+                )
+            ) : (
+                driftingTTPs.length === 0 ? (
+                   <div style={{ padding: '30px 20px', textAlign: 'center', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: '12px' }}>
+                      <ShieldCheck size={28} color="#10b981" style={{ marginBottom: '8px' }} />
+                      <p style={{ color: 'var(--text-primary)', fontSize: '0.95rem', fontWeight: 600, margin: '0 0 4px 0' }}>No Decayed TTPs</p>
+                      <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: 0 }}>All validated techniques are within their active freshness window.</p>
+                   </div>
+                ) : (
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, overflowY: 'auto', paddingRight: '5px' }}>
+                     {driftingTTPs.map((item) => {
+                         const isDrifting = item.needsRetest || item.driftStatus === 'Decayed';
+                         const accent = isDrifting ? '#f59e0b' : '#eab308';
+                         return (
+                             <div
+                               key={item.id}
+                               className="hover-lift"
+                               style={{
+                                   display: 'flex',
+                                   justifyContent: 'space-between',
+                                   alignItems: 'center',
+                                   gap: '12px',
+                                   padding: '12px 15px',
+                                   background: 'rgba(255,255,255,0.03)',
+                                   borderRadius: '8px',
+                                   border: '1px solid rgba(255,255,255,0.05)',
+                                   borderLeft: `3px solid ${accent}`
+                               }}
+                             >
+                               <div style={{ flex: 1, minWidth: 0 }}>
+                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                   <span style={{ fontFamily: 'monospace', fontWeight: 700, color: '#fff', fontSize: '0.9rem' }}>{item.id}</span>
+                                   <span style={{
+                                       fontSize: '0.68rem',
+                                       fontWeight: 700,
+                                       padding: '2px 7px',
+                                       borderRadius: '4px',
+                                       background: isDrifting ? 'rgba(245, 158, 11, 0.16)' : 'rgba(234, 179, 8, 0.12)',
+                                       border: `1px solid ${accent}55`,
+                                       color: isDrifting ? '#fbbf24' : '#fde047',
+                                       display: 'inline-flex',
+                                       alignItems: 'center',
+                                       gap: '4px'
+                                   }}>
+                                     <Clock size={10} />
+                                     {item.driftStatus} • {item.daysSinceLastTest}d ago
+                                   </span>
+                                 </div>
+                                 <div style={{ color: 'var(--text-primary)', fontSize: '0.88rem', fontWeight: 500, marginTop: '4px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                   {item.name}
+                                 </div>
+                                 <div style={{ color: 'var(--text-muted)', fontSize: '0.74rem', marginTop: '2px' }}>
+                                   {item.tactic} • Depth: {item.confidenceLabel || 'Low'} ({item.testCount || 1}) • Retention: {Math.round((item.decayFactor || 1) * 100)}%
+                                 </div>
+                               </div>
+
+                               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                                 <button
+                                   onClick={() => navigate('/posture', { state: { returnToTTP: item.id, returnToTactic: item.tactic } })}
+                                   title="Inspect technique on the 3D MITRE Heat Globe"
+                                   style={{
+                                       background: 'rgba(255,255,255,0.05)',
+                                       border: '1px solid var(--glass-border)',
+                                       borderRadius: '6px',
+                                       padding: '6px 9px',
+                                       color: 'var(--text-secondary)',
+                                       cursor: 'pointer',
+                                       display: 'flex',
+                                       alignItems: 'center'
+                                   }}
+                                 >
+                                   <Globe size={13} />
+                                 </button>
+                                 <button
+                                   onClick={() => navigate('/simulation', {
+                                       state: {
+                                           retestTTP: {
+                                               id: item.id,
+                                               name: item.name,
+                                               tactic: item.tactic,
+                                               daysSinceLastTest: item.daysSinceLastTest,
+                                               driftStatus: item.driftStatus
+                                           }
+                                       }
+                                   })}
+                                   title="Re-test this decayed TTP in the Simulation Launcher"
+                                   style={{
+                                       display: 'flex',
+                                       alignItems: 'center',
+                                       gap: '5px',
+                                       padding: '6px 10px',
+                                       borderRadius: '6px',
+                                       fontSize: '0.74rem',
+                                       fontWeight: 700,
+                                       cursor: 'pointer',
+                                       background: 'rgba(245, 158, 11, 0.16)',
+                                       border: '1px solid rgba(245, 158, 11, 0.45)',
+                                       color: '#fbbf24'
+                                   }}
+                                 >
+                                   <PlaneTakeoff size={12} />
+                                   <span>Re-Test</span>
+                                 </button>
+                               </div>
+                             </div>
+                         );
+                     })}
+                   </div>
+                )
             )}
          </div>
       </div>

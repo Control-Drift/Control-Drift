@@ -207,10 +207,6 @@ export function useEventActions({
                     proc.outcome = `${original} ➔ Prevented ✓`;
                     proc.coverageRating = 'Optimal';
                     proc.severity = 'N/A';
-                } else if (statusLower === 'prevented') {
-                    proc.outcome = `${original} ➔ Prevented ✓`;
-                    proc.coverageRating = 'Optimal';
-                    proc.severity = 'N/A';
                 } else if (statusLower === 'alerted') {
                     proc.outcome = `${original} ➔ Alerted ✓`;
                     proc.coverageRating = 'Optimal';
@@ -376,7 +372,7 @@ export function useEventActions({
 
         let shouldResolveGap = false;
         const statusLowerForResolve = newOutcomeStatus.toLowerCase();
-        if (['prevented & alerted', 'prevented', 'prevented', 'alerted'].includes(statusLowerForResolve)) {
+        if (['prevented & alerted', 'prevented', 'alerted'].includes(statusLowerForResolve)) {
              shouldResolveGap = true;
         }
 
@@ -454,11 +450,11 @@ export function useEventActions({
         if (simulationData && simulationData.testResults) {
             const proc = simulationData.testResults.find(p => p.name === procName);
             if (proc) {
-                if (proc.outcome && (proc.outcome.includes(' ➔ ') || proc.outcome.includes(' ➔ '))) {
-                    const original = proc.outcome.split(' ➔ ')[0].split(' ➔ ')[0].trim();
+                if (proc.outcome && proc.outcome.includes(' ➔ ')) {
+                    const original = proc.outcome.split(' ➔ ')[0].trim();
                     proc.outcome = original;
                     if (original === 'Prevented & Alerted' || original === 'Prevented' || original === 'Alerted') proc.coverageRating = 'Optimal';
-                    else if (original === 'Prevented' || original === 'Logged') proc.coverageRating = 'Partial';
+                    else if (original === 'Logged') proc.coverageRating = 'Partial';
                     else if (original === 'Missed') proc.coverageRating = 'None';
                     else proc.coverageRating = 'N/A';
                 }
@@ -505,8 +501,18 @@ export function useEventActions({
             aggregatedSecurityControls = Array.from(new Set(proceduresForTTP.flatMap(p => p.securityControls || [])));
 
             setSimulationSummaries(currentSimulations);
-            if (dbAdapter && typeof dbAdapter.saveData === 'function' && dbAdapter.type === 'local') {
-                await dbAdapter.saveData('simulation_summaries', currentSimulations);
+            if (dbAdapter && typeof dbAdapter.upsertSimulation === 'function') {
+                try {
+                    await dbAdapter.upsertSimulation({
+                        id: simulationName,
+                        summary: simulationData,
+                        evidence: (simulationEvidence && simulationEvidence[simulationName]) || []
+                    });
+                } catch (err) {
+                    console.warn("upsertSimulation failed during revertEventValidation:", err);
+                }
+            } else if (dbAdapter && typeof dbAdapter.saveData === 'function') {
+                await dbAdapter.saveData('simulationSummaries', currentSimulations);
             }
         }
         
@@ -535,8 +541,10 @@ export function useEventActions({
                 });
                 return nextMap;
             });
+            setExercises(updatedExercises);
         } else {
-            const updatedExercises = events.map(ex => {
+            const modifiedExercises = [];
+            Object.values(allEventsData).forEach(ex => {
                 if (targetTTPs.includes(ex.ttp) && ex.simulation === simulationName) {
                     const updated = {
                         ...ex,
@@ -545,30 +553,35 @@ export function useEventActions({
                         remediation: newRemediationNotes || ex.remediation,
                         securityControls: aggregatedSecurityControls
                     };
+                    modifiedExercises.push(updated);
                     if (dbAdapter && typeof dbAdapter.updateEvent === 'function') {
                         dbAdapter.updateEvent(updated.id, updated).catch(err => console.error("Error updating event:", err));
                     }
-                    return updated;
                 }
-                return ex;
+            });
+
+            const updatedExercises = events.map(ex => {
+                const mod = modifiedExercises.find(m => m.id === ex.id);
+                return mod ? mod : ex;
             });
             setExercises(updatedExercises);
             
             setAllEventsData(prevMap => {
                 const nextMap = { ...prevMap };
-                updatedExercises.forEach(ex => {
+                modifiedExercises.forEach(ex => {
                     nextMap[ex.id] = ex;
                 });
                 return nextMap;
             });
         }
-    }, [simulationSummaries, setSimulationSummaries, dbAdapter, events, allEventsData, setExercises, setAllEventsData]);
+    }, [simulationSummaries, setSimulationSummaries, simulationEvidence, dbAdapter, events, allEventsData, setExercises, setAllEventsData]);
 
     const deleteSimulation = useCallback(async (simulationName) => {
         if (!simulationName) return;
 
         // 0. Delete from DB explicitly if adapter supports it
-        if (dbAdapter && typeof dbAdapter.deleteSimulation === 'function') {
+        const hasAdapterDelete = dbAdapter && typeof dbAdapter.deleteSimulation === 'function';
+        if (hasAdapterDelete) {
             try {
                 await dbAdapter.deleteSimulation(simulationName);
             } catch (err) {
@@ -580,7 +593,7 @@ export function useEventActions({
         setSimulationSummaries(prev => {
             const next = { ...prev };
             delete next[simulationName];
-            if (dbAdapter && typeof dbAdapter.saveData === 'function') {
+            if (!hasAdapterDelete && dbAdapter && typeof dbAdapter.saveData === 'function') {
                 dbAdapter.saveData('simulationSummaries', next).catch(console.error);
             }
             return next;
@@ -593,8 +606,7 @@ export function useEventActions({
             const remainingExercises = allExercises.filter(ex => (ex.simulation || '').toString().trim().toLowerCase() !== cleanSimName);
             await dbAdapter.saveData('events', remainingExercises);
             
-            setAllEventsData(prevMap => {
-                const nextMap = { ...prevMap };
+            setAllEventsData(() => {
                 // Rebuild map from scratch to ensure orphans are removed
                 const rebuiltMap = {};
                 remainingExercises.forEach(ex => { rebuiltMap[ex.id] = ex; });

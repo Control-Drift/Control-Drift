@@ -15,7 +15,7 @@
  */
 
 import React from 'react';
-import { Target, RotateCcw, Ban, X, Shield, ShieldAlert, ShieldCheck, Info, EyeOff, ArrowRight } from 'lucide-react';
+import { Target, RotateCcw, Ban, X, Shield, ShieldAlert, ShieldCheck, Info, EyeOff, ArrowRight, Clock } from 'lucide-react';
 
 export default function TacticDrilldown({
   activeInfo,
@@ -181,7 +181,7 @@ export default function TacticDrilldown({
                      key={tech.id}
                      style={{  
                          background: 'rgba(0,0,0,0.4)', 
-                         border: '1px solid rgba(255,255,255,0.03)', 
+                         border: tech.needsRetest ? '1px solid rgba(245, 158, 11, 0.35)' : '1px solid rgba(255,255,255,0.03)', 
                          borderRadius: '8px',
                          cursor: 'pointer', 
                          display: 'flex', 
@@ -195,8 +195,22 @@ export default function TacticDrilldown({
                      onMouseOver={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.transform = 'translateY(-2px)'; }}
                      onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(0,0,0,0.4)'; e.currentTarget.style.transform = 'translateY(0)'; }}
                    >
-                      <div style={{  display: 'flex', flexDirection: 'column', gap: '4px', overflow: 'hidden'  }}>
-                          <span style={{  fontSize: '0.75rem', color: statusColors[tech.status] || statusColors.unknown, fontWeight: 'bold', letterSpacing: '0.5px'  }}>{tech.id}</span>
+                      <div style={{  display: 'flex', flexDirection: 'column', gap: '4px', overflow: 'hidden', flex: 1, marginRight: '10px'  }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                              <span style={{  fontSize: '0.75rem', color: statusColors[tech.status] || statusColors.unknown, fontWeight: 'bold', letterSpacing: '0.5px'  }}>{tech.id}</span>
+                              {tech.status !== 'unknown' && tech.status !== 'na' && tech.confidenceLabel && (
+                                  <span style={{ fontSize: '0.62rem', padding: '1px 6px', borderRadius: '4px', background: 'rgba(255,255,255,0.06)', color: tech.confidenceLabel === 'High' ? '#10b981' : tech.confidenceLabel === 'Medium' ? '#38bdf8' : '#f59e0b', fontWeight: 600 }}>
+                                      {tech.confidenceLabel} Depth ({tech.executionCount || tech.totalCount || 1})
+                                  </span>
+                              )}
+                              {tech.status !== 'unknown' && tech.status !== 'na' && tech.driftStatus && (
+                                  <span style={{ fontSize: '0.62rem', padding: '1px 6px', borderRadius: '4px', background: tech.needsRetest ? 'rgba(245, 158, 11, 0.16)' : 'rgba(255,255,255,0.04)', border: tech.needsRetest ? '1px solid rgba(245, 158, 11, 0.4)' : 'none', color: tech.needsRetest ? '#fbbf24' : tech.driftStatus === 'Aging' ? '#eab308' : 'var(--text-secondary)', fontWeight: tech.needsRetest ? 700 : 500, display: 'inline-flex', alignItems: 'center', gap: '3px' }}>
+                                      {tech.needsRetest && <Clock size={10} />}
+                                      {tech.needsRetest ? 'Decayed' : tech.driftStatus}
+                                      {tech.daysSinceLastTest !== null && tech.daysSinceLastTest !== undefined ? ` • ${tech.daysSinceLastTest}d` : ''}
+                                  </span>
+                              )}
+                          </div>
                           <span style={{  fontSize: '0.9rem', color: tech.status === 'na' ? 'var(--text-muted)' : 'var(--text-primary)', textDecoration: tech.status === 'na' ? 'line-through' : 'none', transition: 'all 0.3s ease', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis'  }}>{tech.name}</span>
                       </div>
                       <div style={{  display: 'flex', alignItems: 'center', gap: '12px'  }}>

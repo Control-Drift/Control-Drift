@@ -71,7 +71,7 @@ To access the application when connected to a database, you must provision accou
 Control Drift uses a single-tenant workspace architecture. Here is how access and schema initialization work:
 
 ### Schema Initialization
-When you run the automated setup script (or follow the manual steps), the `deploy/schema.sql` file is injected directly into Supabase's initialization volumes. This means that the first time the database boots up, it automatically creates all required tables (`exercises`, `gaps`, `simulations`, and `user_roles`) and configures Row Level Security (RLS). 
+When you run the automated setup script (or follow the manual steps), the `deploy/schema.sql` file is injected directly into Supabase's initialization volumes. This means that the first time the database boots up, it automatically creates all required tables (`events`, `gaps`, `simulations`, and `user_roles`) and configures Row Level Security (RLS). 
 
 ### Provisioning New Users
 For security reasons, access must be manually provisioned by an administrator. Because we set `GOTRUE_MAILER_AUTOCONFIRM=true`, administrators can create accounts without requiring an SMTP server or email verification:

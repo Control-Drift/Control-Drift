@@ -332,8 +332,30 @@ export const AppProvider = ({ children }) => {
     // Multi-tab desync handler
     useEffect(() => {
         let timeoutId;
+        const SYNC_STORAGE_KEYS = new Set([
+            'events',
+            'gaps',
+            'simulations_table',
+            'simulationSummaries',
+            'simulation_summaries',
+            'mitre_coverage',
+            'mitre_data_v4',
+            'target_envs',
+            'target_environments',
+            'target_tags',
+            'target_security_controls'
+        ]);
         const handleStorage = (e) => {
-            if (e.key && e.key.startsWith('eclipse_ops_')) {
+            if (!e.key) return;
+            const isSyncKey = SYNC_STORAGE_KEYS.has(e.key) || e.key.startsWith('control_drift_') || e.key.startsWith('eclipse_ops_');
+            if (isSyncKey) {
+                if ((e.key === 'target_envs' || e.key === 'target_environments') && e.newValue) {
+                    try { gapsData.setTargetEnvironments(JSON.parse(e.newValue)); } catch (_) {}
+                } else if (e.key === 'target_tags' && e.newValue) {
+                    try { tagsData.setTargetTags(JSON.parse(e.newValue)); } catch (_) {}
+                } else if (e.key === 'target_security_controls' && e.newValue) {
+                    try { securityControlsData.setTargetSecurityControls(JSON.parse(e.newValue)); } catch (_) {}
+                }
                 if (dbAdapter) {
                     clearTimeout(timeoutId);
                     timeoutId = setTimeout(() => {
@@ -348,7 +370,7 @@ export const AppProvider = ({ children }) => {
             clearTimeout(timeoutId);
             window.removeEventListener('storage', handleStorage);
         };
-    }, [dbAdapter, addToast]);
+    }, [dbAdapter, addToast, gapsData.setTargetEnvironments, tagsData.setTargetTags, securityControlsData.setTargetSecurityControls]);
 
     // Quota Exceeded handler
     useEffect(() => {
@@ -368,10 +390,12 @@ export const AppProvider = ({ children }) => {
         }
         
         try {
-            await dbAdapter.saveData('events', []);
-            await dbAdapter.saveData('gaps', []);
-            await dbAdapter.saveData('simulationSummaries', {});
-            await dbAdapter.saveData('simulationEvidence', {});
+            if (dbAdapter.type === 'local' && typeof dbAdapter.saveData === 'function') {
+                await dbAdapter.saveData('events', []);
+                await dbAdapter.saveData('gaps', []);
+                await dbAdapter.saveData('simulationSummaries', {});
+                await dbAdapter.saveData('simulationEvidence', {});
+            }
 
             const newExercises = [];
             const newSummaries = {};
@@ -380,38 +404,38 @@ export const AppProvider = ({ children }) => {
             // Helper to generate dates
             const daysAgo = (days) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
-            // CAMPAIGN 1: APT29 Emulation (Cozy Bear)
+            // CAMPAIGN 1: APT29 Emulation (Cozy Bear) — Aging (~55 days ago), with 1 recently re-validated gap
             const c1_simName = "Q3 APT29 Emulation (Cozy Bear)";
             newExercises.push({
                 id: `demo-c1-ex1`, campaign: "Q3 APT29 Emulation", simulation: c1_simName,
                 finding: `Execution of obfuscated PowerShell payload mimicking APT29 staging`,
                 remediation: `Event: PowerShell execution detected and blocked by EDR behavioral engine`,
-                environment: 'Windows Enclave', date: daysAgo(5), status: 'high', severity: 'High',
+                environment: 'Windows Enclave', date: daysAgo(55), status: 'high', severity: 'High',
                 ttp: 'T1059.001', securityControls: ['CrowdStrike', 'Windows Defender'], tags: ['Initial Access', 'APT29']
             });
             newExercises.push({
                 id: `demo-c1-ex2`, campaign: "Q3 APT29 Emulation", simulation: c1_simName,
                 finding: `Credential dumping via comsvcs.dll targeting LSASS`,
                 remediation: `Event: LSASS access allowed, but alert triggered in SIEM. EDR failed to block.`,
-                environment: 'Windows Enclave', date: daysAgo(4), status: 'medium', severity: 'Critical',
+                environment: 'Windows Enclave', date: daysAgo(55), status: 'medium', severity: 'Critical',
                 ttp: 'T1003.001', securityControls: ['CrowdStrike', 'Splunk'], tags: ['Credential Access', 'APT29']
             });
             newExercises.push({
                 id: `demo-c1-ex3`, campaign: "Q3 APT29 Emulation", simulation: c1_simName,
                 finding: `Creation of malicious Windows Service for persistence`,
                 remediation: `Event: Service created successfully, no alerts generated. Complete blindspot.`,
-                environment: 'Windows Enclave', date: daysAgo(4), status: 'low', severity: 'High',
+                environment: 'Windows Enclave', date: daysAgo(55), status: 'low', severity: 'High',
                 ttp: 'T1543.003', securityControls: ['Splunk'], tags: ['Persistence', 'APT29']
             });
             newGaps.push({
                 id: 'gap-c1-1', finding: 'CrowdStrike failed to prevent LSASS dump via comsvcs.dll',
                 details: 'During APT29 emulation, the EDR agent failed to prevent a Minidump of LSASS via comsvcs.dll. An alert was fired in Splunk, but prevention was bypassed.',
-                status: 'Open', severity: 'Critical', environment: 'Windows Enclave', createdDate: daysAgo(4), ttp: 'T1003.001'
+                status: 'Open', severity: 'Critical', environment: 'Windows Enclave', createdDate: daysAgo(55), ttp: 'T1003.001'
             });
             newGaps.push({
                 id: 'gap-c1-2', finding: 'Missing telemetry for malicious service creation',
                 details: 'Service creation events (Event ID 7045) are not currently being ingested into Splunk from the Windows Enclave, resulting in a persistence blindspot.',
-                status: 'Resolved', severity: 'High', environment: 'Windows Enclave', createdDate: daysAgo(4), resolvedDate: daysAgo(1), ttp: 'T1543.003'
+                status: 'Resolved', severity: 'High', environment: 'Windows Enclave', createdDate: daysAgo(55), resolvedDate: daysAgo(1), ttp: 'T1543.003'
             });
             newSummaries[c1_simName] = {
                 summary: `Emulation of APT29 focused on stealthy persistence and credential access. Found critical gaps in EDR prevention policies for LSASS.`,
@@ -438,7 +462,7 @@ export const AppProvider = ({ children }) => {
                     },
                     { 
                         id: `res-c1-3`, name: `Service Persistence`, eventType: 'Registry/Service Modification', 
-                        expectedOutcome: 'Alerted', outcome: `Missed ➔ Logged`, ttps: [`T1543.003`], severity: `High`, 
+                        expectedOutcome: 'Alerted', outcome: `Missed ➔ Logged`, validationDate: daysAgo(1), ttps: [`T1543.003`], severity: `High`, 
                         execNotes: `sc.exe create "WindowsUpdateSvc" binPath= "C:\\Temp\\beacon.exe" start= auto`,
                         detNotes: `Initially completely missed due to missing Event ID 7045 telemetry. Forwarder config updated yesterday. Now logging correctly, but still needs alerting logic.`,
                         payloadCode: `sc.exe create "SysSvc" binPath= "cmd.exe /c echo beacon" start= auto`
@@ -446,26 +470,26 @@ export const AppProvider = ({ children }) => {
                 ]
             };
 
-            // CAMPAIGN 2: Insider Threat - Data Exfiltration
+            // CAMPAIGN 2: Insider Threat - Data Exfiltration — Stale / Control Drift (~135 days ago)
             const c2_simName = "Insider Threat - Data Exfiltration";
             newExercises.push({
                 id: `demo-c2-ex1`, campaign: "Insider Threat Assessment", simulation: c2_simName,
                 finding: `Archiving of sensitive HR documents into password-protected ZIP`,
                 remediation: `Event: Action logged by DLP but no alert generated for analyst review`,
-                environment: 'macOS Fleet', date: daysAgo(12), status: 'minimal', severity: 'Medium',
+                environment: 'macOS Fleet', date: daysAgo(135), status: 'minimal', severity: 'Medium',
                 ttp: 'T1560.001', securityControls: ['Palo Alto Cortex', 'Splunk'], tags: ['Insider Threat', 'Collection']
             });
             newExercises.push({
                 id: `demo-c2-ex2`, campaign: "Insider Threat Assessment", simulation: c2_simName,
                 finding: `Data exfiltration over non-standard port (TCP 8443) to unknown IP`,
                 remediation: `Event: Exfiltration succeeded. Next-Gen Firewall did not drop non-web traffic over 8443.`,
-                environment: 'macOS Fleet', date: daysAgo(12), status: 'low', severity: 'Critical',
+                environment: 'macOS Fleet', date: daysAgo(135), status: 'low', severity: 'Critical',
                 ttp: 'T1048.003', securityControls: ['Palo Alto NGFW'], tags: ['Insider Threat', 'Exfiltration']
             });
             newGaps.push({
                 id: 'gap-c2-1', finding: 'NGFW allowing arbitrary protocols over Port 8443',
                 details: 'The Palo Alto firewall is configured to allow any protocol over TCP 8443 out to the internet, rather than restricting it to strictly HTTPS/TLS.',
-                status: 'Risk Accepted', severity: 'Critical', environment: 'macOS Fleet', createdDate: daysAgo(12), ttp: 'T1048.003'
+                status: 'Risk Accepted', severity: 'Critical', environment: 'macOS Fleet', createdDate: daysAgo(135), ttp: 'T1048.003'
             });
             newSummaries[c2_simName] = {
                 summary: `Assessed DLP and network perimeter controls against data staging and exfiltration. Highlighted critical egress filtering gaps.`,
@@ -493,33 +517,33 @@ export const AppProvider = ({ children }) => {
                 ]
             };
 
-            // CAMPAIGN 3: Ransomware Readiness (Conti)
+            // CAMPAIGN 3: Ransomware Readiness (Conti) — Fresh (2 days ago)
             const c3_simName = "Ransomware Readiness (Conti)";
             newExercises.push({
                 id: `demo-c3-ex1`, campaign: "Conti Ransomware Readiness", simulation: c3_simName,
                 finding: `VSS (Volume Shadow Copy) deletion via vssadmin.exe`,
                 remediation: `Event: Command blocked by EDR ransomware behavioral heuristics`,
-                environment: 'AWS Prod VPC', date: daysAgo(1), status: 'high', severity: 'Critical',
+                environment: 'AWS Prod VPC', date: daysAgo(2), status: 'high', severity: 'Critical',
                 ttp: 'T1490', securityControls: ['CrowdStrike'], tags: ['Ransomware', 'Impact']
             });
             newExercises.push({
                 id: `demo-c3-ex2`, campaign: "Conti Ransomware Readiness", simulation: c3_simName,
                 finding: `Lateral movement via RDP using compromised domain admin credentials`,
                 remediation: `Event: RDP connection established. Anomalous login alerted by UEBA.`,
-                environment: 'AWS Prod VPC', date: daysAgo(1), status: 'medium', severity: 'High',
+                environment: 'AWS Prod VPC', date: daysAgo(2), status: 'medium', severity: 'High',
                 ttp: 'T1021.001', securityControls: ['Splunk UEBA'], tags: ['Ransomware', 'Lateral Movement']
             });
             newExercises.push({
                 id: `demo-c3-ex3`, campaign: "Conti Ransomware Readiness", simulation: c3_simName,
                 finding: `Mass file encryption simulation on network share`,
                 remediation: `Event: Encryption interrupted and blocked by EDR after 50 files encrypted`,
-                environment: 'AWS Prod VPC', date: daysAgo(1), status: 'high', severity: 'Critical',
+                environment: 'AWS Prod VPC', date: daysAgo(2), status: 'high', severity: 'Critical',
                 ttp: 'T1486', securityControls: ['CrowdStrike'], tags: ['Ransomware', 'Impact']
             });
             newGaps.push({
                 id: 'gap-c3-1', finding: 'RDP unrestricted between AWS Subnets',
                 details: 'Lateral movement was possible because RDP is not segmented between production subnets in the VPC.',
-                status: 'Open', severity: 'High', environment: 'AWS Prod VPC', createdDate: daysAgo(1), ttp: 'T1021.001'
+                status: 'Open', severity: 'High', environment: 'AWS Prod VPC', createdDate: daysAgo(2), ttp: 'T1021.001'
             });
             newSummaries[c3_simName] = {
                 summary: `Simulated a Conti ransomware outbreak. Impact was successfully mitigated by EDR, but lateral movement is still largely unrestricted.`,

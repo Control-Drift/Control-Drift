@@ -61,7 +61,7 @@ export class RestApiAdapter extends DatabaseAdapter {
 
     async login(credentials) {
         if (!this.endpoint) throw new Error("REST API endpoint not configured.");
-        const res = await fetch(`${this.endpoint}/auth/login`, {
+        const res = await this.fetchWithTimeout(`${this.endpoint}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...(this.apiKey ? { 'x-api-key': this.apiKey } : {}) },
             body: JSON.stringify(credentials)
@@ -76,7 +76,22 @@ export class RestApiAdapter extends DatabaseAdapter {
         if (!data.token) throw new Error("Server did not return an authentication token.");
         
         this.token = data.token;
-        this.roles = data.roles || [];
+        if (Array.isArray(data.roles) && data.roles.length > 0) {
+            this.roles = data.roles;
+        } else {
+            // Fallback: decode token using atob to extract role claim
+            try {
+                const payloadBase64 = this.token.split('.')[1];
+                const payloadJson = atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'));
+                const payload = JSON.parse(payloadJson);
+                const role = payload.role;
+                this.roles = Array.isArray(role) ? role : (role ? [role] : []);
+            } catch (e) {
+                console.error("Failed to decode token on login:", e);
+                this.roles = [];
+            }
+        }
+        
         localStorage.setItem('token', this.token);
         localStorage.setItem('roles', JSON.stringify(this.roles));
         return true;
@@ -94,34 +109,6 @@ export class RestApiAdapter extends DatabaseAdapter {
             console.error("Failed to decode SSO token:", e);
             this.roles = [];
         }
-        localStorage.setItem('token', this.token);
-        localStorage.setItem('roles', JSON.stringify(this.roles));
-        return true;
-    }
-
-    async login(credentials) {
-        const res = await this.fetchWithTimeout(`${this.endpoint}/auth/login`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(credentials)
-        });
-        if (!res.ok) throw new Error('Login failed. Check credentials or endpoint.');
-        
-        const data = await res.json();
-        this.token = data.token;
-        
-        // Decode token using atob to extract role claim
-        try {
-            const payloadBase64 = this.token.split('.')[1];
-            const payloadJson = atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/'));
-            const payload = JSON.parse(payloadJson);
-            const role = payload.role;
-            this.roles = Array.isArray(role) ? role : (role ? [role] : []);
-        } catch (e) {
-            console.error("Failed to decode token on login:", e);
-            this.roles = [];
-        }
-        
         localStorage.setItem('token', this.token);
         localStorage.setItem('roles', JSON.stringify(this.roles));
         return true;
@@ -180,6 +167,16 @@ export class RestApiAdapter extends DatabaseAdapter {
             body: JSON.stringify(event)
         });
         if (!res.ok) throw new Error('Failed to create event');
+        return await res.json();
+    }
+
+    async updateEvent(id, eventData) {
+        const res = await this.fetchWithTimeout(`${this.endpoint}/api/events/${id}`, {
+            method: 'PUT',
+            headers: this.getHeaders(),
+            body: JSON.stringify(eventData)
+        });
+        if (!res.ok) throw new Error('Failed to update event');
         return await res.json();
     }
 
@@ -249,6 +246,15 @@ export class RestApiAdapter extends DatabaseAdapter {
         });
         if (!res.ok) throw new Error('Failed to upsert simulation');
         return await res.json();
+    }
+
+    async deleteSimulation(id) {
+        const res = await this.fetchWithTimeout(`${this.endpoint}/api/simulations/${encodeURIComponent(id)}`, {
+            method: 'DELETE',
+            headers: this.getHeaders()
+        });
+        if (!res.ok) throw new Error('Failed to delete simulation');
+        return true;
     }
 
     async bulkImport(backupData) {

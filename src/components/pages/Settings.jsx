@@ -28,7 +28,16 @@ import { useNavigate } from 'react-router-dom';
 export default function Settings() {
   const navigate = useNavigate();
   const { addToast } = useToast();
-  const { aiSettings, setAiSettings, targetEnvironments, deleteEnvironment, targetTags, deleteTag, targetSecurityControls, deleteSecurityControl, addSecurityControl, confirmAction, dbConfig, setDbConfig, dbAdapter, testDbConnection: pingDb } = useAppContext();
+  const {
+    aiSettings, setAiSettings,
+    targetEnvironments, setTargetEnvironments, deleteEnvironment,
+    targetTags, setTargetTags, deleteTag,
+    targetSecurityControls, setTargetSecurityControls, deleteSecurityControl, addSecurityControl,
+    confirmAction, dbConfig, setDbConfig, dbAdapter, testDbConnection: pingDb,
+    gaps, events, allEventsData, simulationSummaries, simulationEvidence,
+    setGaps, setExercises, setAllEventsData, setSimulationSummaries, setSimulationEvidence,
+    setActiveAiContext, injectTestData, loadData
+  } = useAppContext();
   const [localSettings, setLocalSettings] = useState(aiSettings || { endpointUrl: '', model: '', apiKey: '', customHeaders: '' });
   const [localDbConfig, setLocalDbConfig] = useState(dbConfig || { provider: 'local', endpoint: '', apiKey: '' });
   const [saveStatus, setSaveStatus] = useState('');
@@ -63,8 +72,6 @@ export default function Settings() {
   const [backupPassword, setBackupPassword] = useState('');
   const [pendingImportFile, setPendingImportFile] = useState(null);
   const [backupLoading, setBackupLoading] = useState(false);
-
-  const { gaps, events, simulationSummaries, simulationEvidence, setGaps, setExercises, setSimulationSummaries, setSimulationEvidence, setActiveAiContext, injectTestData } = useAppContext();
 
   const defaultAi = { endpointUrl: '', model: '', apiKey: '', customHeaders: '' };
   const aiSettingsModified = JSON.stringify(localSettings) !== JSON.stringify(aiSettings || defaultAi);
@@ -126,7 +133,11 @@ export default function Settings() {
       let exerciseCount = 0;
       let gapCount = 0;
       
-      events.forEach(ex => {
+      const fullEventsList = allEventsData && Object.keys(allEventsData).length > 0
+          ? Object.values(allEventsData)
+          : events;
+
+      fullEventsList.forEach(ex => {
           if (type === 'environment') {
               if (Array.isArray(ex.environment) ? ex.environment.includes(name) : ex.environment === name) exerciseCount++;
           } else if (type === 'tag') {
@@ -154,6 +165,8 @@ export default function Settings() {
                   if (Array.isArray(sim.details.environment) ? sim.details.environment.includes(name) : sim.details.environment === name) simCount++;
               } else if (type === 'tag') {
                   if (Array.isArray(sim.details.tags) ? sim.details.tags.includes(name) : sim.details.tags === name) simCount++;
+              } else if (type === 'control') {
+                  if (Array.isArray(sim.details.securityControls) ? sim.details.securityControls.includes(name) : sim.details.securityControls === name) simCount++;
               }
           }
       });
@@ -193,7 +206,18 @@ export default function Settings() {
       if (!backupPassword) return alert("Password is required to encrypt the backup.");
       setBackupLoading(true);
       try {
-          const data = { gaps, events, simulationSummaries, simulationEvidence };
+          const fullEvents = allEventsData && Object.keys(allEventsData).length > 0
+              ? Object.values(allEventsData)
+              : events;
+          const data = {
+              gaps,
+              events: fullEvents,
+              simulationSummaries,
+              simulationEvidence,
+              targetEnvironments,
+              targetTags,
+              targetSecurityControls
+          };
           const jsonString = JSON.stringify(data);
           const encrypted = await encryptData(jsonString, backupPassword);
           
@@ -248,9 +272,22 @@ export default function Settings() {
                   await dbAdapter.bulkImport(sanitizedData);
               }
               if (sanitizedData.gaps) setGaps(sanitizedData.gaps);
-              if (sanitizedData.events) setExercises(sanitizedData.events);
+              if (sanitizedData.events) {
+                  setExercises(sanitizedData.events);
+                  const rebuiltMap = {};
+                  sanitizedData.events.forEach(ex => {
+                      if (ex && ex.id) rebuiltMap[ex.id] = ex;
+                  });
+                  setAllEventsData(rebuiltMap);
+              }
               if (sanitizedData.simulationSummaries) setSimulationSummaries(sanitizedData.simulationSummaries);
               if (sanitizedData.simulationEvidence) setSimulationEvidence(sanitizedData.simulationEvidence);
+              if (Array.isArray(sanitizedData.targetEnvironments)) setTargetEnvironments(sanitizedData.targetEnvironments);
+              if (Array.isArray(sanitizedData.targetTags)) setTargetTags(sanitizedData.targetTags);
+              if (Array.isArray(sanitizedData.targetSecurityControls)) setTargetSecurityControls(sanitizedData.targetSecurityControls);
+              if (loadData && dbAdapter) {
+                  await loadData(dbAdapter);
+              }
               setSaveStatus(isEncrypted ? 'Encrypted backup restored securely.' : 'JSON data imported successfully.');
               setTimeout(() => setSaveStatus(''), 4000);
           } catch (err) {

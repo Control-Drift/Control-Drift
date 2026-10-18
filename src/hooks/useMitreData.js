@@ -16,6 +16,7 @@
 
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { calculateAverageStatus } from '../lib/mitreUtils';
+import { idbGet, idbSet } from '../lib/db/idbStorage';
 
 /**
  * Custom React hook that loads, caches, and calculates MITRE ATT&CK framework data 
@@ -33,19 +34,20 @@ export function useMitreData(dbAdapter, allEventsData) {
     // Persist any manual scope toggles (like marking N/A) back to the cache
     useEffect(() => {
         if (Object.keys(baseMitreData).length > 0 && !isMitreLoading) {
-            const cachedStr = localStorage.getItem('mitre_data_v4');
-            let timestamp = Date.now();
-            if (cachedStr) {
+            (async () => {
+                let timestamp = Date.now();
                 try {
-                    const cached = JSON.parse(cachedStr);
-                    if (cached.timestamp) timestamp = cached.timestamp; // Preserve original fetch timestamp so it can still expire and refresh if needed
-                } catch (e) {}
-            }
-            
-            localStorage.setItem('mitre_data_v4', JSON.stringify({
-                timestamp,
-                data: baseMitreData
-            }));
+                    const cached = await idbGet('mitre_data_v4');
+                    if (cached && cached.timestamp) {
+                        timestamp = cached.timestamp; // Preserve original fetch timestamp so it can still expire and refresh if needed
+                    }
+                } catch (_) {}
+
+                await idbSet('mitre_data_v4', {
+                    timestamp,
+                    data: baseMitreData
+                }, { notifySync: false });
+            })();
         }
     }, [baseMitreData, isMitreLoading]);
 
@@ -304,7 +306,7 @@ export function useMitreData(dbAdapter, allEventsData) {
                     if (out.includes(' ➔ ')) out = out.split(' ➔ ')[1];
                     out = out.replace(' ✓', '').trim().toLowerCase();
                     
-                    if (out === 'prevented' || out === 'prevented' || out === 'prevented & alerted' || (!out && calcStatus === 'high')) {
+                    if (out === 'prevented' || out === 'prevented & alerted' || (!out && calcStatus === 'high')) {
                         exMap[ex.ttp][env].prevented++;
                     }
                 }
@@ -342,10 +344,13 @@ export function useMitreData(dbAdapter, allEventsData) {
                             if (score === -2) return;
                             
                             envArray.forEach(env => {
-                                if (!subCombinedEnvs[env]) subCombinedEnvs[env] = { scores: [], prevented: 0, total: 0 };
+                                if (!subCombinedEnvs[env]) subCombinedEnvs[env] = { scores: [], prevented: 0, total: 0, lastTestedDate: null };
                                 if (score >= 0) {
                                     subCombinedEnvs[env].scores.push(score);
                                     subCombinedEnvs[env].total++;
+                                    if (ex.date && (!subCombinedEnvs[env].lastTestedDate || new Date(ex.date) > new Date(subCombinedEnvs[env].lastTestedDate))) {
+                                        subCombinedEnvs[env].lastTestedDate = ex.date;
+                                    }
                                     let out = ex.outcome || ex.finding || '';
                                     if (ex.remediation && ex.remediation.includes('Event:')) {
                                         const eventLines = ex.remediation.split('\n\n').filter(r => r.trim() && r.startsWith('Event:'));
@@ -374,6 +379,13 @@ export function useMitreData(dbAdapter, allEventsData) {
                                 else if (avg >= 50) sub.environments[env] = 'medium';
                                 else if (avg >= 25) sub.environments[env] = 'minimal';
                                 else sub.environments[env] = 'low';
+
+                                if (!sub.preventedStats) sub.preventedStats = {};
+                                sub.preventedStats[env] = {
+                                    prevented: subCombinedEnvs[env].prevented,
+                                    total: subCombinedEnvs[env].total,
+                                    lastTestedDate: subCombinedEnvs[env].lastTestedDate
+                                };
                             });
                         }
                     });
@@ -460,11 +472,14 @@ export function useMitreData(dbAdapter, allEventsData) {
                     if (score === -2) return;
                     
                     envArray.forEach(env => {
-                        if (!combinedEnvs[env]) combinedEnvs[env] = { scores: [], prevented: 0, total: 0 };
+                        if (!combinedEnvs[env]) combinedEnvs[env] = { scores: [], prevented: 0, total: 0, lastTestedDate: null };
                         
                         if (score >= 0) {
                             combinedEnvs[env].scores.push(score);
                             combinedEnvs[env].total++;
+                            if (ex.date && (!combinedEnvs[env].lastTestedDate || new Date(ex.date) > new Date(combinedEnvs[env].lastTestedDate))) {
+                                combinedEnvs[env].lastTestedDate = ex.date;
+                            }
                             
                             let out = ex.outcome || ex.finding || '';
                             if (ex.remediation && ex.remediation.includes('Event:')) {
@@ -477,7 +492,7 @@ export function useMitreData(dbAdapter, allEventsData) {
                             if (out.includes(' ➔ ')) out = out.split(' ➔ ')[1];
                             out = out.replace(' ✓', '').trim().toLowerCase();
                             
-                            if (out === 'prevented' || out === 'prevented' || out === 'prevented & alerted' || (!out && calcStatus === 'high')) {
+                            if (out === 'prevented' || out === 'prevented & alerted' || (!out && calcStatus === 'high')) {
                                 combinedEnvs[env].prevented++;
                             }
                         } else if (score === -1 && combinedEnvs[env].scores.length === 0) {
@@ -511,7 +526,8 @@ export function useMitreData(dbAdapter, allEventsData) {
                         if (!t.preventedStats) t.preventedStats = {};
                         t.preventedStats[env] = {
                             prevented: combinedEnvs[env].prevented,
-                            total: combinedEnvs[env].total
+                            total: combinedEnvs[env].total,
+                            lastTestedDate: combinedEnvs[env].lastTestedDate
                         };
                     });
                 }
@@ -532,9 +548,8 @@ export function useMitreData(dbAdapter, allEventsData) {
     const loadMitreSkeleton = useCallback(async (provider) => {
         setIsMitreLoading(true);
         try {
-            const cachedStr = localStorage.getItem('mitre_data_v4');
-            if (cachedStr) {
-              const cached = JSON.parse(cachedStr);
+            const cached = await idbGet('mitre_data_v4');
+            if (cached && typeof cached === 'object') {
               const SEVEN_DAYS = 7 * 24 * 60 * 60 * 1000;
               if (cached.timestamp && Date.now() - cached.timestamp < SEVEN_DAYS && cached.data) {
                 setBaseMitreData(cached.data);
@@ -622,23 +637,20 @@ export function useMitreData(dbAdapter, allEventsData) {
                mitreOutput[k].techniques.forEach(t => t.subTechniques.sort((a,b) => a.id.localeCompare(b.id)));
             });
 
-            localStorage.setItem('mitre_data_v4', JSON.stringify({
+            await idbSet('mitre_data_v4', {
                timestamp: Date.now(),
                data: mitreOutput
-            }));
+            }, { notifySync: false });
             setBaseMitreData(mitreOutput);
         } catch (err) {
             console.error("Error loading MITRE STIX data:", err);
-            const cachedStr = localStorage.getItem('mitre_data_v4');
-            if (cachedStr) {
-                try {
-                    const cached = JSON.parse(cachedStr);
-                    if (cached.data) {
-                        setBaseMitreData(cached.data);
-                    }
-                } catch (e) {
-                    console.error("Failed to parse expired cache fallback:", e);
+            try {
+                const cached = await idbGet('mitre_data_v4');
+                if (cached && cached.data) {
+                    setBaseMitreData(cached.data);
                 }
+            } catch (e) {
+                console.error("Failed to parse expired cache fallback:", e);
             }
         } finally {
             setIsMitreLoading(false);

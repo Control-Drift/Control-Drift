@@ -9,7 +9,7 @@ When you first load Control Drift, you are greeted by the Dashboard. This acts a
 - **Global Readiness Score:** A high-level metric quantifying your defensive posture based on historical simulation data, resolved gaps, and active vulnerabilities.
 - **Top Security Controls:** Visualizations detailing which controls (e.g., EDR, Firewall, IAM) are performing best and which require immediate attention.
 - **Remediation Burndown:** Remediation Resolution Rate, Weighted Residual Risk, and MTTR cards tracking gap & remediation metrics.
-
+- **TTP Decay Watchlist & Decayed Metric:** Dedicated monitoring of techniques that have exceeded their dynamic decay lifespan and require re-testing to preserve posture confidence. Click any entry to immediately launch a re-test.
 
 ## 2. Launching Simulations
 
@@ -18,18 +18,27 @@ The core workflow of Control Drift revolves around threat simulation.
 ### The Simulation Launcher
 To start a new test, navigate to the **Simulation Launcher**. The streamlined 4-step launcher will guide you through the process:
 
-1. **Scope:** Define the simulation scenario, TTPs, target environment, simulation tags (for tracking).
-2. **Design:** Strategize how the simulation will be executed. Use the text editor to manually outline the simulation strategy, or utilize your AI integration to auto-generate the design. Tip: Use the AI assistant to refine further if necessary.
-3. **Execute:** As you manually execute the procedures in your environment, log the simulation **Events** by filling out the event cards.
+1. **Scope:** Define the simulation scenario, select MITRE TTPs, target environment, and simulation tags.
+2. **Design (with Procedural Variation Memory):** Strategize how the simulation will be executed. 
+   - **Historical Procedure Memory:** Step 2 automatically queries past campaigns and displays previous commands, flags, tools, and payloads tested for your selected TTPs.
+   - **AI-Assisted Variation:** When auto-generating simulation strategies, the AI ingests historical procedures and generates novel procedural variations to challenge controls against evasion and different execution vectors rather than replaying identical signatures.
+3. **Execute:** As you execute procedures in your environment, log simulation **Events** using the event cards (capturing outcome, coverage rating, executed commands, and defensive evidence).
 4. **Report:** Review the summary of the simulation results. You can also utilize your AI integration to automatically generate a comprehensive executive summary of the simulation outcomes before finalizing the report.
 
-## 3. The Heat Globe
+### Continuous Re-Testing Pipeline
+Clicking "Re-Test" on any **Decayed** or **Drifting** technique across the Heatmap or Dashboard bypasses manual configuration, launching directly into Step 2 (Design) with the technique and its historical procedure history pre-loaded.
+
+## 3. The Heat Globe & MITRE ATT&CK Matrix
 
 Once you've logged simulations, navigate to the **Heat Globe**.
 
-- **Interactive 3D Globe:** Unlike standard 2D tables, Control Drift visualizes the MITRE ATT&CK matrix on an interactive 3D globe.
-- **Dynamic Updates:** The colors of the tactic regions and techniques on the globe light-up dynamically based on simulation data. Red indicates no coverage, orange indicates minimal coverage, yellow indicates partial coverage, and green indicates optimal coverage.
-- **TTP Overlay:** Clicking on any technique on the globe opens an overlay showing historical simulations involving that technique, providing instant context on aggregate scoring and metrics.
+- **Interactive 3D Globe & Flat Matrix Views:** Toggle between an interactive 3D globe and full 2D matrix view of the MITRE ATT&CK framework.
+- **Dynamic Heatmap Colors:** Colors update dynamically based on aggregate simulation outcomes: Red (None), Orange (Minimal), Yellow (Partial), and Green (Optimal).
+- **Strict Testing Depth Tiers:** Badges reflect empirical validation depth: **Low** (1 test), **Medium** (2–3 tests), and **High** (4+ tests). Sub-technique executions automatically roll up into the parent technique family.
+- **TTP Decay vs. Control Drift:** 
+  - **Decayed:** Techniques that have not been re-tested within their dynamic decay lifespan are marked with a **cracked shield icon**, dimmed visual weight, and flagged for re-validation.
+  - **Control Drift:** Techniques where actual control outcomes deviated from expected defensive performance (`expectedOutcome !== outcome`).
+- **TTP Overlay:** Clicking on any technique opens an overlay showing historical simulation executions, procedure notes, depth tiers, decay lifespan metrics, and a direct "Re-Test in Simulation Launcher" button.
 
 ## 4. Gap Tracking and Remediation
 

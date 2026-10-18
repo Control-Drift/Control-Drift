@@ -14,23 +14,59 @@
  * limitations under the License.
  */
 
+import { idbGet, idbSet, idbDelete } from '../idbStorage.js';
+
 export default class LocalStorageAdapter {
     constructor() {
         this.type = 'local';
         this.STORAGE_KEY_EVENTS = 'events';
         this.STORAGE_KEY_GAPS = 'gaps';
         this.STORAGE_KEY_MITRE = 'mitre_coverage';
+        this.STORAGE_KEY_SIMULATIONS = 'simulations_table';
     }
     async checkAuth() { return true; }
     async login(credentials) { return true; }
     async logout() { return true; }
     async fetchData(key) {
-        const data = localStorage.getItem(key);
-        return data ? JSON.parse(data) : null;
+        return await idbGet(key);
     }
     async saveData(key, data) {
         try {
-            localStorage.setItem(key, JSON.stringify(data));
+            if (key === 'simulationSummaries' || key === 'simulation_summaries') {
+                // Keep simulations_table in sync when callers pass a summaries dictionary
+                const summariesObj = data && typeof data === 'object' ? data : {};
+                const summaryIds = Object.keys(summariesObj);
+                if (summaryIds.length === 0) {
+                    await idbSet(this.STORAGE_KEY_SIMULATIONS, []);
+                } else {
+                    const current = await this.fetchSimulationsData();
+                    const evidenceMap = {};
+                    current.forEach(sim => {
+                        if (sim && sim.id) evidenceMap[sim.id] = sim.evidence || [];
+                    });
+                    const updatedRows = summaryIds.map(id => ({
+                        id,
+                        summary: summariesObj[id] || {},
+                        evidence: evidenceMap[id] || []
+                    }));
+                    await idbSet(this.STORAGE_KEY_SIMULATIONS, updatedRows);
+                }
+                await idbDelete('simulationSummaries', { notifySync: false });
+                await idbDelete('simulation_summaries', { notifySync: false });
+                return true;
+            }
+            if (key === 'simulationEvidence') {
+                const evidenceObj = data && typeof data === 'object' ? data : {};
+                const current = await this.fetchSimulationsData();
+                const updatedRows = current.map(sim => ({
+                    ...sim,
+                    evidence: evidenceObj[sim.id] !== undefined ? evidenceObj[sim.id] : (sim.evidence || [])
+                }));
+                await idbSet(this.STORAGE_KEY_SIMULATIONS, updatedRows);
+                await idbDelete('simulationEvidence', { notifySync: false });
+                return true;
+            }
+            await idbSet(key, data);
             return true;
         } catch (e) {
             if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
@@ -74,8 +110,33 @@ export default class LocalStorageAdapter {
     }
     
     async fetchSimulationsData() {
-        const data = localStorage.getItem('simulations_table');
-        return data ? JSON.parse(data) : [];
+        const data = await idbGet(this.STORAGE_KEY_SIMULATIONS);
+        const rows = Array.isArray(data) ? data : [];
+
+        // Reconcile any legacy/desynced keys ('simulationSummaries' / 'simulation_summaries') if present
+        const legacySummaries = (await idbGet('simulation_summaries')) || (await idbGet('simulationSummaries'));
+        if (legacySummaries && typeof legacySummaries === 'object' && !Array.isArray(legacySummaries)) {
+            try {
+                const rowMap = new Map(rows.map(r => [r.id, r]));
+                Object.entries(legacySummaries).forEach(([id, summary]) => {
+                    const existing = rowMap.get(id);
+                    rowMap.set(id, {
+                        id,
+                        summary,
+                        evidence: existing?.evidence || []
+                    });
+                });
+                const merged = Array.from(rowMap.values());
+                await idbSet(this.STORAGE_KEY_SIMULATIONS, merged, { notifySync: false });
+                await idbDelete('simulationSummaries', { notifySync: false });
+                await idbDelete('simulation_summaries', { notifySync: false });
+                return merged;
+            } catch (e) {
+                console.warn('Failed to migrate legacy simulation summaries key:', e);
+            }
+        }
+
+        return rows;
     }
 
     async upsertSimulation(simulationData) {
@@ -87,7 +148,7 @@ export default class LocalStorageAdapter {
             current.push(simulationData);
         }
         try {
-            localStorage.setItem('simulations_table', JSON.stringify(current));
+            await idbSet(this.STORAGE_KEY_SIMULATIONS, current);
             return simulationData;
         } catch (e) {
             if (e.name === 'QuotaExceededError' || e.name === 'NS_ERROR_DOM_QUOTA_REACHED') {
@@ -103,7 +164,9 @@ export default class LocalStorageAdapter {
         const cleanId = (id || '').toString().trim().toLowerCase();
         const filtered = current.filter(s => (s.id || '').toString().trim().toLowerCase() !== cleanId);
         try {
-            localStorage.setItem('simulations_table', JSON.stringify(filtered));
+            await idbSet(this.STORAGE_KEY_SIMULATIONS, filtered);
+            await idbDelete('simulationSummaries', { notifySync: false });
+            await idbDelete('simulation_summaries', { notifySync: false });
             
             // Clean up all related events
             const events = await this.fetchData(this.STORAGE_KEY_EVENTS) || [];
@@ -127,8 +190,8 @@ export default class LocalStorageAdapter {
 
     async bulkImport(backupData) {
         try {
-            if (backupData.gaps) localStorage.setItem(this.STORAGE_KEY_GAPS, JSON.stringify(backupData.gaps));
-            if (backupData.events) localStorage.setItem(this.STORAGE_KEY_EVENTS, JSON.stringify(backupData.events));
+            if (backupData.gaps) await idbSet(this.STORAGE_KEY_GAPS, backupData.gaps, { notifySync: false });
+            if (backupData.events) await idbSet(this.STORAGE_KEY_EVENTS, backupData.events, { notifySync: false });
             
             const simulationRows = [];
             const summaries = backupData.simulationSummaries || {};
@@ -141,7 +204,10 @@ export default class LocalStorageAdapter {
                     evidence: evidence[id] || []
                 });
             });
-            localStorage.setItem('simulations_table', JSON.stringify(simulationRows));
+            await idbSet(this.STORAGE_KEY_SIMULATIONS, simulationRows, { notifySync: true });
+            await idbDelete('simulationSummaries', { notifySync: false });
+            await idbDelete('simulation_summaries', { notifySync: false });
+            await idbDelete('simulationEvidence', { notifySync: false });
             
             return { success: true };
         } catch (e) {

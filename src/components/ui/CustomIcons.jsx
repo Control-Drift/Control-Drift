@@ -15,6 +15,7 @@
  */
 
 import React from 'react';
+import { Eye, Wrench, Key, Terminal, Anchor, ChevronsUp, Ghost, Unlock, Search, Network, Package, Zap } from 'lucide-react';
 
 export const SatelliteStationIcon = ({ size = 24, color = "currentColor", ...props }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -91,3 +92,38 @@ export const RedBlueSwordsIcon = ({ size = 24, ...props }) => (
         </g>
     </svg>
 );
+
+
+export const BomberIcon = ({ size = 24, color = "currentColor", ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="M12 3 L22 15 L17 15 L12 19 L7 15 L2 15 Z" fill={color} fillOpacity="0.2" />
+        <path d="M12 3 L12 19" strokeOpacity="0.5" />
+    </svg>
+);
+
+export const DistortionIcon = ({ size = 24, color = "currentColor", ...props }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+        <path d="M3 12h3l3 -7l4 14l5 -7h3" />
+        <path d="M2 5h4" />
+        <path d="M18 19h4" />
+    </svg>
+);
+
+export const TACTIC_ICONS = {
+    "Reconnaissance": Eye,
+    "Resource Development": Wrench,
+    "Initial Access": Key,
+    "Execution": Terminal,
+    "Persistence": Anchor,
+    "Privilege Escalation": ChevronsUp,
+    "Defense Evasion": Ghost,
+    "Credential Access": Unlock,
+    "Discovery": Search,
+    "Lateral Movement": Network,
+    "Collection": Package,
+    "Command and Control": SatelliteStationIcon,
+    "Exfiltration": HeavyTransportIcon,
+    "Impact": Zap,
+    "Defense Impairment": DistortionIcon,
+    "Stealth": StealthBomberIcon
+};

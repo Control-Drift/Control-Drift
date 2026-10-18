@@ -27,7 +27,8 @@ export default function TacticsSidebar({
   quickFilter,
   setQuickFilter,
   resolvedMitreData,
-  statusColors
+  statusColors,
+  driftingCount = 0
 }) {
   return (
     <div className={`glass-panel animate-fade-in heatmap-sidebar ${activeTactic ? 'hidden-on-mobile-tactic' : ''}`} style={{ pointerEvents: 'auto', marginLeft: '20px', marginBottom: '20px', flex: '0 1 auto', minHeight: 0, width: '15rem', background: 'rgba(5, 5, 8, 0.75)', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column', border: '1px solid var(--glass-border)'  }}>
@@ -56,6 +57,31 @@ export default function TacticsSidebar({
               <button className="btn" style={{  padding: '4px 6px', fontSize: '0.65rem', background: quickFilter === 'critical' ? 'var(--danger)' : 'rgba(255,255,255,0.05)', color: quickFilter === 'critical' ? '#fff' : 'var(--text-secondary)'  }} onClick={() => setQuickFilter('critical')}>Critical Gaps</button>
               <button className="btn" style={{  padding: '4px 6px', fontSize: '0.65rem', background: quickFilter === 'tested' ? 'var(--success)' : 'rgba(255,255,255,0.05)', color: quickFilter === 'tested' ? '#fff' : 'var(--text-secondary)'  }} onClick={() => setQuickFilter('tested')}>Tested</button>
               <button className="btn" style={{  padding: '4px 6px', fontSize: '0.65rem', background: quickFilter === 'untested' ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.05)', color: quickFilter === 'untested' ? '#fff' : 'var(--text-secondary)'  }} onClick={() => setQuickFilter('untested')}>Untested</button>
+              <button
+                className="btn"
+                style={{
+                  gridColumn: 'span 2',
+                  padding: '4px 6px',
+                  fontSize: '0.65rem',
+                  background: quickFilter === 'drifting' ? '#f59e0b' : 'rgba(245, 158, 11, 0.1)',
+                  border: '1px solid rgba(245, 158, 11, 0.3)',
+                  color: quickFilter === 'drifting' ? '#000' : '#fbbf24',
+                  fontWeight: quickFilter === 'drifting' ? 700 : 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '5px'
+                }}
+                onClick={() => setQuickFilter(quickFilter === 'drifting' ? 'all' : 'drifting')}
+                title="Show decayed techniques that need re-testing"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  <path d="M12 2.5 L10 8.5 L14 12 L10.5 16.5 L12 21.5" />
+                  <path d="M14 12 L17 13.5" />
+                </svg>
+                <span>Decayed {driftingCount > 0 ? `(${driftingCount})` : ''}</span>
+              </button>
            </div>
        </div>
         <div style={{  flex: 1, overflowY: 'auto', padding: '8px'  }}>
@@ -63,6 +89,7 @@ export default function TacticsSidebar({
               const filtered = Object.keys(resolvedMitreData).filter(tactic => {
                  if (quickFilter === 'critical' && !resolvedMitreData[tactic].techniques.some(t => t.status === 'low' || t.status === 'minimal')) return false;
                  if (quickFilter === 'tested' && !resolvedMitreData[tactic].techniques.some(t => t.status !== 'unknown' && t.status !== 'na')) return false;
+                 if (quickFilter === 'drifting' && !resolvedMitreData[tactic].techniques.some(t => t.status !== 'unknown' && t.status !== 'na' && t.needsRetest)) return false;
                  if (quickFilter === 'untested' && !resolvedMitreData[tactic].techniques.some(t => t.status === 'unknown')) return false;
 
                  if (!searchTerm) return true;

@@ -1087,7 +1087,7 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                 </div>
                 {typeof simulationSummaries[selectedSimulation] === 'object' && (
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '5px', marginTop: '15px' }}>
-                        <div style={{ display: 'flex', gap: '10px' }}>
+                        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                             <button className="btn" onClick={() => setActiveSimulationDrilldown(simulationSummaries[selectedSimulation])} style={{  background: 'var(--accent-primary)', display: 'flex', alignItems: 'center', gap: '8px'  }}>
                                 <Search size={16} /> Open Drilldown
                             </button>

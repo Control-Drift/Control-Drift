@@ -44,10 +44,8 @@
     "jspdf": "^4.2.1",
     "lucide-react": "^0.300.0",
     "marked": "^18.0.4",
-    "node-fetch": "^3.3.2",
     "opentype.js": "^2.0.0",
     "prismjs": "^1.29.0",
-    "puppeteer": "^25.3.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-quill": "^2.0.0",
@@ -68,6 +66,8 @@
     "@vitejs/plugin-react": "^4.2.1",
     "cross-env": "^10.1.0",
     "jsdom": "^29.1.1",
+    "node-fetch": "^3.3.2",
+    "puppeteer": "^25.3.0",
     "vite": "^5.0.0",
     "vitest": "^4.1.9"
   }

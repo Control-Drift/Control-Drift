@@ -15,13 +15,14 @@
  */
 
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, Trash2, Crosshair, Shield, Upload, Info } from 'lucide-react';
+import { ChevronDown, ChevronRight, Trash2, Crosshair, Shield, Upload, Info, CheckCircle2, AlertTriangle, Copy, Check, History } from 'lucide-react';
 import EventTypeDropdown from '../dropdowns/EventTypeDropdown';
 import OutcomeDropdown from '../dropdowns/OutcomeDropdown';
 import CoverageRatingDropdown from '../dropdowns/CoverageRatingDropdown';
 import SeverityDropdown from '../dropdowns/SeverityDropdown';
 import EventTTPDropdown from '../dropdowns/EventTTPDropdown';
 import SecurityControlsDropdown from '../dropdowns/SecurityControlsDropdown';
+import { getOutcomeCascadedFields } from '../../lib/simulationAutomation';
 
 const getOutcomeStyle = (outcome) => {
     if (outcome === 'Prevented & Alerted') return { color: 'var(--success)', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)' };
@@ -54,28 +55,148 @@ export default function EventCard({
     setExpandedImage,
     isManual = false
 }) {
+    const [copiedCode, setCopiedCode] = useState(false);
     const eventColor = proc.coverageRating === 'Optimal' ? 'var(--success)' : proc.coverageRating === 'Partial' ? 'var(--warning)' : proc.coverageRating === 'Minimal' ? 'var(--minimal)' : proc.coverageRating === 'None' ? 'var(--danger)' : 'var(--accent-primary)';
-    
+
+    const handleBaselineHeld = (e) => {
+        e.stopPropagation();
+        const targetOutcome = proc.expectedOutcome || 'Alerted';
+        const cascaded = getOutcomeCascadedFields(targetOutcome, proc.severity);
+        updateProcedure(proc.id, 'outcome', targetOutcome);
+        updateProcedure(proc.id, 'coverageRating', cascaded.coverageRating);
+        updateProcedure(proc.id, 'severity', cascaded.severity);
+        if (!proc.detNotes || !proc.detNotes.trim()) {
+            updateProcedure(
+                proc.id,
+                'detNotes',
+                `Baseline held (${targetOutcome}) — verified on ${new Date().toLocaleDateString()}`
+            );
+        }
+    };
+
+    const handleDriftDetected = (e) => {
+        e.stopPropagation();
+        updateProcedure(proc.id, 'outcome', 'Missed');
+        updateProcedure(proc.id, 'coverageRating', 'None');
+        updateProcedure(proc.id, 'severity', 'High');
+        if (!proc.detNotes || !proc.detNotes.trim()) {
+            updateProcedure(
+                proc.id,
+                'detNotes',
+                `Control drift detected: Expected ${proc.expectedOutcome || 'Alerted'}, but execution was Missed.`
+            );
+        }
+    };
+
+    const handleCopyPayload = (e) => {
+        e.stopPropagation();
+        if (!proc.payloadCode) return;
+        navigator.clipboard?.writeText(proc.payloadCode);
+        setCopiedCode(true);
+        setTimeout(() => setCopiedCode(false), 1800);
+    };
+
+    const isBaselineMatched =
+        !isManual &&
+        proc.expectedOutcome &&
+        proc.outcome &&
+        proc.outcome === proc.expectedOutcome;
+
     return (
         <div className="glass-panel" style={{  padding: isCollapsed ? '12px 20px' : '16px 20px', background: 'var(--glass-bg)', flexShrink: 0, borderLeft: `4px solid ${eventColor}`, position: 'relative', zIndex: totalCards - index, borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '12px', transition: 'all 0.3s ease', boxShadow: `-12px 0 12px -12px ${eventColor}, 0 8px 32px rgba(0,0,0,0.2)`  }}>
             {/* Header Row */}
-            <div style={{  display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '15px'  }}>
-                <div style={{  display: 'flex', gap: '15px', alignItems: 'center', flex: 1  }}>
+            <div style={{  display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '15px', flexWrap: 'wrap'  }}>
+                <div style={{  display: 'flex', gap: '15px', alignItems: 'center', flex: 1, minWidth: '240px'  }}>
                     <div style={{  width: '160px'  }}>
                         <EventTypeDropdown 
                             value={proc.eventType || 'Payload'} 
                             onChange={(val) => updateProcedure(proc.id, 'eventType', val)} 
                         />
                     </div>
-                    <div style={{  flex: 1, position: 'relative', display: 'flex', alignItems: 'center', gap: '15px'  }}>
-                        <input onKeyDown={e => e.stopPropagation()} maxLength={100} className="ai-input" style={{  flex: 1, margin: 0, background: (showNameErrors && (!proc.name || proc.name.trim() === '' || /^Procedure \d+$/.test(proc.name.trim()))) ? 'rgba(239, 68, 68, 0.1)' : 'transparent', border: 'none', borderBottom: (showNameErrors && (!proc.name || proc.name.trim() === '' || /^Procedure \d+$/.test(proc.name.trim()))) ? '1px dashed var(--danger)' : '1px dashed var(--glass-border)', fontSize: '1.1rem', color: 'var(--text-primary)', padding: '6px 8px', outline: 'none', fontWeight: 'bold', borderRadius: '4px 4px 0 0', transition: 'all 0.3s ease'  }} 
+                    <div style={{  flex: 1, position: 'relative', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap'  }}>
+                        <input onKeyDown={e => e.stopPropagation()} maxLength={100} className="ai-input" style={{  flex: 1, minWidth: '160px', margin: 0, background: (showNameErrors && (!proc.name || proc.name.trim() === '' || /^Procedure \d+$/.test(proc.name.trim()))) ? 'rgba(239, 68, 68, 0.1)' : 'transparent', border: 'none', borderBottom: (showNameErrors && (!proc.name || proc.name.trim() === '' || /^Procedure \d+$/.test(proc.name.trim()))) ? '1px dashed var(--danger)' : '1px dashed var(--glass-border)', fontSize: '1.1rem', color: 'var(--text-primary)', padding: '6px 8px', outline: 'none', fontWeight: 'bold', borderRadius: '4px 4px 0 0', transition: 'all 0.3s ease'  }} 
                                value={proc.name || ''} 
                                onChange={(e) => {
                                    updateProcedure(proc.id, 'name', e.target.value);
                                    if (showNameErrors) setShowNameErrors(false);
                                }} 
                                placeholder={proc.eventType === 'Payload' || !proc.eventType ? "Payload Name" : "Procedure Name"} />
-                        
+
+                        {proc.isBaselinePrefilled && (
+                            <span
+                                title={proc.baselineSource ? `Pre-filled from historical run: ${proc.baselineSource}` : 'Pre-filled from historical TTP baseline'}
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    fontSize: '0.68rem',
+                                    fontWeight: 700,
+                                    padding: '3px 8px',
+                                    borderRadius: '10px',
+                                    background: 'rgba(139, 92, 246, 0.14)',
+                                    border: '1px solid rgba(139, 92, 246, 0.35)',
+                                    color: '#c4b5fd',
+                                    whiteSpace: 'nowrap'
+                                }}
+                            >
+                                <History size={11} />
+                                Baseline Memory
+                            </span>
+                        )}
+
+                        {proc.isHarnessImported && proc.harnessConfidence && (
+                            (() => {
+                                const isConfirmed = proc.harnessConfidence === 'Host-Confirmed';
+                                const isErr = proc.harnessConfidence === 'Prerequisite-Missing' || proc.harnessConfidence === 'Timed-Out';
+                                const badgeBg = isConfirmed
+                                    ? 'rgba(6, 182, 212, 0.14)'
+                                    : isErr
+                                    ? 'rgba(239, 68, 68, 0.14)'
+                                    : 'rgba(245, 158, 11, 0.16)';
+                                const badgeBorder = isConfirmed
+                                    ? 'rgba(6, 182, 212, 0.4)'
+                                    : isErr
+                                    ? 'rgba(239, 68, 68, 0.4)'
+                                    : 'rgba(245, 158, 11, 0.45)';
+                                const badgeColor = isConfirmed
+                                    ? '#22d3ee'
+                                    : isErr
+                                    ? '#f87171'
+                                    : '#fbbf24';
+                                const badgeLabel = isConfirmed
+                                    ? 'Host Block Confirmed ✓'
+                                    : isErr
+                                    ? `Exec Error (${proc.harnessConfidence})`
+                                    : 'Inferred • Verify SIEM ⚠';
+                                const badgeTitle = isConfirmed
+                                    ? 'The self-logging harness confirmed this payload was actively blocked on the endpoint (OS/EDR/AMSI).'
+                                    : isErr
+                                    ? 'This step failed due to a missing binary, syntax error, or timeout—not a security control block.'
+                                    : 'This command ran unblocked on the endpoint (Exit Code 0). Because a local script cannot see cloud SIEM/EDR alerts, please verify whether your SOC console alerted or missed it.';
+                                return (
+                                    <span
+                                        title={badgeTitle}
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                            fontSize: '0.68rem',
+                                            fontWeight: 700,
+                                            padding: '3px 8px',
+                                            borderRadius: '10px',
+                                            background: badgeBg,
+                                            border: `1px solid ${badgeBorder}`,
+                                            color: badgeColor,
+                                            whiteSpace: 'nowrap',
+                                            cursor: 'help'
+                                        }}
+                                    >
+                                        {badgeLabel}
+                                    </span>
+                                );
+                            })()
+                        )}
+
                         {isCollapsed && (
                             <div style={{  display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center'  }}>
                                 {proc.outcome && proc.outcome !== 'N/A' && proc.outcome !== '' && (
@@ -87,7 +208,57 @@ export default function EventCard({
                         )}
                     </div>
                 </div>
-                <div style={{  display: 'flex', gap: '8px'  }}>
+                <div style={{  display: 'flex', gap: '8px', alignItems: 'center'  }}>
+                    {!isManual && proc.isDecayRetest && proc.expectedOutcome && (
+                        <>
+                            <button
+                                type="button"
+                                onClick={handleBaselineHeld}
+                                title={`1-Click Confirm: Actual Outcome matched Expected Outcome (${proc.expectedOutcome})`}
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '5px',
+                                    padding: '5px 10px',
+                                    borderRadius: '6px',
+                                    fontSize: '0.74rem',
+                                    fontWeight: 700,
+                                    cursor: 'pointer',
+                                    background: isBaselineMatched ? 'rgba(16, 185, 129, 0.25)' : 'rgba(16, 185, 129, 0.12)',
+                                    border: `1px solid ${isBaselineMatched ? '#10b981' : 'rgba(16, 185, 129, 0.4)'}`,
+                                    color: '#34d399',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                <CheckCircle2 size={13} />
+                                <span>{isBaselineMatched ? `Held (${proc.expectedOutcome})` : `Baseline Held ✓`}</span>
+                            </button>
+                            {proc.expectedOutcome !== 'Missed' && (
+                                <button
+                                    type="button"
+                                    onClick={handleDriftDetected}
+                                    title="1-Click Flag: Control failed to block/alert (Drift Detected)"
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        padding: '5px 9px',
+                                        borderRadius: '6px',
+                                        fontSize: '0.72rem',
+                                        fontWeight: 700,
+                                        cursor: 'pointer',
+                                        background: proc.outcome === 'Missed' ? 'rgba(239, 68, 68, 0.25)' : 'rgba(239, 68, 68, 0.1)',
+                                        border: `1px solid ${proc.outcome === 'Missed' ? '#ef4444' : 'rgba(239, 68, 68, 0.35)'}`,
+                                        color: '#f87171',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    <AlertTriangle size={12} />
+                                    <span>Drifted</span>
+                                </button>
+                            )}
+                        </>
+                    )}
                     <button onClick={onToggleCollapse} style={{  background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', borderRadius: '6px', transition: 'all 0.2s'  }} onMouseEnter={e => {e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}} onMouseLeave={e => {e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'}} title={isCollapsed ? "Expand" : "Collapse"}>
                         {isCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}
                     </button>
@@ -106,10 +277,38 @@ export default function EventCard({
                 <div style={{ overflow: 'hidden', display: 'flex', flexDirection: 'column', gap: '12px', marginTop: isCollapsed ? '0' : '8px' }}>
                     {/* Payload / Procedure Body */}
                     {(proc.eventType === 'Payload' || !proc.eventType) && (
-                        <textarea onKeyDown={e => e.stopPropagation()} className="ai-input" style={{  width: '100%', boxSizing: 'border-box', background: 'rgba(5, 5, 10, 0.6)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--accent-secondary)', padding: '12px', outline: 'none', minHeight: '60px', fontFamily: 'monospace', resize: 'vertical'  }} 
-                               value={proc.payloadCode || ''} 
-                               onChange={e => updateProcedure(proc.id, 'payloadCode', e.target.value)} 
-                               placeholder="Payload Code" />
+                        <div style={{ position: 'relative' }}>
+                            <textarea onKeyDown={e => e.stopPropagation()} className="ai-input" style={{  width: '100%', boxSizing: 'border-box', background: 'rgba(5, 5, 10, 0.6)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--accent-secondary)', padding: '12px 85px 12px 12px', outline: 'none', minHeight: '60px', fontFamily: 'monospace', resize: 'vertical'  }} 
+                                   value={proc.payloadCode || ''} 
+                                   onChange={e => updateProcedure(proc.id, 'payloadCode', e.target.value)} 
+                                   placeholder="Payload Code" />
+                            {proc.payloadCode && proc.payloadCode.trim() && (
+                                <button
+                                    type="button"
+                                    onClick={handleCopyPayload}
+                                    title="Copy command to clipboard"
+                                    style={{
+                                        position: 'absolute',
+                                        top: '8px',
+                                        right: '10px',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        padding: '4px 8px',
+                                        borderRadius: '6px',
+                                        fontSize: '0.7rem',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        background: copiedCode ? 'rgba(16, 185, 129, 0.2)' : 'rgba(255,255,255,0.06)',
+                                        border: `1px solid ${copiedCode ? 'rgba(16, 185, 129, 0.4)' : 'var(--glass-border)'}`,
+                                        color: copiedCode ? '#34d399' : 'var(--text-secondary)'
+                                    }}
+                                >
+                                    {copiedCode ? <Check size={12} /> : <Copy size={12} />}
+                                    <span>{copiedCode ? 'Copied' : 'Copy'}</span>
+                                </button>
+                            )}
+                        </div>
                     )}
                     {proc.eventType === 'Procedure' && (
                         <textarea onKeyDown={e => e.stopPropagation()} className="ai-input" style={{  width: '100%', boxSizing: 'border-box', background: 'rgba(5, 5, 10, 0.6)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--text-primary)', padding: '12px', outline: 'none', minHeight: '60px', fontFamily: 'sans-serif', resize: 'vertical'  }} 
