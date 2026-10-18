@@ -28,7 +28,6 @@ import {
     getHistoricalProceduresForTTPs,
     formatHistoricalProceduresForAIPrompt,
     scaffoldEventsFromDesignAndTTPs,
-    parseHarnessOutput,
     getOutcomeCascadedFields,
     normalizeOutcomeValue
 } from '../../lib/simulationAutomation';
@@ -359,7 +358,7 @@ export default function SimulationWizard() {
           setSimulationPayload('');
           setStep(2);
           addToast(
-              `Bundled ${batch.length} decayed/aging TTPs into a Chained Scenario in Step 2! Click "Generate Evolved Design" to build a unified multi-phase harness.`,
+              `Bundled ${batch.length} decayed/aging TTPs into a Chained Scenario in Step 2! Click "Generate Evolved Design" to build a unified multi-phase emulation plan.`,
               'success'
           );
           navigate(location.pathname, { replace: true, state: {} });
@@ -535,83 +534,6 @@ export default function SimulationWizard() {
      }));
   };
 
-  const handleAutoScaffoldEvents = useCallback(() => {
-      const scaffolded = scaffoldEventsFromDesignAndTTPs({
-          simulationPayload,
-          selectedTTPs,
-          existingTestResults: testResults,
-          simulationSummaries,
-          events,
-          mitreData
-      });
-      if (scaffolded.length === 0) {
-          addToast("All selected TTPs and design blocks are already represented in your Event Cards.", "info");
-          return;
-      }
-      setTestResults(prev => [...prev, ...scaffolded]);
-      const prefilledCount = scaffolded.filter(e => e.isBaselinePrefilled).length;
-      addToast(
-          `Scaffolded ${scaffolded.length} event(s)${prefilledCount > 0 ? ` (${prefilledCount} pre-filled from historical baseline memory)` : ''}!`,
-          'success'
-      );
-  }, [simulationPayload, selectedTTPs, testResults, simulationSummaries, events, mitreData, addToast]);
-
-  const handleImportHarnessOutput = useCallback(
-      (rawOutputText) => {
-          try {
-              const updated = parseHarnessOutput(
-                  rawOutputText,
-                  testResults,
-                  selectedTTPs,
-                  simulationSummaries,
-                  events
-              );
-              setTestResults(updated);
-              const summary = updated.summary || {};
-              if (summary.verifySiemCount > 0 || summary.errorCount > 0) {
-                  addToast(
-                      `Imported ${summary.totalImported || updated.length} event(s): ${summary.hostConfirmedCount || 0} host block(s) confirmed, ${summary.verifySiemCount || 0} unblocked step(s) flagged to verify in SIEM${summary.errorCount > 0 ? `, ${summary.errorCount} command error(s)` : ''}.`,
-                      'info'
-                  );
-              } else {
-                  addToast('Imported harness execution results into Simulation Events!', 'success');
-              }
-              return true;
-          } catch (err) {
-              addToast(err.message || 'Failed to parse harness output.', 'error');
-              return false;
-          }
-      },
-      [testResults, selectedTTPs, simulationSummaries, events, addToast]
-  );
-
-  const handleConfirmAllBaselinesHeld = useCallback(() => {
-      let confirmedCount = 0;
-      const dateStr = new Date().toLocaleDateString();
-      setTestResults(prev =>
-          prev.map(p => {
-              if (p.expectedOutcome && (!p.outcome || p.outcome === 'N/A' || p.outcome === '')) {
-                  confirmedCount++;
-                  const cascaded = getOutcomeCascadedFields(p.expectedOutcome, p.severity);
-                  return {
-                      ...p,
-                      outcome: p.expectedOutcome,
-                      coverageRating: cascaded.coverageRating,
-                      severity: cascaded.severity,
-                      detNotes:
-                          p.detNotes && p.detNotes.trim()
-                              ? p.detNotes
-                              : `Baseline held (${p.expectedOutcome}) — verified on ${dateStr}`
-                  };
-              }
-              return p;
-          })
-      );
-      if (confirmedCount > 0) {
-          addToast(`Confirmed baseline held for ${confirmedCount} event(s)!`, 'success');
-      }
-  }, [addToast]);
-
   const removeProcedure = (procId) => {
      confirmAction('Are you sure you want to remove this event?', () => {
          setTestResults(prev => prev?.filter(p => p.id !== procId));
@@ -735,7 +657,7 @@ export default function SimulationWizard() {
         }
 
         const systemInstruction = `You are an elite Defensive Security Engineer and Purple Team lead. The user wants to design a simulation for testing EDR/SIEM telemetry.
-You must provide a highly structured Markdown response optimized for Control Drift's automated event scaffolding and self-logging harness compiler:
+You must provide a highly structured Markdown response optimized for Control Drift's automated event scaffolding:
 1. First, provide a concise **Simulation Overview** explaining the attack chain and defensive validation goals (use inline backticks for command names here—do NOT use fenced triple-backtick code blocks in the overview).
 2. Second, under **Recommended Validation Procedures**, create one dedicated section per selected MITRE ATT&CK technique using the exact heading format:
    \`### Phase N: <Descriptive Procedure Name> (<TTP_ID>)\`
@@ -1656,11 +1578,6 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
             addSimulationEvidence={addSimulationEvidence}
             simulationDetails={simulationDetails}
             setExpandedImage={setExpandedImage}
-            onAutoScaffoldEvents={handleAutoScaffoldEvents}
-            onImportHarnessOutput={handleImportHarnessOutput}
-            onConfirmAllBaselinesHeld={handleConfirmAllBaselinesHeld}
-            mitreData={mitreData}
-            addToast={addToast}
           />
         )}
 
