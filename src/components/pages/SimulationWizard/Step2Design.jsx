@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import React, { useMemo } from 'react';
-import { Sparkles, Terminal, Loader2, ChevronLeft, ChevronRight, Info, Target, Layers, PlusCircle } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Sparkles, Terminal, Loader2, ChevronLeft, ChevronRight, ChevronDown, ChevronUp, Info, Target, Layers } from 'lucide-react';
 import BlackHoleIcon from '../../ui/BlackHoleIcon';
 import RichMarkdownEditor from '../../ui/RichMarkdownEditor';
 import { getHistoricalProceduresForTTPs } from '../../../lib/simulationAutomation';
@@ -37,6 +37,9 @@ export default function Step2Design({
     mitreData = {},
     addToast
 }) {
+    const [expandedTtps, setExpandedTtps] = useState({});
+    const [showAllSiblings, setShowAllSiblings] = useState({});
+
     const historicalByTtp = useMemo(
         () => getHistoricalProceduresForTTPs(selectedTTPs, simulationSummaries, events, mitreData),
         [selectedTTPs, simulationSummaries, events, mitreData]
@@ -46,6 +49,18 @@ export default function Step2Design({
         () => historicalByTtp.some(item => item.procedures.length > 0),
         [historicalByTtp]
     );
+
+    const isTtpExpanded = (ttpId, idx) => {
+        if (expandedTtps[ttpId] !== undefined) return expandedTtps[ttpId];
+        return idx === 0;
+    };
+
+    const toggleTtp = (ttpId, idx) => {
+        setExpandedTtps(prev => ({
+            ...prev,
+            [ttpId]: !isTtpExpanded(ttpId, idx)
+        }));
+    };
 
     const handleAddSiblingSubTechnique = (sibling) => {
         if (!setSelectedTTPs) return;
@@ -176,98 +191,123 @@ export default function Step2Design({
                              </div>
                           </div>
 
-                          {/* Procedural Evolution Memory: Previously Validated Variations & Untested Siblings */}
-                          {historicalByTtp.some(item => item.procedures.length > 0 || item.untestedSiblings.length > 0) && (
-                             <div style={{
-                                 marginTop: '4px',
-                                 padding: '14px',
-                                 borderRadius: '10px',
-                                 background: 'rgba(56, 189, 248, 0.06)',
-                                 border: '1px solid rgba(56, 189, 248, 0.25)',
-                                 display: 'flex',
-                                 flexDirection: 'column',
-                                 gap: '12px'
-                             }}>
-                                 <div>
-                                     <div style={{ display: 'flex', alignItems: 'center', gap: '7px', color: '#38bdf8', fontSize: '0.82rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                                         <Layers size={15} /> Evolve Depth — Prior Variations
-                                     </div>
-                                     <p style={{ margin: '4px 0 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                                         Avoid repeating the exact same one-liners. Design or generate a <strong>new procedural variation</strong> (different interpreter flags, LOLBin, or sibling sub-technique) to deepen validation coverage and extend this TTP&apos;s freshness lifespan.
-                                     </p>
-                                 </div>
+                          {/* Prior Procedure History: Only shown when historical variations exist */}
+                           {hasHistoricalVariations && (
+                              <div style={{
+                                  marginTop: '8px',
+                                  padding: '12px',
+                                  borderRadius: '10px',
+                                  background: 'rgba(56, 189, 248, 0.04)',
+                                  border: '1px solid rgba(56, 189, 248, 0.2)',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '10px'
+                              }}>
+                                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#38bdf8', fontSize: '0.8rem', fontWeight: 700, letterSpacing: '0.3px' }}>
+                                          <Layers size={14} /> Prior Procedure History
+                                      </div>
+                                      <span 
+                                          title="Review previously tested commands, flags, and outcomes for these TTPs to design a new procedural variation and avoid repeating identical signatures."
+                                          style={{ display: 'flex', alignItems: 'center', color: 'var(--text-muted)', cursor: 'help' }}
+                                      >
+                                          <Info size={13} />
+                                      </span>
+                                  </div>
 
-                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                     {historicalByTtp.filter(item => item.procedures.length > 0 || item.untestedSiblings.length > 0).map(item => (
-                                         <div key={item.ttpId} style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '8px', padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                                 <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.8rem', color: '#fff' }}>
-                                                     {item.ttpId} <span style={{ fontFamily: 'sans-serif', fontWeight: 500, color: 'var(--text-secondary)' }}>• {item.ttpName}</span>
-                                                 </span>
-                                                 <span style={{ fontSize: '0.68rem', fontWeight: 700, padding: '2px 7px', borderRadius: '10px', background: 'rgba(56, 189, 248, 0.14)', color: '#7dd3fc', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
-                                                     Depth: {item.procedures.length} {item.procedures.length === 1 ? 'Variation' : 'Variations'}
-                                                 </span>
-                                             </div>
+                                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                                      {historicalByTtp.filter(item => item.procedures.length > 0).map((item, idx) => {
+                                          const isExpanded = isTtpExpanded(item.ttpId, idx);
 
-                                             {item.procedures.slice(0, 3).map((proc, pIdx) => {
-                                                 const snippet = (proc.payloadCode || proc.procedureSteps || '').trim();
-                                                 const isPositive = proc.outcome === 'Prevented & Alerted' || proc.outcome === 'Prevented' || proc.outcome === 'Alerted';
-                                                 return (
-                                                     <div key={pIdx} style={{ padding: '7px 9px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)', borderLeft: `2px solid ${isPositive ? '#10b981' : '#f59e0b'}`, display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                                                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', fontSize: '0.74rem' }}>
-                                                             <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
-                                                                 #{pIdx + 1} {proc.name}
-                                                             </span>
-                                                             <span style={{ fontSize: '0.66rem', fontWeight: 700, color: isPositive ? '#34d399' : '#fbbf24' }}>
-                                                                 {proc.outcome}
-                                                             </span>
-                                                         </div>
-                                                         {snippet && (
-                                                             <div style={{ fontFamily: 'monospace', fontSize: '0.7rem', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.4)', padding: '4px 6px', borderRadius: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={snippet}>
-                                                                 {snippet}
-                                                             </div>
-                                                         )}
-                                                     </div>
-                                                 );
-                                             })}
+                                          return (
+                                              <div 
+                                                  key={item.ttpId} 
+                                                  style={{ 
+                                                      background: 'rgba(0,0,0,0.3)', 
+                                                      border: '1px solid rgba(255,255,255,0.07)', 
+                                                      borderRadius: '8px', 
+                                                      padding: '8px 10px', 
+                                                      display: 'flex', 
+                                                      flexDirection: 'column', 
+                                                      gap: '8px',
+                                                      transition: 'all 0.2s ease'
+                                                  }}
+                                              >
+                                                  {/* Interactive Accordion Header */}
+                                                  <div 
+                                                      onClick={() => toggleTtp(item.ttpId, idx)}
+                                                      style={{ 
+                                                          display: 'flex', 
+                                                          justifyContent: 'space-between', 
+                                                          alignItems: 'center', 
+                                                          cursor: 'pointer',
+                                                          userSelect: 'none',
+                                                          gap: '6px'
+                                                      }}
+                                                  >
+                                                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
+                                                          {isExpanded ? (
+                                                              <ChevronDown size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                                                          ) : (
+                                                              <ChevronRight size={14} color="var(--text-muted)" style={{ flexShrink: 0 }} />
+                                                          )}
+                                                          <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: '0.78rem', color: '#fff', flexShrink: 0 }}>
+                                                              {item.ttpId}
+                                                          </span>
+                                                          <span 
+                                                              style={{ 
+                                                                  fontSize: '0.76rem', 
+                                                                  color: 'var(--text-secondary)', 
+                                                                  overflow: 'hidden', 
+                                                                  textOverflow: 'ellipsis', 
+                                                                  whiteSpace: 'nowrap' 
+                                                              }} 
+                                                              title={item.ttpName}
+                                                          >
+                                                              • {item.ttpName}
+                                                          </span>
+                                                      </div>
 
-                                             {item.untestedSiblings.length > 0 && (
-                                                 <div style={{ marginTop: '2px', display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                                                     <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.4px' }}>
-                                                         Untested {item.parentId} Sibling Sub-Techniques:
-                                                     </span>
-                                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px' }}>
-                                                         {item.untestedSiblings.map(sib => (
-                                                             <button
-                                                                 key={sib.id}
-                                                                 type="button"
-                                                                 onClick={() => handleAddSiblingSubTechnique(sib)}
-                                                                 title={`Add ${sib.id} (${sib.name}) to Targeted TTPs`}
-                                                                 style={{
-                                                                     display: 'inline-flex',
-                                                                     alignItems: 'center',
-                                                                     gap: '4px',
-                                                                     fontSize: '0.68rem',
-                                                                     padding: '3px 8px',
-                                                                     borderRadius: '10px',
-                                                                     background: 'rgba(168, 85, 247, 0.14)',
-                                                                     border: '1px solid rgba(168, 85, 247, 0.35)',
-                                                                     color: '#e9d5ff',
-                                                                     cursor: 'pointer'
-                                                                 }}
-                                                             >
-                                                                 <PlusCircle size={10} /> {sib.id}: {sib.name}
-                                                             </button>
-                                                         ))}
-                                                     </div>
-                                                 </div>
-                                             )}
-                                         </div>
-                                     ))}
-                                 </div>
-                             </div>
-                          )}
-                      </>
+                                                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+                                                          <span style={{ fontSize: '0.65rem', fontWeight: 700, padding: '1px 6px', borderRadius: '10px', background: 'rgba(56, 189, 248, 0.14)', color: '#7dd3fc', border: '1px solid rgba(56, 189, 248, 0.3)' }}>
+                                                              {item.procedures.length} {item.procedures.length === 1 ? 'Variation' : 'Variations'}
+                                                          </span>
+                                                      </div>
+                                                  </div>
+
+                                                  {/* Expandable Content: Past Executed Procedures */}
+                                                  {isExpanded && (
+                                                      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', paddingTop: '4px' }}>
+                                                          {item.procedures.slice(0, 3).map((proc, pIdx) => {
+                                                              const snippet = (proc.payloadCode || proc.procedureSteps || '').trim();
+                                                              const isPositive = proc.outcome === 'Prevented & Alerted' || proc.outcome === 'Prevented' || proc.outcome === 'Alerted';
+                                                              return (
+                                                                  <div key={pIdx} style={{ padding: '6px 8px', borderRadius: '6px', background: 'rgba(255,255,255,0.03)', borderLeft: `2px solid ${isPositive ? '#10b981' : '#f59e0b'}`, display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                                                                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px', fontSize: '0.72rem' }}>
+                                                                          <span style={{ color: 'var(--text-primary)', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                                              #{pIdx + 1} {proc.name}
+                                                                          </span>
+                                                                          <span style={{ fontSize: '0.65rem', fontWeight: 700, color: isPositive ? '#34d399' : '#fbbf24', flexShrink: 0 }}>
+                                                                              {proc.outcome}
+                                                                          </span>
+                                                                      </div>
+                                                                      {snippet && (
+                                                                          <div style={{ fontFamily: 'monospace', fontSize: '0.68rem', color: 'var(--text-muted)', background: 'rgba(0,0,0,0.4)', padding: '3px 6px', borderRadius: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={snippet}>
+                                                                              {snippet}
+                                                                          </div>
+                                                                      )}
+                                                                  </div>
+                                                              );
+                                                          })}
+                                                      </div>
+                                                  )}
+                                              </div>
+                                          );
+                                      })}
+                                  </div>
+                              </div>
+                           )}
+                           </>
                   )}
                </div>
             </div>

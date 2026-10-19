@@ -97,7 +97,7 @@ export default function Step3Execute({
                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, minWidth: 0 }}>
                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', marginTop: '10px', minHeight: '32px', paddingRight: '16px' }}>
                     <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>Simulation Events</h3>
-                    <button type="button" className="btn" onClick={() => addProcedure(null)} style={{ fontSize: '0.85rem', padding: '6px 12px', background: 'rgba(156, 39, 176, 0.2)', color: 'var(--accent-primary)', border: '1px solid var(--accent-primary)', fontWeight: 'bold', boxShadow: '0 4px 15px rgba(156, 39, 176, 0.3)' }}>+ Add Event</button>
+                    <button type="button" className="btn hover-lift" onClick={() => addProcedure(null)} style={{ fontSize: '0.85rem', padding: '6px 12px', background: 'rgba(156, 39, 176, 0.2)', color: 'var(--accent-primary)', border: '1px solid var(--accent-primary)', fontWeight: 'bold', boxShadow: '0 4px 15px rgba(156, 39, 176, 0.3)' }}>+ Add Event</button>
                  </div>
                  <div style={{ flex: 1, height: 0, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', paddingRight: '10px', paddingTop: '15px', marginTop: '-15px' }}>
                  

@@ -603,6 +603,26 @@ export default function SimulationWizard() {
           return;
       }
     }
+    if (step === 2) {
+      if (testResults.length === 0 && (simulationPayload || selectedTTPs.length > 0)) {
+        const scaffolded = scaffoldEventsFromDesignAndTTPs({
+          simulationPayload,
+          selectedTTPs,
+          existingTestResults: testResults,
+          simulationSummaries,
+          events,
+          mitreData
+        });
+        if (scaffolded.length > 0) {
+          setTestResults(scaffolded);
+          const prefilledCount = scaffolded.filter(e => e.isBaselinePrefilled).length;
+          addToast(
+            `Auto-generated ${scaffolded.length} event card(s) from your design${prefilledCount > 0 ? ` (${prefilledCount} pre-filled from historical baseline)` : ''}!`,
+            'success'
+          );
+        }
+      }
+    }
     if (step === 3) {
       if (testResults.length === 0) {
           addToast("Please add at least one event to proceed.", 'warning');
