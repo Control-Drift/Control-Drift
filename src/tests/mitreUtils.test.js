@@ -292,6 +292,28 @@ describe('mitreUtils', () => {
       expect(events[0].expectedOutcome).toBe('Prevented');
       expect(events[0].securityControls).toContain('CrowdStrike Falcon');
       expect(events[1].mappedTTPs).toEqual(['T1003']);
+
+      // Verifies dedicated teardown/cleanup blocks are parsed but not scaffolded as test events
+      const mdWithCleanup = [
+        '### Phase 1: PowerShell Execution (T1059.001)',
+        '```powershell',
+        'Get-Process | Select-Object -First 3',
+        '```',
+        '### Phase 2: Simulation Teardown & Cleanup',
+        '```powershell',
+        'Remove-Item -Path "C:\\Temp\\test.txt" -Force',
+        '```'
+      ].join('\n');
+
+      const eventsWithCleanup = scaffoldEventsFromDesignAndTTPs({
+        simulationPayload: mdWithCleanup,
+        selectedTTPs: ['T1059.001'],
+        simulationSummaries: {},
+        events: []
+      });
+
+      expect(eventsWithCleanup.length).toBe(1);
+      expect(eventsWithCleanup[0].mappedTTPs).toEqual(['T1059.001']);
     });
 
     it('generates agentless self-logging harness scripts and parses structured output back with confidence tracking', () => {

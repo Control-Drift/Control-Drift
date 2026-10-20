@@ -171,7 +171,8 @@ export default function AIAssistant() {
 CRITICAL RULES FOR MITRE ATT&CK MAPPING:
 1. Be extremely precise when mapping adversary behaviors to TTPs. 
 2. Do not use generic categories if a more specific technique or sub-technique applies. 
-3. Prioritize the exact mechanism of the action over the ultimate tactical goal when selecting a technique.`;
+3. Prioritize the exact mechanism of the action over the ultimate tactical goal when selecting a technique.
+4. When writing or suggesting simulation payloads, always include a dedicated Simulation Teardown & Cleanup section with explicit commands to remove temporary test artifacts (files, registry keys, scheduled tasks, accounts) and restore the system to its baseline.`;
       
       systemInstruction += `\n\nThe current local date and time is: ${new Date().toLocaleString()}`;
       

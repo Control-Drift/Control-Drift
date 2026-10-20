@@ -509,6 +509,11 @@ export function scaffoldEventsFromDesignAndTTPs({
 
   // 1. Create events from Step 2 code blocks
   parsedBlocks.forEach((block, idx) => {
+    // Teardown & cleanup phases restore the host and should not be scaffolded as EDR validation events
+    if (/(?:teardown|clean\s*up)/i.test(block.title)) {
+      return;
+    }
+
     let assignedTtps = block.ttps.length > 0 ? [...block.ttps] : [];
     if (assignedTtps.length === 0 && normalizedSelected.length > 0) {
       const uncovered = normalizedSelected.find((t) => !coveredTtpIds.has(t.id));

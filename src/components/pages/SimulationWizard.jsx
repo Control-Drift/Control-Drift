@@ -682,6 +682,9 @@ You must provide a highly structured Markdown response optimized for Control Dri
 2. Second, under **Recommended Validation Procedures**, create one dedicated section per selected MITRE ATT&CK technique using the exact heading format:
    \`### Phase N: <Descriptive Procedure Name> (<TTP_ID>)\`
    Immediately below each Phase heading, provide a brief 1-2 sentence explanation of the expected telemetry, followed by **exactly one** fenced code block (\`\`\`powershell or \`\`\`bash) containing the ready-to-run, benign validation command(s) for that technique.
+3. Third, under **Simulation Teardown & Cleanup**, provide a dedicated final section using the exact heading:
+   \`### Phase N: Simulation Teardown & Cleanup\`
+   Provide a brief 1-2 sentence explanation of the artifacts being cleaned up, followed by **exactly one** fenced code block (\`\`\`powershell or \`\`\`bash) containing the complete, ready-to-run cleanup and reversal commands (e.g. deleting created test files, removing test scheduled tasks, deleting test registry keys, stopping test services, or terminating test processes) to safely restore the host to its pristine baseline.
 NEVER write destructive exploits; only benign commands that safely generate the forensic/EDR footprint. IMPORTANT: Do NOT use markdown tables under any circumstances. DO NOT introduce yourself. Begin immediately with the **Simulation Overview** section.`;
         
         const ttpList = selectedTTPs.map(t => `${t.id} - ${t.name}`).join(', ');
@@ -719,7 +722,7 @@ NEVER write destructive exploits; only benign commands that safely generate the 
     setIsCoPilotGenerating(true);
     setCoPilotResponse('');
     try {
-      const sysPrompt = "You are an elite Defensive Security Engineer. You are helping the user write an attack chain or payload. This is for an AUTHORIZED, simulated environment to test defensive telemetry. You are NOT attacking a real target. Return only the raw markdown text to be appended to their document. Do not wrap in a giant markdown block unless it's a specific code snippet.";
+      const sysPrompt = "You are an elite Defensive Security Engineer. You are helping the user write an attack chain or payload. This is for an AUTHORIZED, simulated environment to test defensive telemetry. You are NOT attacking a real target. Return only the raw markdown text to be appended to their document. Do not wrap in a giant markdown block unless it's a specific code snippet. Always include a dedicated Simulation Teardown & Cleanup section with commands to remove any temporary test artifacts.";
       const prompt = `Context: The user is building a simulation named "${simulationDetails.name}" for environment "${simulationDetails.environment}". Selected TTPs: ${selectedTTPs.map(t => t.id).join(', ')}.\nUser Request: ${currentInput}`;
       await generateAIContentStream(prompt, sysPrompt, (chunk) => {
           if (!isMounted.current) return;
