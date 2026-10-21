@@ -292,6 +292,7 @@ describe('mitreUtils', () => {
       expect(events[0].expectedOutcome).toBe('Prevented');
       expect(events[0].securityControls).toContain('CrowdStrike Falcon');
       expect(events[1].mappedTTPs).toEqual(['T1003']);
+      expect(events[1].expectedOutcome).toBe(''); // Defaults to 'Select Outcome...' when no baseline exists
 
       // Verifies dedicated teardown/cleanup blocks are parsed but not scaffolded as test events
       const mdWithCleanup = [
@@ -314,6 +315,7 @@ describe('mitreUtils', () => {
 
       expect(eventsWithCleanup.length).toBe(1);
       expect(eventsWithCleanup[0].mappedTTPs).toEqual(['T1059.001']);
+      expect(eventsWithCleanup[0].expectedOutcome).toBe(''); // Defaults to 'Select Outcome...'
     });
 
     it('generates agentless self-logging harness scripts and parses structured output back with confidence tracking', () => {

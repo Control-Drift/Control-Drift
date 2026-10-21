@@ -122,8 +122,8 @@ export function getHistoricalBaselineForTTP(ttpId, simulationSummaries = {}, eve
     const results = Array.isArray(data.testResults) ? data.testResults : [];
     const matchingProc = results.find((p) => extractProcTtps(p).includes(normalizedId));
     if (matchingProc) {
-      const rawOutcome = matchingProc.outcome || matchingProc.expectedOutcome || 'Alerted';
-      const cleanOutcome = normalizeOutcomeValue(rawOutcome) || 'Alerted';
+      const rawOutcome = matchingProc.outcome || matchingProc.expectedOutcome || '';
+      const cleanOutcome = normalizeOutcomeValue(rawOutcome) || '';
       return {
         ttpId: normalizedId,
         name: matchingProc.name || `${normalizedId} Validation`,
@@ -162,8 +162,8 @@ export function getHistoricalBaselineForTTP(ttpId, simulationSummaries = {}, eve
         new Date(a.validationDate || a.date || 0).getTime()
     );
     const latest = sorted[0];
-    const rawOutcome = latest.outcome || latest.finding || 'Alerted';
-    const cleanOutcome = normalizeOutcomeValue(rawOutcome) || 'Alerted';
+    const rawOutcome = latest.outcome || latest.finding || '';
+    const cleanOutcome = normalizeOutcomeValue(rawOutcome) || '';
     return {
       ttpId: normalizedId,
       name: `${normalizedId} Validation`,
@@ -542,7 +542,7 @@ export function scaffoldEventsFromDesignAndTTPs({
       mappedTTPs: assignedTtps,
       eventType: 'Payload',
       payloadCode: block.code,
-      expectedOutcome: baseline?.expectedOutcome || 'Alerted',
+      expectedOutcome: baseline?.expectedOutcome || '',
       outcome: '',
       coverageRating: 'N/A',
       severity: 'Auto-Calculate',
@@ -574,7 +574,7 @@ export function scaffoldEventsFromDesignAndTTPs({
         baseline?.payloadCode ||
         `# Validate telemetry & prevention controls for ${upperId} (${ttpLabel})\n`,
       procedureSteps: baseline?.procedureSteps || '',
-      expectedOutcome: baseline?.expectedOutcome || 'Alerted',
+      expectedOutcome: baseline?.expectedOutcome || '',
       outcome: '',
       coverageRating: 'N/A',
       severity: 'Auto-Calculate',
@@ -1067,7 +1067,7 @@ export function parseHarnessOutput(
         mappedTTPs: targetTtps,
         eventType: 'Payload',
         payloadCode: '',
-        expectedOutcome: baseline?.expectedOutcome || 'Alerted',
+        expectedOutcome: baseline?.expectedOutcome || '',
         outcome,
         status: cascaded.status,
         coverageRating: cascaded.coverageRating,
