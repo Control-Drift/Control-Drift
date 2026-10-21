@@ -115,16 +115,16 @@ export default function EventCard({
     return (
         <div className="glass-panel" style={{  padding: isCollapsed ? '12px 20px' : '16px 20px', background: 'var(--glass-bg)', flexShrink: 0, borderLeft: `4px solid ${eventColor}`, position: 'relative', zIndex: totalCards - index, borderRadius: '12px', display: 'flex', flexDirection: 'column', gap: '12px', transition: 'all 0.3s ease', boxShadow: `-12px 0 12px -12px ${eventColor}, 0 8px 32px rgba(0,0,0,0.2)`  }}>
             {/* Header Row */}
-            <div style={{  display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '15px', flexWrap: 'wrap'  }}>
-                <div style={{  display: 'flex', gap: '15px', alignItems: 'center', flex: 1, minWidth: '240px'  }}>
-                    <div style={{  width: '160px'  }}>
+            <div style={{  display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '10px', flexWrap: 'wrap'  }}>
+                <div style={{  display: 'flex', gap: '10px', alignItems: 'center', flex: '1 1 260px', minWidth: 0  }}>
+                    <div style={{  width: '135px', flexShrink: 0  }}>
                         <EventTypeDropdown 
                             value={proc.eventType || 'Payload'} 
                             onChange={(val) => updateProcedure(proc.id, 'eventType', val)} 
                         />
                     </div>
-                    <div style={{  flex: 1, position: 'relative', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap'  }}>
-                        <input onKeyDown={e => e.stopPropagation()} maxLength={100} className="ai-input" style={{  flex: 1, minWidth: '160px', margin: 0, background: (showNameErrors && (!proc.name || proc.name.trim() === '' || /^Procedure \d+$/.test(proc.name.trim()))) ? 'rgba(239, 68, 68, 0.1)' : 'transparent', border: 'none', borderBottom: (showNameErrors && (!proc.name || proc.name.trim() === '' || /^Procedure \d+$/.test(proc.name.trim()))) ? '1px dashed var(--danger)' : '1px dashed var(--glass-border)', fontSize: '1.1rem', color: 'var(--text-primary)', padding: '6px 8px', outline: 'none', fontWeight: 'bold', borderRadius: '4px 4px 0 0', transition: 'all 0.3s ease'  }} 
+                    <div style={{  flex: 1, minWidth: 0, position: 'relative', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap'  }}>
+                        <input onKeyDown={e => e.stopPropagation()} maxLength={100} className="ai-input" style={{  flex: 1, minWidth: 0, width: '100%', textOverflow: 'ellipsis', margin: 0, background: (showNameErrors && (!proc.name || proc.name.trim() === '' || /^Procedure \d+$/.test(proc.name.trim()))) ? 'rgba(239, 68, 68, 0.1)' : 'transparent', border: 'none', borderBottom: (showNameErrors && (!proc.name || proc.name.trim() === '' || /^Procedure \d+$/.test(proc.name.trim()))) ? '1px dashed var(--danger)' : '1px dashed var(--glass-border)', fontSize: '1.05rem', color: 'var(--text-primary)', padding: '5px 8px', outline: 'none', fontWeight: 'bold', borderRadius: '4px 4px 0 0', transition: 'all 0.3s ease'  }} 
                                value={proc.name || ''} 
                                onChange={(e) => {
                                    updateProcedure(proc.id, 'name', e.target.value);
@@ -218,7 +218,7 @@ export default function EventCard({
                         )}
                     </div>
                 </div>
-                <div style={{  display: 'flex', gap: '8px', alignItems: 'center'  }}>
+                <div style={{  display: 'flex', gap: '6px', alignItems: 'center', flexShrink: 0, marginLeft: 'auto'  }}>
                     {!isManual && proc.isDecayRetest && proc.expectedOutcome && (
                         <>
                             <button

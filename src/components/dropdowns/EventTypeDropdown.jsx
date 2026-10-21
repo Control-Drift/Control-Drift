@@ -40,7 +40,7 @@ export default function EventTypeDropdown({ value, onChange }) {
     }, []);
 
     return (
-        <div ref={dropdownRef} style={{ position: 'relative', width: '150px', zIndex: isOpen ? 50 : 1 }}>
+        <div ref={dropdownRef} style={{ position: 'relative', width: '100%', zIndex: isOpen ? 50 : 1 }}>
             <button 
                 onClick={(e) => { e.preventDefault(); setIsOpen(!isOpen); }}
                 style={{ 
