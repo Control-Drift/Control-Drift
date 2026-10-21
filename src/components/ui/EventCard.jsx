@@ -15,7 +15,7 @@
  */
 
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, Trash2, Crosshair, Shield, Upload, Info, CheckCircle2, AlertTriangle, Copy, Check, History } from 'lucide-react';
+import { ChevronDown, ChevronRight, Trash2, Crosshair, Shield, Upload, Info, CheckCircle2, AlertTriangle, Copy, Check, History, Clock, RotateCcw, X } from 'lucide-react';
 import EventTypeDropdown from '../dropdowns/EventTypeDropdown';
 import OutcomeDropdown from '../dropdowns/OutcomeDropdown';
 import CoverageRatingDropdown from '../dropdowns/CoverageRatingDropdown';
@@ -56,6 +56,16 @@ export default function EventCard({
     isManual = false
 }) {
     const [copiedCode, setCopiedCode] = useState(false);
+    const [isEditingTime, setIsEditingTime] = useState(false);
+
+    const formatTimeDisplay = (ts) => {
+        if (!ts) return '';
+        const d = new Date(ts);
+        if (!isNaN(d.getTime())) {
+            return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        }
+        return String(ts);
+    };
     const eventColor = proc.coverageRating === 'Optimal' ? 'var(--success)' : proc.coverageRating === 'Partial' ? 'var(--warning)' : proc.coverageRating === 'Minimal' ? 'var(--minimal)' : proc.coverageRating === 'None' ? 'var(--danger)' : 'var(--accent-primary)';
 
     const handleBaselineHeld = (e) => {
@@ -258,6 +268,157 @@ export default function EventCard({
                                 </button>
                             )}
                         </>
+                    )}
+                    {proc.timestamp ? (
+                        <div 
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '2px 6px',
+                                borderRadius: '6px',
+                                background: 'rgba(56, 189, 248, 0.12)',
+                                border: '1px solid rgba(56, 189, 248, 0.35)',
+                                color: '#38bdf8',
+                                fontSize: '0.72rem',
+                                whiteSpace: 'nowrap'
+                            }}
+                        >
+                            {isEditingTime ? (
+                                <input
+                                    type="time"
+                                    step="1"
+                                    autoFocus
+                                    defaultValue={formatTimeDisplay(proc.timestamp)}
+                                    onBlur={(e) => {
+                                        setIsEditingTime(false);
+                                        if (e.target.value) {
+                                            const parts = e.target.value.split(':');
+                                            const d = new Date(proc.timestamp || Date.now());
+                                            if (parts[0] !== undefined) d.setHours(parseInt(parts[0], 10));
+                                            if (parts[1] !== undefined) d.setMinutes(parseInt(parts[1], 10));
+                                            if (parts[2] !== undefined) d.setSeconds(parseInt(parts[2], 10));
+                                            updateProcedure(proc.id, 'timestamp', d.toISOString());
+                                        }
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') e.target.blur();
+                                        if (e.key === 'Escape') setIsEditingTime(false);
+                                    }}
+                                    style={{
+                                        background: 'rgba(0, 0, 0, 0.6)',
+                                        border: '1px solid #38bdf8',
+                                        color: '#38bdf8',
+                                        borderRadius: '4px',
+                                        fontSize: '0.72rem',
+                                        padding: '1px 4px',
+                                        outline: 'none',
+                                        fontFamily: 'monospace'
+                                    }}
+                                />
+                            ) : (
+                                <span
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setIsEditingTime(true);
+                                    }}
+                                    title={`Execution Timestamp: ${new Date(proc.timestamp).toLocaleString()}\nClick to edit time manually`}
+                                    style={{
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        gap: '4px',
+                                        cursor: 'pointer',
+                                        fontWeight: 700,
+                                        fontFamily: 'monospace'
+                                    }}
+                                >
+                                    <Clock size={11} color="#38bdf8" />
+                                    {formatTimeDisplay(proc.timestamp)}
+                                </span>
+                            )}
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    updateProcedure(proc.id, 'timestamp', new Date().toISOString());
+                                }}
+                                title="Re-stamp to current time (Now)"
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'rgba(56, 189, 248, 0.75)',
+                                    cursor: 'pointer',
+                                    padding: '2px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    borderRadius: '3px'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.color = '#fff'}
+                                onMouseLeave={e => e.currentTarget.style.color = 'rgba(56, 189, 248, 0.75)'}
+                            >
+                                <RotateCcw size={10} />
+                            </button>
+                            <button
+                                type="button"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setIsEditingTime(false);
+                                    updateProcedure(proc.id, 'timestamp', '');
+                                }}
+                                title="Clear timestamp"
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'rgba(56, 189, 248, 0.75)',
+                                    cursor: 'pointer',
+                                    padding: '2px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    borderRadius: '3px'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.color = 'var(--danger)'}
+                                onMouseLeave={e => e.currentTarget.style.color = 'rgba(56, 189, 248, 0.75)'}
+                            >
+                                <X size={10} />
+                            </button>
+                        </div>
+                    ) : (
+                        <button
+                            type="button"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                updateProcedure(proc.id, 'timestamp', new Date().toISOString());
+                            }}
+                            title="Stamp execution time (Now)"
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                fontSize: '0.72rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                background: 'rgba(255, 255, 255, 0.04)',
+                                border: '1px dashed var(--glass-border)',
+                                color: 'var(--text-muted)',
+                                transition: 'all 0.2s ease',
+                                whiteSpace: 'nowrap'
+                            }}
+                            onMouseEnter={e => {
+                                e.currentTarget.style.color = '#38bdf8';
+                                e.currentTarget.style.borderColor = 'rgba(56, 189, 248, 0.4)';
+                                e.currentTarget.style.background = 'rgba(56, 189, 248, 0.08)';
+                            }}
+                            onMouseLeave={e => {
+                                e.currentTarget.style.color = 'var(--text-muted)';
+                                e.currentTarget.style.borderColor = 'var(--glass-border)';
+                                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)';
+                            }}
+                        >
+                            <Clock size={11} />
+                            <span>Stamp Time</span>
+                        </button>
                     )}
                     <button onClick={onToggleCollapse} style={{  background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '8px', display: 'flex', alignItems: 'center', borderRadius: '6px', transition: 'all 0.2s'  }} onMouseEnter={e => {e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}} onMouseLeave={e => {e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent'}} title={isCollapsed ? "Expand" : "Collapse"}>
                         {isCollapsed ? <ChevronRight size={18} /> : <ChevronDown size={18} />}

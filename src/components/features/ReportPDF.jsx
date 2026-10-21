@@ -337,6 +337,7 @@ const ReportPDF = ({ simulationName, date, summary, events, testResults, partici
                               <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#1e293b', marginBottom: 4 }}>
                                   {j + 1}. {sanitizeText(proc.name) || 'Unnamed Event'}
                                   {proc.outcome?.includes(' ➔ ') ? '  [Re-Tested ✓]' : ''}
+                                   {proc.timestamp ? `  [${new Date(proc.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}]` : ''}
                               </Text>
                               {proc.expectedOutcome && proc.expectedOutcome !== proc.outcome && (
                                   <Text style={{ fontSize: 9, color: '#dc2626', fontStyle: 'italic' }}>Control Drift Detected</Text>

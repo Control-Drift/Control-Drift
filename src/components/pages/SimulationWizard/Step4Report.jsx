@@ -15,7 +15,7 @@
  */
 
 import React from 'react';
-import { Upload, FileText, Loader2, Sparkles, CheckSquare, Square, Shield } from 'lucide-react';
+import { Upload, FileText, Loader2, Sparkles, CheckSquare, Square, Shield, Clock } from 'lucide-react';
 import BlackHoleIcon from '../../ui/BlackHoleIcon';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import ReportPDF from '../../features/ReportPDF';
@@ -287,7 +287,13 @@ export default function Step4Report({
                                       </div>
                                   </div>
                                   <div style={{  display: 'flex', gap: '15px', alignItems: 'center', fontSize: '0.85rem', flexWrap: 'wrap', justifyContent: 'flex-end', flexShrink: 0  }}>
-                                      <div style={{  color: 'var(--text-muted)', whiteSpace: 'nowrap'  }}>Expected: <span style={{  color: 'var(--text-primary)'  }}>{proc.expectedOutcome || 'N/A'}</span></div>
+                                      {proc.timestamp && (
+                                           <div style={{ color: '#38bdf8', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.78rem', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '2px 7px', borderRadius: '4px', fontWeight: 'bold', fontFamily: 'monospace' }} title={`Execution Time: ${new Date(proc.timestamp).toLocaleString()}`}>
+                                               <Clock size={12} />
+                                               <span>{new Date(proc.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</span>
+                                           </div>
+                                       )}
+                                       <div style={{  color: 'var(--text-muted)', whiteSpace: 'nowrap'  }}>Expected: <span style={{  color: 'var(--text-primary)'  }}>{proc.expectedOutcome || 'N/A'}</span></div>
                                       <div style={{  color: 'var(--text-muted)', whiteSpace: 'nowrap'  }}>Actual: <strong style={{  color: procBadge.text  }}>{proc.outcome || 'Missed'}</strong></div>
                                       {proc.coverageRating && proc.coverageRating !== 'N/A' && (
                                       <div style={{  color: 'var(--text-muted)', whiteSpace: 'nowrap'  }}>Coverage: <span style={{  color: proc.coverageRating === 'Optimal' ? 'var(--success)' : proc.coverageRating === 'Partial' ? 'var(--warning)' : proc.coverageRating === 'Minimal' ? 'var(--minimal)' : proc.coverageRating === 'None' ? 'var(--danger)' : 'var(--text-secondary)'  }}>{proc.coverageRating}</span></div>

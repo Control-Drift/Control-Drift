@@ -481,7 +481,8 @@ export default function SimulationWizard() {
              detNotes: '',
              severity: 'Auto-Calculate',
              isBaselinePrefilled: Boolean(baseline),
-             baselineSource: baseline?.previousSimulationName || null
+             baselineSource: baseline?.previousSimulationName || null,
+              timestamp: ''
          }
      ]);
   };

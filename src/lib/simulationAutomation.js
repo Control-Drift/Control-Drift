@@ -552,6 +552,7 @@ export function scaffoldEventsFromDesignAndTTPs({
       detNotes: '',
       isBaselinePrefilled: Boolean(baseline),
       baselineSource: baseline?.previousSimulationName || null,
+      timestamp: '',
     });
   });
 
@@ -584,6 +585,7 @@ export function scaffoldEventsFromDesignAndTTPs({
       detNotes: '',
       isBaselinePrefilled: Boolean(baseline),
       baselineSource: baseline?.previousSimulationName || null,
+      timestamp: '',
     });
 
     coveredTtpIds.add(upperId);
