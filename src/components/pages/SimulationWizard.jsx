@@ -682,24 +682,28 @@ export default function SimulationWizard() {
 CRITICAL PARADIGM — RED TEAM EVENTS VS. ATOMIC PAYLOADS IN A VACUUM:
 - In Control Drift, each simulation phase represents an authentic **Red Team Event**—a meaningful operational activity with realistic tradecraft, execution context, and behavioral consequence.
 - NEVER generate isolated, sterile "atomic one-liners in a vacuum" (e.g., executing \`whoami /priv\`, \`Get-Process\`, or popping \`calc.exe\` directly from an interactive admin prompt). In isolation, such synthetic commands do not perform any realistic adversary activity, yield minimal or suppressed telemetry, and will NOT trip modern EDR behavioral heuristics or SIEM correlation rules.
-- Whether a simulation tests a single focused technique or a multi-technique campaign, EVERY procedure must be structured as an operational event:
+- Whether a simulation tests a single focused technique or a complex campaign, EVERY procedure must be structured as an operational event:
   1. **Pre-flight & Setup**: Validates required privileges, resolves dynamic targets (e.g. locating legitimate surrogate PIDs, resolving LOLBins, checking environment state).
   2. **Realistic Tradecraft**: Uses realistic operational tradecraft (e.g., staging test artifacts in realistic directories like \`C:\\ProgramData\` or \`AppData\\Local\`, invoking living-off-the-land binaries, using realistic interpreter arguments/flags).
   3. **Behavioral Telemetry & Correlation**: Actively triggers the correlated telemetry signals that detection engineers need to test (e.g., cross-process handle access, parent-child lineage, file creation followed by execution, or network socket attempts) rather than resting inert.
   4. **Observable Operational Outcome**: Verifies execution success or failure status cleanly.
   5. **Safety**: Completely benign, non-destructive, and safely contained.
 
+OPERATIONAL STRUCTURING & PHASE DECOMPOSITION:
+- Break the simulation down into distinct, realistic operational phases based on sequential tactical milestones.
+- **Do NOT collapse the entire scenario into a single monolithic phase**: An adversary operation naturally progresses through distinct operational activities (e.g., initial execution/foothold setup, host situational awareness, credential access, local staging, or persistence). Grouping completely distinct operational activities into one giant script obscures detection boundaries and prevents accurate detection validation.
+- **Do NOT artificially fragment single activities**: If an operational event naturally leverages multiple techniques simultaneously (e.g., in-memory process injection executed via PowerShell, or scheduled task persistence executing an encoded script), chain those associated TTPs together within that specific event.
+- **Associate TTPs with their Real Activity**: Map TTPs to the phase where that specific technique is actually executed. Each Phase must represent a coherent red team event with its genuinely associated TTPs.
+- Ensure every selected technique is covered in its relevant operational phase.
+
 STRUCTURED RESPONSE REQUIREMENTS:
 You must provide a highly structured Markdown response optimized for Control Drift's automated event scaffolding:
 1. First, provide a concise **Simulation Overview** explaining the operational scenario, adversary objective/narrative, and telemetry validation goals (use inline backticks for command names here—do NOT use fenced triple-backtick code blocks in the overview).
-2. Second, under **Recommended Validation Procedures**, structure the simulation into logical, realistic operational phases:
-   - **Operational Scope**: Simulations can range from a single focused technique test to a multi-stage attack chain. In all cases, each phase must be an authentic operational event.
-   - **Multi-TTP Chaining**: Where multiple techniques naturally interact in an operational action (e.g., Scripting delivering Persistence, Process Injection paired with Discovery, or Credential Access paired with Staging), chain them into a single cohesive Phase.
+2. Second, under **Recommended Validation Procedures**, structure the simulation into distinct operational phases:
    - **Phase Heading Format**: Every phase heading MUST use this format, listing all applicable MITRE ATT&CK technique/sub-technique IDs:
      \`### Phase N: <Descriptive Operational Event Name> (<TTP_ID_1>, <TTP_ID_2>, ...)\`
-     (e.g., \`### Phase 1: In-Memory Process Injection via PowerShell (T1059.001, T1055.001)\` or \`### Phase 1: Local Credential Harvesting & Staging (T1003.001)\`)
-   - Every selected technique must be represented in at least one Phase.
-   - Immediately below each Phase heading, provide a brief 1-2 sentence explanation of the operational procedure and the specific telemetry correlation signals expected (process ancestry, API calls, event IDs), followed by **exactly one** fenced code block (\`\`\`powershell or \`\`\`bash) containing the complete, ready-to-run script implementing the realistic event.
+     (e.g., \`### Phase 1: PowerShell Execution & Host Discovery (T1059.001, T1082)\` or \`### Phase 2: Domain Network & User Enumeration (T1049, T1087.001)\` or \`### Phase 3: Automated Collection & Local Staging (T1119)\`)
+   - Immediately below each Phase heading, provide a brief 1-2 sentence explanation of the operational procedure, why it represents a distinct tactical milestone, and the specific telemetry correlation signals expected (process ancestry, API calls, event IDs), followed by **exactly one** fenced code block (\`\`\`powershell or \`\`\`bash) containing the complete, ready-to-run script implementing that realistic event.
 3. Third, under **Simulation Teardown & Cleanup**, provide a dedicated final section using the exact heading:
    \`### Phase N: Simulation Teardown & Cleanup\`
    Provide a brief 1-2 sentence explanation of the artifacts being cleaned up, followed by **exactly one** fenced code block (\`\`\`powershell or \`\`\`bash) containing the complete, ready-to-run cleanup and reversal commands (e.g. deleting created test files, removing test scheduled tasks, deleting test registry keys, stopping test services, or terminating test processes) to safely restore the host to its pristine baseline.
@@ -709,7 +713,7 @@ NEVER write destructive exploits; only benign commands that safely generate the 
         const historyByTtp = getHistoricalProceduresForTTPs(selectedTTPs, simulationSummaries, events, mitreData);
         const historyPromptBlock = formatHistoricalProceduresForAIPrompt(historyByTtp);
         
-        let prompt = `Target Environment: ${simulationDetails.environment || 'Unknown/Generic'}.\nSimulation Scenario / Goals: ${simulationDetails.goals || 'Defensive Telemetry & Detection Validation'}\nSelected Technique(s): ${ttpList}.${historyPromptBlock}\n\nTask: Design realistic, operational Red Team events for the selected technique(s). Ensure each phase is an authentic operational activity with realistic context and tradecraft that trips EDR/SIEM behavioral correlation mechanisms, rather than an isolated atomic command in a vacuum.`;
+        let prompt = `Target Environment: ${simulationDetails.environment || 'Unknown/Generic'}.\nSimulation Scenario / Goals: ${simulationDetails.goals || 'Defensive Telemetry & Detection Validation'}\nSelected Technique(s): ${ttpList}.${historyPromptBlock}\n\nTask: Break this simulation into realistic operational phases representing authentic Red Team events. Decompose distinct tactical activities into separate sequential phases with their associated TTPs (avoiding monolithic single-script lumps while avoiding artificial single-line fragmentation). Ensure each event uses realistic context and tradecraft that trips EDR/SIEM behavioral correlation mechanisms.`;
         
         if (coPilotInput.trim()) {
             prompt += `\n\nAdditionally, incorporate this specific request from the user: "${coPilotInput}"`;
@@ -740,7 +744,7 @@ NEVER write destructive exploits; only benign commands that safely generate the 
     setIsCoPilotGenerating(true);
     setCoPilotResponse('');
     try {
-      const sysPrompt = "You are an elite Defensive Security Engineer and Purple Team Lead. You are helping the user write realistic adversary simulation procedures and attack payloads. This is for an AUTHORIZED, simulated environment to test defensive telemetry. You are NOT attacking a real target. Every procedure must be an authentic Red Team Event with operational tradecraft, realistic execution context, and behavioral telemetry signals that trip EDR/SIEM correlation mechanisms—NEVER write sterile atomic one-liners in a vacuum. Multi-TTP chaining is supported and encouraged where techniques naturally interact (e.g. ### Phase N: Action Name (Txxxx, Tyyyy)). Return only the raw markdown text to be appended to their document. Do not wrap in a giant markdown block unless it's a specific code snippet. Always include a dedicated Simulation Teardown & Cleanup section with commands to remove any temporary test artifacts.";
+      const sysPrompt = "You are an elite Defensive Security Engineer and Purple Team Lead. You are helping the user write realistic adversary simulation procedures and attack payloads. This is for an AUTHORIZED, simulated environment to test defensive telemetry. You are NOT attacking a real target. Structure simulations into realistic operational phases representing authentic Red Team Events with genuine tradecraft, context, and behavioral telemetry signals that trip EDR/SIEM correlation mechanisms. Do NOT collapse distinct tactical activities into a single monolithic script, and NEVER write sterile atomic one-liners in a vacuum. Associate each event with its realistic TTPs (e.g. ### Phase N: Action Name (Txxxx, Tyyyy)). Return only the raw markdown text to be appended to their document. Do not wrap in a giant markdown block unless it's a specific code snippet. Always include a dedicated Simulation Teardown & Cleanup section with commands to remove any temporary test artifacts.";
       const prompt = `Context: The user is building a simulation named "${simulationDetails.name}" for environment "${simulationDetails.environment}". Selected TTPs: ${selectedTTPs.map(t => t.id).join(', ')}.\nUser Request: ${currentInput}`;
       await generateAIContentStream(prompt, sysPrompt, (chunk) => {
           if (!isMounted.current) return;
