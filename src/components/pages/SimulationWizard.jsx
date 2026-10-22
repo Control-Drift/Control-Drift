@@ -677,17 +677,29 @@ export default function SimulationWizard() {
             return;
         }
 
-        const systemInstruction = `You are an elite Defensive Security Engineer and Purple Team lead. The user wants to design a realistic adversary simulation for testing EDR/SIEM telemetry and detection coverage.
+        const systemInstruction = `You are an elite Defensive Security Engineer and Purple Team Lead. The user wants to design realistic adversary simulation procedures for validating EDR/SIEM telemetry and detection engineering coverage.
+
+CRITICAL PARADIGM — RED TEAM EVENTS VS. ATOMIC PAYLOADS IN A VACUUM:
+- In Control Drift, each simulation phase represents an authentic **Red Team Event**—a meaningful operational activity with realistic tradecraft, execution context, and behavioral consequence.
+- NEVER generate isolated, sterile "atomic one-liners in a vacuum" (e.g., executing \`whoami /priv\`, \`Get-Process\`, or popping \`calc.exe\` directly from an interactive admin prompt). In isolation, such synthetic commands do not perform any realistic adversary activity, yield minimal or suppressed telemetry, and will NOT trip modern EDR behavioral heuristics or SIEM correlation rules.
+- Whether a simulation tests a single focused technique or a multi-technique campaign, EVERY procedure must be structured as an operational event:
+  1. **Pre-flight & Setup**: Validates required privileges, resolves dynamic targets (e.g. locating legitimate surrogate PIDs, resolving LOLBins, checking environment state).
+  2. **Realistic Tradecraft**: Uses realistic operational tradecraft (e.g., staging test artifacts in realistic directories like \`C:\\ProgramData\` or \`AppData\\Local\`, invoking living-off-the-land binaries, using realistic interpreter arguments/flags).
+  3. **Behavioral Telemetry & Correlation**: Actively triggers the correlated telemetry signals that detection engineers need to test (e.g., cross-process handle access, parent-child lineage, file creation followed by execution, or network socket attempts) rather than resting inert.
+  4. **Observable Operational Outcome**: Verifies execution success or failure status cleanly.
+  5. **Safety**: Completely benign, non-destructive, and safely contained.
+
+STRUCTURED RESPONSE REQUIREMENTS:
 You must provide a highly structured Markdown response optimized for Control Drift's automated event scaffolding:
-1. First, provide a concise **Simulation Overview** explaining the attack chain, the adversary narrative, and defensive validation goals (use inline backticks for command names here—do NOT use fenced triple-backtick code blocks in the overview).
+1. First, provide a concise **Simulation Overview** explaining the operational scenario, adversary objective/narrative, and telemetry validation goals (use inline backticks for command names here—do NOT use fenced triple-backtick code blocks in the overview).
 2. Second, under **Recommended Validation Procedures**, structure the simulation into logical, realistic operational phases:
-   - **Multi-TTP Chaining**: Real-world attacks rarely execute techniques in complete isolation. Where selected techniques naturally chain or interact within an operational action (e.g., Execution executing Process Injection, Scripting delivering Persistence, Credential Access feeding Discovery, or Staging paired with Exfiltration), chain them together into a single cohesive Phase rather than artificially fragmenting them into isolated steps.
+   - **Operational Scope**: Simulations can range from a single focused technique test to a multi-stage attack chain. In all cases, each phase must be an authentic operational event.
+   - **Multi-TTP Chaining**: Where multiple techniques naturally interact in an operational action (e.g., Scripting delivering Persistence, Process Injection paired with Discovery, or Credential Access paired with Staging), chain them into a single cohesive Phase.
    - **Phase Heading Format**: Every phase heading MUST use this format, listing all applicable MITRE ATT&CK technique/sub-technique IDs:
-     \`### Phase N: <Descriptive Operational Procedure Name> (<TTP_ID_1>, <TTP_ID_2>, ...)\`
-     (e.g., \`### Phase 1: In-Memory Process Injection via PowerShell (T1059.001, T1055.001)\` or \`### Phase 2: Local Credential Dumping & Staging (T1003.001, T1074.001)\`)
-   - For techniques that do not naturally chain with others in this scenario, maintain dedicated single-technique phases.
+     \`### Phase N: <Descriptive Operational Event Name> (<TTP_ID_1>, <TTP_ID_2>, ...)\`
+     (e.g., \`### Phase 1: In-Memory Process Injection via PowerShell (T1059.001, T1055.001)\` or \`### Phase 1: Local Credential Harvesting & Staging (T1003.001)\`)
    - Every selected technique must be represented in at least one Phase.
-   - Immediately below each Phase heading, provide a brief 1-2 sentence explanation of the operational procedure and the telemetry correlation opportunity across the chained techniques, followed by **exactly one** fenced code block (\`\`\`powershell or \`\`\`bash) containing the ready-to-run, benign validation command(s) that execute the chained action.
+   - Immediately below each Phase heading, provide a brief 1-2 sentence explanation of the operational procedure and the specific telemetry correlation signals expected (process ancestry, API calls, event IDs), followed by **exactly one** fenced code block (\`\`\`powershell or \`\`\`bash) containing the complete, ready-to-run script implementing the realistic event.
 3. Third, under **Simulation Teardown & Cleanup**, provide a dedicated final section using the exact heading:
    \`### Phase N: Simulation Teardown & Cleanup\`
    Provide a brief 1-2 sentence explanation of the artifacts being cleaned up, followed by **exactly one** fenced code block (\`\`\`powershell or \`\`\`bash) containing the complete, ready-to-run cleanup and reversal commands (e.g. deleting created test files, removing test scheduled tasks, deleting test registry keys, stopping test services, or terminating test processes) to safely restore the host to its pristine baseline.
@@ -697,7 +709,7 @@ NEVER write destructive exploits; only benign commands that safely generate the 
         const historyByTtp = getHistoricalProceduresForTTPs(selectedTTPs, simulationSummaries, events, mitreData);
         const historyPromptBlock = formatHistoricalProceduresForAIPrompt(historyByTtp);
         
-        let prompt = `Target Environment: ${simulationDetails.environment || 'Unknown/Generic'}.\nSimulation Scenario: ${simulationDetails.goals || 'None'}\n\nDesign a cohesive, realistic adversary simulation strategy combining the following techniques into realistic operational phases (chaining techniques where operationally appropriate): ${ttpList}.${historyPromptBlock}`;
+        let prompt = `Target Environment: ${simulationDetails.environment || 'Unknown/Generic'}.\nSimulation Scenario / Goals: ${simulationDetails.goals || 'Defensive Telemetry & Detection Validation'}\nSelected Technique(s): ${ttpList}.${historyPromptBlock}\n\nTask: Design realistic, operational Red Team events for the selected technique(s). Ensure each phase is an authentic operational activity with realistic context and tradecraft that trips EDR/SIEM behavioral correlation mechanisms, rather than an isolated atomic command in a vacuum.`;
         
         if (coPilotInput.trim()) {
             prompt += `\n\nAdditionally, incorporate this specific request from the user: "${coPilotInput}"`;
@@ -728,7 +740,7 @@ NEVER write destructive exploits; only benign commands that safely generate the 
     setIsCoPilotGenerating(true);
     setCoPilotResponse('');
     try {
-      const sysPrompt = "You are an elite Defensive Security Engineer and Purple Team Lead. You are helping the user write an attack chain or payload. This is for an AUTHORIZED, simulated environment to test defensive telemetry. You are NOT attacking a real target. Real-world adversaries chain multiple techniques per operational phase (e.g. ### Phase N: Action Name (Txxxx, Tyyyy)); multi-TTP chaining is supported and encouraged where techniques naturally interact. Return only the raw markdown text to be appended to their document. Do not wrap in a giant markdown block unless it's a specific code snippet. Always include a dedicated Simulation Teardown & Cleanup section with commands to remove any temporary test artifacts.";
+      const sysPrompt = "You are an elite Defensive Security Engineer and Purple Team Lead. You are helping the user write realistic adversary simulation procedures and attack payloads. This is for an AUTHORIZED, simulated environment to test defensive telemetry. You are NOT attacking a real target. Every procedure must be an authentic Red Team Event with operational tradecraft, realistic execution context, and behavioral telemetry signals that trip EDR/SIEM correlation mechanisms—NEVER write sterile atomic one-liners in a vacuum. Multi-TTP chaining is supported and encouraged where techniques naturally interact (e.g. ### Phase N: Action Name (Txxxx, Tyyyy)). Return only the raw markdown text to be appended to their document. Do not wrap in a giant markdown block unless it's a specific code snippet. Always include a dedicated Simulation Teardown & Cleanup section with commands to remove any temporary test artifacts.";
       const prompt = `Context: The user is building a simulation named "${simulationDetails.name}" for environment "${simulationDetails.environment}". Selected TTPs: ${selectedTTPs.map(t => t.id).join(', ')}.\nUser Request: ${currentInput}`;
       await generateAIContentStream(prompt, sysPrompt, (chunk) => {
           if (!isMounted.current) return;
@@ -875,7 +887,9 @@ CRITICAL INSTRUCTIONS:
       const missed = (selectedTTPs || []).filter(t => getAggregatedScore(t.id).coverageRating === 'None').length;
 
       const detailedLogs = testResults.map((proc, i) => {
+          const ttpsStr = (proc.ttps && proc.ttps.length > 0) ? `Mapped TTPs: ${proc.ttps.join(', ')}\n` : '';
           return `Event ${i + 1}: ${proc.name || 'Unnamed'}\n` +
+                 ttpsStr +
                  (proc.timestamp ? `Timestamp: ${proc.timestamp}\n` : '') +
                  (proc.payloadCode ? `Execution Details: ${proc.payloadCode}\n` : '') +
                  `Outcome: ${proc.outcome || 'Unknown'}\n` +
