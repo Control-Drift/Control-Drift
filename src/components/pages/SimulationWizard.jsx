@@ -482,7 +482,7 @@ export default function SimulationWizard() {
              severity: 'Auto-Calculate',
              isBaselinePrefilled: Boolean(baseline),
              baselineSource: baseline?.previousSimulationName || null,
-              timestamp: ''
+              timestamp: new Date().toISOString()
          }
      ]);
   };
@@ -677,12 +677,17 @@ export default function SimulationWizard() {
             return;
         }
 
-        const systemInstruction = `You are an elite Defensive Security Engineer and Purple Team lead. The user wants to design a simulation for testing EDR/SIEM telemetry.
+        const systemInstruction = `You are an elite Defensive Security Engineer and Purple Team lead. The user wants to design a realistic adversary simulation for testing EDR/SIEM telemetry and detection coverage.
 You must provide a highly structured Markdown response optimized for Control Drift's automated event scaffolding:
-1. First, provide a concise **Simulation Overview** explaining the attack chain and defensive validation goals (use inline backticks for command names here—do NOT use fenced triple-backtick code blocks in the overview).
-2. Second, under **Recommended Validation Procedures**, create one dedicated section per selected MITRE ATT&CK technique using the exact heading format:
-   \`### Phase N: <Descriptive Procedure Name> (<TTP_ID>)\`
-   Immediately below each Phase heading, provide a brief 1-2 sentence explanation of the expected telemetry, followed by **exactly one** fenced code block (\`\`\`powershell or \`\`\`bash) containing the ready-to-run, benign validation command(s) for that technique.
+1. First, provide a concise **Simulation Overview** explaining the attack chain, the adversary narrative, and defensive validation goals (use inline backticks for command names here—do NOT use fenced triple-backtick code blocks in the overview).
+2. Second, under **Recommended Validation Procedures**, structure the simulation into logical, realistic operational phases:
+   - **Multi-TTP Chaining**: Real-world attacks rarely execute techniques in complete isolation. Where selected techniques naturally chain or interact within an operational action (e.g., Execution executing Process Injection, Scripting delivering Persistence, Credential Access feeding Discovery, or Staging paired with Exfiltration), chain them together into a single cohesive Phase rather than artificially fragmenting them into isolated steps.
+   - **Phase Heading Format**: Every phase heading MUST use this format, listing all applicable MITRE ATT&CK technique/sub-technique IDs:
+     \`### Phase N: <Descriptive Operational Procedure Name> (<TTP_ID_1>, <TTP_ID_2>, ...)\`
+     (e.g., \`### Phase 1: In-Memory Process Injection via PowerShell (T1059.001, T1055.001)\` or \`### Phase 2: Local Credential Dumping & Staging (T1003.001, T1074.001)\`)
+   - For techniques that do not naturally chain with others in this scenario, maintain dedicated single-technique phases.
+   - Every selected technique must be represented in at least one Phase.
+   - Immediately below each Phase heading, provide a brief 1-2 sentence explanation of the operational procedure and the telemetry correlation opportunity across the chained techniques, followed by **exactly one** fenced code block (\`\`\`powershell or \`\`\`bash) containing the ready-to-run, benign validation command(s) that execute the chained action.
 3. Third, under **Simulation Teardown & Cleanup**, provide a dedicated final section using the exact heading:
    \`### Phase N: Simulation Teardown & Cleanup\`
    Provide a brief 1-2 sentence explanation of the artifacts being cleaned up, followed by **exactly one** fenced code block (\`\`\`powershell or \`\`\`bash) containing the complete, ready-to-run cleanup and reversal commands (e.g. deleting created test files, removing test scheduled tasks, deleting test registry keys, stopping test services, or terminating test processes) to safely restore the host to its pristine baseline.
@@ -692,7 +697,7 @@ NEVER write destructive exploits; only benign commands that safely generate the 
         const historyByTtp = getHistoricalProceduresForTTPs(selectedTTPs, simulationSummaries, events, mitreData);
         const historyPromptBlock = formatHistoricalProceduresForAIPrompt(historyByTtp);
         
-        let prompt = `Target Environment: ${simulationDetails.environment || 'Unknown/Generic'}.\nSimulation Scenario: ${simulationDetails.goals || 'None'}\n\nDesign a unified defensive simulation strategy and validation payload combining the following identified techniques: ${ttpList}.${historyPromptBlock}`;
+        let prompt = `Target Environment: ${simulationDetails.environment || 'Unknown/Generic'}.\nSimulation Scenario: ${simulationDetails.goals || 'None'}\n\nDesign a cohesive, realistic adversary simulation strategy combining the following techniques into realistic operational phases (chaining techniques where operationally appropriate): ${ttpList}.${historyPromptBlock}`;
         
         if (coPilotInput.trim()) {
             prompt += `\n\nAdditionally, incorporate this specific request from the user: "${coPilotInput}"`;
@@ -723,7 +728,7 @@ NEVER write destructive exploits; only benign commands that safely generate the 
     setIsCoPilotGenerating(true);
     setCoPilotResponse('');
     try {
-      const sysPrompt = "You are an elite Defensive Security Engineer. You are helping the user write an attack chain or payload. This is for an AUTHORIZED, simulated environment to test defensive telemetry. You are NOT attacking a real target. Return only the raw markdown text to be appended to their document. Do not wrap in a giant markdown block unless it's a specific code snippet. Always include a dedicated Simulation Teardown & Cleanup section with commands to remove any temporary test artifacts.";
+      const sysPrompt = "You are an elite Defensive Security Engineer and Purple Team Lead. You are helping the user write an attack chain or payload. This is for an AUTHORIZED, simulated environment to test defensive telemetry. You are NOT attacking a real target. Real-world adversaries chain multiple techniques per operational phase (e.g. ### Phase N: Action Name (Txxxx, Tyyyy)); multi-TTP chaining is supported and encouraged where techniques naturally interact. Return only the raw markdown text to be appended to their document. Do not wrap in a giant markdown block unless it's a specific code snippet. Always include a dedicated Simulation Teardown & Cleanup section with commands to remove any temporary test artifacts.";
       const prompt = `Context: The user is building a simulation named "${simulationDetails.name}" for environment "${simulationDetails.environment}". Selected TTPs: ${selectedTTPs.map(t => t.id).join(', ')}.\nUser Request: ${currentInput}`;
       await generateAIContentStream(prompt, sysPrompt, (chunk) => {
           if (!isMounted.current) return;
@@ -871,6 +876,7 @@ CRITICAL INSTRUCTIONS:
 
       const detailedLogs = testResults.map((proc, i) => {
           return `Event ${i + 1}: ${proc.name || 'Unnamed'}\n` +
+                 (proc.timestamp ? `Timestamp: ${proc.timestamp}\n` : '') +
                  (proc.payloadCode ? `Execution Details: ${proc.payloadCode}\n` : '') +
                  `Outcome: ${proc.outcome || 'Unknown'}\n` +
                  (proc.finding ? `Analyst Notes: ${proc.finding}\n` : '');
@@ -1133,9 +1139,13 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
                                procedures.some(p => p.severity === 'Medium') ? 'Medium' : 
                                procedures.some(p => p.severity === 'Low') ? 'Low' : 'Medium';
                                
-         const remediationNotes = procedures.map(p => {
-             let note = `Event: ${p.name || 'Unnamed Event'} [${p.outcome || 'N/A'}]`;
-             if (p.expectedOutcome) note += `\nExpected: ${p.expectedOutcome}`;
+                   const remediationNotes = procedures.map(p => {
+              let note = `Event: ${p.name || 'Unnamed Event'} [${p.outcome || 'N/A'}]`;
+              if (p.timestamp) {
+                  const timeFormatted = new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+                  note += `\nTimestamp: ${timeFormatted} (${new Date(p.timestamp).toLocaleDateString()})`;
+              }
+              if (p.expectedOutcome) note += `\nExpected: ${p.expectedOutcome}`;
              if (p.execNotes) note += `\nExecution: ${p.execNotes}`;
              if (p.detNotes) note += `\nDetection: ${p.detNotes}`;
              return note;
@@ -1176,16 +1186,20 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
              const baseScore = severity === 'Critical' ? 100 : severity === 'High' ? 80 : severity === 'Medium' ? 50 : 20;
              const visibilityMultiplier = (p.coverageRating === 'None') ? 1.0 : (p.coverageRating === 'Minimal' ? 0.9 : (p.coverageRating === 'Partial' ? 0.75 : 0.0));
              const priorityScore = Math.round(baseScore * visibilityMultiplier);
-             const newGap = {
-                 id: Date.now() + Math.random().toString(),
-                 displayId: 'GAP-' + Math.floor(1000 + Math.random() * 9000),
-                 ttp: (p.ttps || []).join(', ') || 'Unmapped',
-                 simulation: finalSimulationName,
-                 finding: p.name || 'Unnamed Event',
-                 outcome: p.outcome || 'Missed',
-                 coverageRating: p.coverageRating || 'None',
-                 details: `Execution: ${p.execNotes || 'N/A'}\nDetection: ${p.detNotes || 'N/A'}`,
-                 severity: severity,
+                           const eventTime = p.timestamp ? new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : '';
+              const timeHeader = p.timestamp ? `Timestamp: ${eventTime} (${new Date(p.timestamp).toLocaleDateString()})\n` : '';
+              const newGap = {
+                  id: Date.now() + Math.random().toString(),
+                  displayId: 'GAP-' + Math.floor(1000 + Math.random() * 9000),
+                  ttp: (p.ttps || []).join(', ') || 'Unmapped',
+                  simulation: finalSimulationName,
+                  finding: p.name || 'Unnamed Event',
+                  outcome: p.outcome || 'Missed',
+                  coverageRating: p.coverageRating || 'None',
+                  details: `${timeHeader}Execution: ${p.execNotes || 'N/A'}\nDetection: ${p.detNotes || 'N/A'}`,
+                  timestamp: p.timestamp || simulationTimestamp,
+                  eventTimestamp: p.timestamp || simulationTimestamp,
+                  severity: severity,
                  priorityScore: priorityScore,
                  status: 'Open',
                  actionItems: 'Review telemetry and develop detection logic.',
@@ -1193,6 +1207,7 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
                  remediationNotes: "",
                  environment: simulationDetails.environmentCategory,
                  tags: simulationDetails.tags || [],
+                  securityControls: Array.isArray(p.securityControls) ? p.securityControls : [],
                  createdDate: new Date().toISOString()
              };
              await createGap(newGap, true);

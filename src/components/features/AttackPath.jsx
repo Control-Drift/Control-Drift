@@ -18,6 +18,7 @@ import React, { useMemo, useState, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../AppContext';
+import CopyButton from '../ui/CopyButton';
 import { ShieldAlert, Shield, X, Package, Monitor, Zap, Network, SatelliteDish, Sparkles, Activity, Fingerprint, AlertCircle, Crosshair, FileText, Terminal, ChevronDown, ChevronUp, Swords, Map as MapIcon, Target, Code } from 'lucide-react';
 import BlackHoleIcon from '../ui/BlackHoleIcon';
 
@@ -888,12 +889,18 @@ Do not include markdown code block wrappers, return ONLY the raw JSON string.\nG
                                                                         Risk Accepted
                                                                     </span>
                                                                 )}
-                                                                {gap.securityControls && gap.securityControls.length > 0 && (
-                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(59, 130, 246, 0.1)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.2)' }} title={gap.securityControls.join(', ')}>
-                                                                        <Shield size={10} color="#60a5fa" />
-                                                                        <span style={{ fontSize: '0.65rem', color: '#60a5fa', fontWeight: 'bold' }}>{gap.securityControls.length}</span>
-                                                                    </div>
-                                                                )}
+                                                                {(() => {
+                                                                    const controls = (gap.securityControls && gap.securityControls.length > 0)
+                                                                        ? gap.securityControls
+                                                                        : (simulationSummaries && gap.simulation ? simulationSummaries[gap.simulation]?.testResults?.find(p => p.name === gap.finding || (gap.ttp && (p.ttps || []).some(t => gap.ttp.includes(t))))?.securityControls : null) || [];
+                                                                    if (!controls || controls.length === 0) return null;
+                                                                    return (
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(59, 130, 246, 0.1)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.2)' }} title={controls.join(', ')}>
+                                                                            <Shield size={10} color="#60a5fa" />
+                                                                            <span style={{ fontSize: '0.65rem', color: '#60a5fa', fontWeight: 'bold' }}>{controls.length}</span>
+                                                                        </div>
+                                                                    );
+                                                                })()}
                                                             </div>
                                                         </div>
                                                         
@@ -1058,8 +1065,11 @@ Do not include markdown code block wrappers, return ONLY the raw JSON string.\nG
                                             )}
                                         </div>
                                         {showGapCode && rawPayload && (
-                                            <div className="animate-fade-in" style={{ background: '#0a0a0a', padding: '20px', borderRadius: '8px', fontFamily: 'monospace', fontSize: '0.9rem', color: '#10b981', overflowX: 'auto', overflowY: 'auto', maxHeight: '300px', border: '1px solid rgba(16,185,129,0.3)', whiteSpace: 'pre-wrap', wordBreak: 'break-all', marginBottom: '10px', boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)' }}>
-                                                <pre style={{ margin: 0, whiteSpace: 'pre-wrap' }}>
+                                            <div className="animate-fade-in" style={{ position: 'relative', background: '#0a0a0a', padding: '20px', borderRadius: '8px', fontFamily: 'monospace', fontSize: '0.9rem', color: '#10b981', overflowX: 'auto', overflowY: 'auto', maxHeight: '300px', border: '1px solid rgba(16,185,129,0.3)', whiteSpace: 'pre-wrap', wordBreak: 'break-all', marginBottom: '10px', boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)' }}>
+                                                <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 10 }}>
+                                                    <CopyButton text={rawPayload} />
+                                                </div>
+                                                <pre style={{ margin: 0, paddingTop: '16px', whiteSpace: 'pre-wrap' }}>
                                                     {rawPayload}
                                                 </pre>
                                             </div>

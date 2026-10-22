@@ -296,6 +296,7 @@ export const AppProvider = ({ children }) => {
         simulationSummaries: simsData.simulationSummaries,
         setSimulationSummaries: simsData.setSimulationSummaries,
         simulationEvidence: simsData.simulationEvidence,
+        setSimulationEvidence: simsData.setSimulationEvidence,
         events: exData.events,
         addToast
     });

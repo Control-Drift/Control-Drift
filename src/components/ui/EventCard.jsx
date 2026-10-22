@@ -73,6 +73,7 @@ export default function EventCard({
         const targetOutcome = proc.expectedOutcome || 'Alerted';
         const cascaded = getOutcomeCascadedFields(targetOutcome, proc.severity);
         updateProcedure(proc.id, 'outcome', targetOutcome);
+        if (!proc.timestamp) updateProcedure(proc.id, 'timestamp', new Date().toISOString());
         updateProcedure(proc.id, 'coverageRating', cascaded.coverageRating);
         updateProcedure(proc.id, 'severity', cascaded.severity);
         if (!proc.detNotes || !proc.detNotes.trim()) {
@@ -87,6 +88,7 @@ export default function EventCard({
     const handleDriftDetected = (e) => {
         e.stopPropagation();
         updateProcedure(proc.id, 'outcome', 'Missed');
+        if (!proc.timestamp) updateProcedure(proc.id, 'timestamp', new Date().toISOString());
         updateProcedure(proc.id, 'coverageRating', 'None');
         updateProcedure(proc.id, 'severity', 'High');
         if (!proc.detNotes || !proc.detNotes.trim()) {
@@ -531,6 +533,7 @@ export default function EventCard({
                                 allowNA={isManual}
                                 onChange={val => {
                                     updateProcedure(proc.id, 'outcome', val);
+                                    if (!proc.timestamp) updateProcedure(proc.id, 'timestamp', new Date().toISOString());
                                     if (val === 'Prevented & Alerted' || val === 'Prevented' || val === 'Alerted') {
                                         updateProcedure(proc.id, 'coverageRating', 'Optimal');
                                         updateProcedure(proc.id, 'severity', 'N/A');

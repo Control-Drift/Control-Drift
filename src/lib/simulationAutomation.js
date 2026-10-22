@@ -75,6 +75,8 @@ function extractProcTtps(proc) {
     ? proc.ttps
     : Array.isArray(proc.mappedTTPs)
     ? proc.mappedTTPs
+    : proc.ttp
+    ? (Array.isArray(proc.ttp) ? proc.ttp : String(proc.ttp).split(','))
     : [];
   return raw.map((id) => String(typeof id === 'object' ? id.id : id).trim().toUpperCase()).filter(Boolean);
 }
@@ -150,7 +152,7 @@ export function getHistoricalBaselineForTTP(ttpId, simulationSummaries = {}, eve
 
   // 2. Fallback to atomic `events` history for this TTP (supports both object map and flat array)
   const ttpEvents = Array.isArray(events)
-    ? events.filter((e) => String(e?.ttpId || e?.id || '').toUpperCase() === normalizedId)
+    ? events.filter((e) => String(e?.ttpId || e?.id || e?.ttp || '').toUpperCase() === normalizedId)
     : Array.isArray(events?.[normalizedId])
     ? events[normalizedId]
     : [];
@@ -225,7 +227,7 @@ export function getHistoricalProceduresForTTPs(
   });
   if (Array.isArray(events)) {
     events.forEach((e) => {
-      const id = String(e?.ttpId || e?.id || '').trim().toUpperCase();
+      const id = String(e?.ttpId || e?.id || e?.ttp || '').trim().toUpperCase();
       if (id) allTestedIds.add(id);
     });
   } else if (events && typeof events === 'object') {
@@ -250,10 +252,7 @@ export function getHistoricalProceduresForTTPs(
       for (const proc of results) {
         const procTtps = extractProcTtps(proc);
         const exactMatch = procTtps.includes(ttpId);
-        const familyMatch = procTtps.some(
-          (id) => id === parentId || id.startsWith(`${parentId}.`)
-        );
-        if (!exactMatch && !familyMatch) continue;
+        if (!exactMatch) continue;
 
         const codeOrSteps = (proc.payloadCode || proc.procedureSteps || '').trim();
         const procName = (proc.name || `${ttpId} Validation`).trim();
@@ -263,13 +262,10 @@ export function getHistoricalProceduresForTTPs(
 
         const rawOutcome = proc.outcome || proc.expectedOutcome || 'Alerted';
         const cleanOutcome = normalizeOutcomeValue(rawOutcome) || 'Alerted';
-        const matchedTtpId = exactMatch
-          ? ttpId
-          : procTtps.find((id) => id === parentId || id.startsWith(`${parentId}.`)) || ttpId;
 
         procedures.push({
-          ttpId: matchedTtpId,
-          isExactMatch: exactMatch,
+          ttpId,
+          isExactMatch: true,
           name: procName,
           eventType: proc.eventType || (proc.procedureSteps ? 'Procedure' : 'Payload'),
           payloadCode: proc.payloadCode || '',
@@ -286,13 +282,12 @@ export function getHistoricalProceduresForTTPs(
     if (procedures.length === 0) {
       const ttpEvents = Array.isArray(events)
         ? events.filter((e) => {
-            const id = String(e?.ttpId || e?.id || '').trim().toUpperCase();
-            return id === ttpId || id === parentId || id.startsWith(`${parentId}.`);
+            const id = String(e?.ttpId || e?.id || e?.ttp || '').trim().toUpperCase();
+            return id === ttpId;
           })
-        : [
-            ...(Array.isArray(events?.[ttpId]) ? events[ttpId] : []),
-            ...(ttpId !== parentId && Array.isArray(events?.[parentId]) ? events[parentId] : []),
-          ];
+        : Array.isArray(events?.[ttpId])
+        ? events[ttpId]
+        : [];
 
       ttpEvents.forEach((ev) => {
         if (!ev) return;
@@ -522,17 +517,36 @@ export function scaffoldEventsFromDesignAndTTPs({
 
     assignedTtps.forEach((id) => coveredTtpIds.add(id.toUpperCase()));
 
+    // Aggregate baselines & security controls across all assigned TTPs for chained events
+    let baseline = null;
+    const aggregatedControls = new Set();
+    let expectedOutcome = '';
+    let baselineSource = null;
+    let targetAsset = '';
+
+    assignedTtps.forEach((tid) => {
+      const b = getHistoricalBaselineForTTP(tid, simulationSummaries, events);
+      if (b) {
+        if (!baseline) {
+          baseline = b;
+          expectedOutcome = b.expectedOutcome || '';
+          baselineSource = b.previousSimulationName || null;
+          targetAsset = b.targetAsset || '';
+        }
+        (b.securityControls || []).forEach((c) => aggregatedControls.add(c));
+      }
+    });
+
     const primaryTtp = assignedTtps[0];
-    const baseline = primaryTtp
-      ? getHistoricalBaselineForTTP(primaryTtp, simulationSummaries, events)
-      : null;
     const ttpName = primaryTtp ? lookupTTPName(mitreData, primaryTtp) : '';
 
     const rawTitle =
       block.title && !/^(recommended|simulation|unified|procedure|step\s*\d+|phase\s*\d+)$/i.test(block.title)
         ? block.title
         : primaryTtp
-        ? `${primaryTtp} - ${ttpName || 'Validation'}`
+        ? (assignedTtps.length > 1
+            ? `${assignedTtps.join(' + ')} - Chained Validation`
+            : `${primaryTtp} - ${ttpName || 'Validation'}`)
         : `Phase ${idx + 1} Execution`;
 
     newEvents.push({
@@ -542,16 +556,16 @@ export function scaffoldEventsFromDesignAndTTPs({
       mappedTTPs: assignedTtps,
       eventType: 'Payload',
       payloadCode: block.code,
-      expectedOutcome: baseline?.expectedOutcome || '',
+      expectedOutcome,
       outcome: '',
       coverageRating: 'N/A',
       severity: 'Auto-Calculate',
-      securityControls: baseline?.securityControls || [],
-      targetAsset: baseline?.targetAsset || '',
+      securityControls: aggregatedControls.size > 0 ? Array.from(aggregatedControls) : (baseline?.securityControls || []),
+      targetAsset,
       execNotes: '',
       detNotes: '',
       isBaselinePrefilled: Boolean(baseline),
-      baselineSource: baseline?.previousSimulationName || null,
+      baselineSource,
       timestamp: '',
     });
   });

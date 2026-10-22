@@ -1153,11 +1153,15 @@ const TechnicalDetails = ({ remediationStr, testResults = [], selectedTechId, fa
 };
 
 const PayloadDisplay = ({ code }) => (
-    <div className="animate-fade-in" style={{  background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid var(--glass-border)', overflowX: 'auto'  }}>
-        <pre style={{ margin: 0, color: '#10b981', fontFamily: 'monospace', fontSize: '0.85rem', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{code}</pre>
+    <div className="animate-fade-in" style={{ position: 'relative', background: '#000', padding: '15px', borderRadius: '8px', border: '1px solid var(--glass-border)', overflowX: 'auto' }}>
+        <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 10 }}>
+            <CopyButton text={code} />
+        </div>
+        <pre style={{ margin: 0, paddingTop: '24px', color: '#10b981', fontFamily: 'monospace', fontSize: '0.85rem', whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>{code}</pre>
     </div>
 );
 
+import CopyButton from '../ui/CopyButton';
 import TagDropdown from '../dropdowns/TagDropdown';
 
 /**

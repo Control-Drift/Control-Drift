@@ -31,6 +31,7 @@ export function useEventActions({
     simulationSummaries,
     setSimulationSummaries,
     simulationEvidence,
+    setSimulationEvidence,
     events,
     addToast
 }) {
@@ -175,7 +176,7 @@ export function useEventActions({
      * @param {string} [validationDate] - ISO timestamp of when the re-test occurred.
      * @returns {boolean} True if the gap was auto-resolved, false otherwise.
      */
-    const updateEventValidation = useCallback(async (gapObj, newOutcomeStatus, validationNotes, validationDate) => {
+    const updateEventValidation = useCallback(async (gapObj, newOutcomeStatus, validationNotes, validationDate, validationEvidence = []) => {
         // Parse the TTPs mapped to this gap (can be a comma-separated list)
         const ttpList = (gapObj.ttp || '').split(',').map(t => t.trim()).filter(Boolean);
         const simulationName = gapObj.simulation;
@@ -218,7 +219,14 @@ export function useEventActions({
                 } else {
                     proc.outcome = `${original} ➔ ${newOutcomeStatus} ✓`;
                 }
-                proc.detNotes = (proc.detNotes || '') + `\n\n**[Validation Re-Test]**\n${validationNotes}`;
+                const cleanValidationNotes = (validationNotes || '')
+                    .replace(/\n\n\[Attached Evidence:.*?\]/g, '')
+                    .replace(/\[Attached Evidence:.*?\]/g, '')
+                    .trim();
+                proc.detNotes = (proc.detNotes || '') + `\n\n**[Validation Re-Test]**\n${cleanValidationNotes}`;
+                if (Array.isArray(validationEvidence) && validationEvidence.length > 0) {
+                    proc.evidence = [...(proc.evidence || []), ...validationEvidence];
+                }
                 if (validationDate) {
                     proc.validationDate = validationDate;
                 }
@@ -270,19 +278,38 @@ export function useEventActions({
             
             aggregatedSecurityControls = Array.from(new Set(proceduresForTTP.flatMap(p => p.securityControls || [])));
             
+            let updatedEvidenceArray = (simulationEvidence && simulationEvidence[simulationName]) ? [...simulationEvidence[simulationName]] : [];
+            if (Array.isArray(validationEvidence) && validationEvidence.length > 0) {
+                updatedEvidenceArray = [...updatedEvidenceArray, ...validationEvidence];
+                if (typeof setSimulationEvidence === 'function') {
+                    setSimulationEvidence(prev => ({
+                        ...prev,
+                        [simulationName]: updatedEvidenceArray
+                    }));
+                }
+            }
+
             setSimulationSummaries(currentSimulations);
             if (dbAdapter && typeof dbAdapter.upsertSimulation === 'function') {
                 try {
                     await dbAdapter.upsertSimulation({
                         id: simulationName,
                         summary: simulationData,
-                        evidence: simulationEvidence[simulationName] || []
+                        evidence: updatedEvidenceArray
                     });
                 } catch (err) {
                     console.warn("upsertSimulation failed, possibly missing simulations table. Skipping.", err);
                 }
             } else if (dbAdapter && typeof dbAdapter.saveData === 'function') {
                 await dbAdapter.saveData('simulationSummaries', currentSimulations);
+                if (Array.isArray(validationEvidence) && validationEvidence.length > 0) {
+                    try {
+                        const currentEv = (await dbAdapter.fetchData?.('simulationEvidence')) || {};
+                        await dbAdapter.saveData('simulationEvidence', { ...currentEv, [simulationName]: updatedEvidenceArray });
+                    } catch (e) {
+                        console.warn("Saving simulationEvidence failed:", e);
+                    }
+                }
             }
         }
 
@@ -423,7 +450,7 @@ export function useEventActions({
             }
         }
         return shouldResolveGap;
-    }, [dbAdapter, events, allEventsData, gaps, exercisesPage, exercisesLimit, fetchEventsPage, loadMitreCoverage, simulationSummaries, setSimulationSummaries, simulationEvidence, setExercises, setAllEventsData, setGaps]);
+    }, [dbAdapter, events, allEventsData, gaps, exercisesPage, exercisesLimit, fetchEventsPage, loadMitreCoverage, simulationSummaries, setSimulationSummaries, simulationEvidence, setSimulationEvidence, setExercises, setAllEventsData, setGaps]);
 
     /**
      * revertEventValidation

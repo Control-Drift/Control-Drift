@@ -17,6 +17,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../AppContext';
+import CopyButton from '../ui/CopyButton';
 import { ArrowLeft, ArrowRight, Clock, Target, Crosshair, AlertCircle, Edit3, Link as LinkIcon, Sparkles, Terminal, X, User, FileText, Shield, CheckCircle2, ShieldAlert, ChevronDown, Info, CheckSquare, Check, Plus, CornerDownLeft, Activity, Code, Eye, EyeOff, Server } from 'lucide-react';
 import ValidationOutcomeDropdown from '../dropdowns/ValidationOutcomeDropdown';
 import { useToast } from '../ui/Toast';
@@ -50,7 +51,21 @@ const FormattedOutcome = ({ outcome, strikeThrough = false }) => {
     return <span className={`status-${stat}`} style={{ padding: '4px 10px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: '1', textDecoration: strikeThrough ? 'line-through' : 'none', opacity: strikeThrough ? 0.7 : 1 }}>{cleanOutcome}</span>;
 };
 
-    const renderTechnicalDetails = (remediationStr, gap, proc) => {
+    
+const formatTimestamp = (ts) => {
+    if (!ts) return null;
+    const d = new Date(ts);
+    if (!isNaN(d.getTime())) {
+        return {
+            time: d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }),
+            date: d.toLocaleDateString(),
+            full: d.toLocaleString()
+        };
+    }
+    return { time: String(ts), date: '', full: String(ts) };
+};
+
+const renderTechnicalDetails = (remediationStr, gap, proc, campSumm, allEvents) => {
         let effectiveCoverage = gap?.coverageRating;
         
         let currentOutcome = gap?.outcome ? gap.outcome.replace(/ z" .* o"/g, '').trim() : '';
@@ -74,15 +89,54 @@ const FormattedOutcome = ({ outcome, strikeThrough = false }) => {
     const events = remediationStr.split(/(?=(?:^|\n)Event:\s+)/).map(e => e.trim()).filter(Boolean);
     
     if (events.length > 0 && !events[0].startsWith('Event:')) {
+        const evtTs = proc?.timestamp || proc?.date || gap?.eventTimestamp || gap?.timestamp || (() => {
+            if (remediationStr) {
+                const m = remediationStr.match(/Timestamp:\s*([^\n\r]+)/);
+                if (m && m[1]) return m[1].trim();
+            }
+            return null;
+        })();
+        const techTimeInfo = formatTimestamp(evtTs);
+
+        const controlsToDisplay = (() => {
+            if (Array.isArray(gap?.securityControls) && gap.securityControls.length > 0) return gap.securityControls;
+            if (Array.isArray(proc?.securityControls) && proc.securityControls.length > 0) return proc.securityControls;
+            if (campSumm?.testResults) {
+                const found = campSumm.testResults.find(p => p.name === gap?.finding || (gap?.ttp && (p.ttps || []).some(t => gap.ttp.includes(t))));
+                if (Array.isArray(found?.securityControls) && found.securityControls.length > 0) return found.securityControls;
+            }
+            if (allEvents && Array.isArray(allEvents)) {
+                const matchedEvent = allEvents.find(e => 
+                    e.simulation === gap?.simulation && 
+                    (e.finding === gap?.finding || (gap?.ttp && (gap.ttp.includes(e.ttp) || e.ttp.includes(gap.ttp))))
+                );
+                if (Array.isArray(matchedEvent?.securityControls) && matchedEvent.securityControls.length > 0) return matchedEvent.securityControls;
+            }
+            return [];
+        })();
+
         return (
-             <div style={{  background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '12px', border: '1px solid var(--glass-border)', boxShadow: 'inset 0 0 20px rgba(0,0,0,0.2)', color: 'var(--text-secondary)'  }}>
-                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr)', gap: '20px', alignItems: 'flex-start', width: '100%', marginBottom: '20px' }}>
+             <div style={{ background: 'rgba(255,255,255,0.03)', padding: '20px', borderRadius: '12px', border: '1px solid var(--glass-border)', boxShadow: 'inset 0 0 20px rgba(0,0,0,0.2)', color: 'var(--text-secondary)' }}>
+                 <div style={{ display: 'grid', gridTemplateColumns: techTimeInfo ? 'minmax(0, 1fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1.5fr)' : 'minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr)', gap: '20px', alignItems: 'flex-start', width: '100%', marginBottom: '20px' }}>
                      <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                         <span style={{  display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold'  }}><Activity size={14} color="var(--accent-primary)" /> Outcome</span>
+                         <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold' }}><Activity size={14} color="var(--accent-primary)" /> Outcome</span>
                          <div style={{ display: 'flex', alignItems: 'center', minHeight: '26px', wordBreak: 'break-word' }}>
                              <FormattedOutcome outcome={proc?.outcome || gap?.outcome} />
                          </div>
                      </div>
+                     {techTimeInfo && (
+                         <div style={{ textAlign: 'left', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                             <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '6px', letterSpacing: '1px', fontWeight: 'bold' }}>
+                                 <Clock size={14} color="var(--accent-primary)" /> Event Timestamp
+                             </div>
+                             <div style={{ display: 'flex', alignItems: 'center', minHeight: '26px' }}>
+                                 <span style={{ color: '#38bdf8', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '5px', fontSize: '0.85rem', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '4px 10px', borderRadius: '4px', fontWeight: 'bold', fontFamily: 'monospace' }} title={`Execution Timestamp: ${techTimeInfo.full}`}>
+                                     <Clock size={12} />
+                                     <span>{techTimeInfo.time}{techTimeInfo.date ? ` (${techTimeInfo.date})` : ''}</span>
+                                 </span>
+                             </div>
+                         </div>
+                     )}
                      {gap?.coverageRating && (
                          <div style={{ textAlign: 'left', minWidth: 0, display: 'flex', flexDirection: 'column' }}>
                              <div style={{  fontSize: '0.8rem', color: 'var(--text-muted)', textTransform: 'uppercase', marginBottom: '10px', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: '6px', letterSpacing: '1px', fontWeight: 'bold'  }}>
@@ -116,8 +170,8 @@ const FormattedOutcome = ({ outcome, strikeThrough = false }) => {
                              <Shield size={14} color="var(--accent-primary)" /> Security Controls
                          </div>
                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center', minHeight: '26px' }}>
-                             {gap?.securityControls && gap.securityControls.length > 0 ? (
-                                 gap.securityControls.map(sc => (
+                             {controlsToDisplay && controlsToDisplay.length > 0 ? (
+                                  controlsToDisplay.map(sc => (
                                      <span key={sc} style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.2)', padding: '4px 10px', borderRadius: '4px', fontSize: '0.85rem', color: '#60a5fa', fontWeight: 'bold', wordBreak: 'break-word', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', lineHeight: '1' }}>
                                          {sc}
                                      </span>
@@ -130,7 +184,19 @@ const FormattedOutcome = ({ outcome, strikeThrough = false }) => {
                  </div>
                  {remediationStr.split('\n').map((line, i) => {
                      const trimmedLine = line.trim();
-                     if (trimmedLine.startsWith('Execution:')) {
+                     if (trimmedLine.startsWith('Timestamp:')) {
+                        const timeVal = line.substring(line.indexOf('Timestamp:') + 10).trim();
+                        return (
+                            <div key={i} style={{ marginBottom: '10px', display: 'flex', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', alignItems: 'center' }}>
+                                <strong style={{ color: '#38bdf8', width: '170px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <Clock size={14} /> Event Timestamp:
+                                </strong>
+                                <span style={{ color: '#38bdf8', fontFamily: 'monospace', fontWeight: 'bold', fontSize: '0.85rem' }}>
+                                    {timeVal}
+                                </span>
+                            </div>
+                        );
+                    } else if (trimmedLine.startsWith('Execution:')) {
                          return <div key={i} style={{  marginBottom: '10px', display: 'flex', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px'  }}><strong style={{  color: 'var(--danger)', width: '170px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px'  }}><Crosshair size={14} /> Red Team Notes:</strong> <span style={{ flex: 1, color: 'var(--text-primary)', lineHeight: '1.5' }}>{line.substring(line.indexOf('Execution:') + 10).trim()}</span></div>;
                      } else if (trimmedLine.startsWith('Detection:')) {
                          return <div key={i} style={{  marginBottom: '10px', display: 'flex', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px'  }}><strong style={{  color: '#3b82f6', width: '170px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px'  }}><Shield size={14} /> Blue Team Notes:</strong> <span style={{ flex: 1, color: 'var(--text-primary)', lineHeight: '1.5' }}>{line.substring(line.indexOf('Detection:') + 10).trim()}</span></div>;
@@ -170,15 +236,27 @@ const FormattedOutcome = ({ outcome, strikeThrough = false }) => {
                 const expectedMatch = evt.match(/Expected:\s*([\s\S]*?)(?=\n(?:Execution:|Detection:|Event:)|$)/);
                 if (expectedMatch) expectedNotes = expectedMatch[1].trim();
 
+                const timeMatch = evt.match(/Timestamp:\s*([^\n\r]+)/);
+                const matchedProc = (proc?.name === name ? proc : null) || campSumm?.testResults?.find(p => p.name === name);
+                const subEvtTime = formatTimestamp(timeMatch ? timeMatch[1].trim() : (matchedProc?.timestamp || matchedProc?.date || null));
+
                 return (
-                    <div key={i} style={{  background: 'rgba(0,0,0,0.4)', border: '1px solid var(--glass-border)', borderRadius: '6px', padding: '12px'  }}>
-                        <div style={{  display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px'  }}>
-                            <strong style={{  color: 'var(--text-primary)', fontSize: '0.95rem'  }}>
-                                {name}
-                                {outcome && (outcome.includes('->') || outcome.includes('➔')) && (
-                                    <span style={{  marginLeft: '10px', fontSize: '0.7rem', color: '#059669', background: 'rgba(5, 150, 105, 0.15)', padding: '2px 8px', borderRadius: '12px', verticalAlign: 'middle', border: '1px solid rgba(5, 150, 105, 0.3)'  }}>Re-Tested ✓</span>
+                    <div key={i} style={{ background: 'rgba(0,0,0,0.4)', border: '1px solid var(--glass-border)', borderRadius: '6px', padding: '12px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <strong style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                                    {name}
+                                    {outcome && (outcome.includes('->') || outcome.includes('➔')) && (
+                                        <span style={{ marginLeft: '10px', fontSize: '0.7rem', color: '#059669', background: 'rgba(5, 150, 105, 0.15)', padding: '2px 8px', borderRadius: '12px', verticalAlign: 'middle', border: '1px solid rgba(5, 150, 105, 0.3)' }}>Re-Tested ✓</span>
+                                    )}
+                                </strong>
+                                {subEvtTime && (
+                                    <span style={{ color: '#38bdf8', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', fontFamily: 'monospace' }} title={`Execution Timestamp: ${subEvtTime.full}`}>
+                                        <Clock size={10} />
+                                        <span>{subEvtTime.time}</span>
+                                    </span>
                                 )}
-                            </strong>
+                            </div>
                             <FormattedOutcome outcome={outcome} />
                         </div>
                         <div style={{  display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', fontSize: '0.8rem'  }}>
@@ -197,7 +275,7 @@ const FormattedOutcome = ({ outcome, strikeThrough = false }) => {
                                         <span style={{ color: 'var(--text-secondary)', lineHeight: '1.5', display: 'block', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{detectNotes.split('**[Validation Re-Test]**')[0].trim()}</span>
                                         <div style={{ marginTop: '12px', background: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', padding: '10px', borderRadius: '6px' }}>
                                             <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--success)', fontWeight: 'bold', fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: '6px' }}><ShieldCheck size={14} /> Validation Re-Test</span>
-                                            <span style={{ display: 'block', whiteSpace: 'pre-wrap', color: 'var(--text-primary)', lineHeight: '1.5' }}>{detectNotes.split('**[Validation Re-Test]**')[1].trim()}</span>
+                                            <span style={{ display: 'block', whiteSpace: 'pre-wrap', color: 'var(--text-primary)', lineHeight: '1.5' }}>{detectNotes.split('**[Validation Re-Test]**')[1].replace(/\n\n\[Attached Evidence:.*?\]/g, '').replace(/\[Attached Evidence:.*?\]/g, '').trim()}</span>
                                         </div>
                                     </>
                                 ) : (
@@ -231,7 +309,7 @@ const FormattedOutcome = ({ outcome, strikeThrough = false }) => {
 export default function GapDetails({ gapIdProp, onClose, onValidate }) {
     const { id } = useParams();
     const navigate = useNavigate();
-    const { gaps, setExercises, mitreData, simulationSummaries, generateAIContentStream, aiSettings, updateEventValidation, setActiveAiContext, requestSuccessToast, isReadOnly, updateGap, deleteGap, confirmAction } = useAppContext();
+    const { gaps, events, setExercises, mitreData, simulationSummaries, generateAIContentStream, aiSettings, updateEventValidation, setActiveAiContext, requestSuccessToast, isReadOnly, updateGap, deleteGap, confirmAction, compressImage } = useAppContext();
     const { addToast } = useToast();
 
     const getTTPName = (id) => {
@@ -282,6 +360,26 @@ export default function GapDetails({ gapIdProp, onClose, onValidate }) {
     const [validationNotes, setValidationNotes] = useState('');
     const [validationDate, setValidationDate] = useState(() => { const now = new Date(); now.setMinutes(now.getMinutes() - now.getTimezoneOffset()); return now.toISOString().slice(0, 16); });
     const [validationFiles, setValidationFiles] = useState([]);
+    const processValidationFiles = async (files) => {
+        const images = [];
+        for (const file of files) {
+            if (file.type && file.type.startsWith('image/')) {
+                try {
+                    const dataUrl = await new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.onload = e => resolve(e.target.result);
+                        reader.onerror = reject;
+                        reader.readAsDataURL(file);
+                    });
+                    const compressed = compressImage ? await compressImage(dataUrl) : dataUrl;
+                    images.push(compressed);
+                } catch (err) {
+                    console.error("Failed to read evidence image:", file.name, err);
+                }
+            }
+        }
+        return images;
+    };
 
     useEffect(() => {
         if (showValidationModal) {
@@ -461,6 +559,39 @@ export default function GapDetails({ gapIdProp, onClose, onValidate }) {
     const campSumm = simulationSummaries[gap.simulation];
     const proc = campSumm?.testResults?.find(p => p.name === gap.finding);
     const daysOpen = Math.floor((new Date() - new Date(gap.createdDate || Date.now())) / (1000 * 60 * 60 * 24));
+    
+
+    const resolveEventTimestamp = () => {
+        if (proc?.timestamp) return proc.timestamp;
+        if (proc?.date) return proc.date;
+        if (gap?.eventTimestamp) return gap.eventTimestamp;
+        if (gap?.timestamp) return gap.timestamp;
+        if (gap?.details) {
+            const m = gap.details.match(/Timestamp:\s*([^\n\r]+)/);
+            if (m && m[1]) return m[1].trim();
+        }
+        const matchedEvent = events?.find(e => 
+            e.simulation === gap?.simulation && 
+            (e.finding === gap?.finding || (gap?.ttp && (gap.ttp.includes(e.ttp) || e.ttp.includes(gap.ttp))))
+        );
+        if (matchedEvent?.date) return matchedEvent.date;
+        return null;
+    };
+
+    const eventTimeInfo = formatTimestamp(resolveEventTimestamp());
+
+    useEffect(() => {
+        if (gap && (!gap.securityControls || gap.securityControls.length === 0)) {
+            const controls = (proc?.securityControls && proc.securityControls.length > 0) 
+                ? proc.securityControls 
+                : campSumm?.testResults?.find(p => p.name === gap.finding || (gap.ttp && (p.ttps || []).some(t => gap.ttp.includes(t))))?.securityControls;
+            if (controls && controls.length > 0 && typeof updateGap === 'function') {
+                updateGap(gap.id, { securityControls: controls });
+            }
+        }
+    }, [gap, proc, campSumm, updateGap]);
+
+
 
 
 
@@ -474,10 +605,10 @@ export default function GapDetails({ gapIdProp, onClose, onValidate }) {
                     <ArrowLeft size={20} />
                 </button>
                 <div style={{  flex: 1  }}>
-                    <div style={{  display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '5px'  }}>
-                        <span style={{  fontSize: '0.8rem', color: 'var(--text-muted)'  }}>{new Date(gap.createdDate).toLocaleDateString()}</span>
-                        <span style={{  fontSize: '0.8rem', color: 'var(--text-muted)'  }}>•</span>
-                        <span style={{  fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px'  }}><Clock size={12} /> {daysOpen} days open</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '5px' }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Created {new Date(gap.createdDate).toLocaleDateString()}</span>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>•</span>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}><Clock size={12} /> {daysOpen} days open</span>
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                         {gap.displayId && <div style={{ color: 'var(--accent-secondary)', fontSize: '0.9rem', fontWeight: 'bold', letterSpacing: '1.5px' }}>{gap.displayId}</div>}
@@ -703,12 +834,15 @@ export default function GapDetails({ gapIdProp, onClose, onValidate }) {
                             </div>
                             
                             {showPayload && (
-                                <div className="animate-fade-in" style={{ background: '#0a0a0a', padding: '20px', borderRadius: '8px', fontFamily: 'monospace', fontSize: '0.9rem', color: '#10b981', overflowX: 'auto', overflowY: 'auto', maxHeight: '300px', border: '1px solid rgba(16,185,129,0.3)', whiteSpace: 'pre-wrap', wordBreak: 'break-all', marginBottom: '20px', boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)' }}>
-                                    <pre style={{  margin: 0, whiteSpace: 'pre-wrap'   }}>{proc?.payloadCode || gap.payloadCode || proc?.procedureSteps || gap.procedureSteps}</pre>
+                                <div className="animate-fade-in" style={{ position: 'relative', background: '#0a0a0a', padding: '20px', borderRadius: '8px', fontFamily: 'monospace', fontSize: '0.9rem', color: '#10b981', overflowX: 'auto', overflowY: 'auto', maxHeight: '300px', border: '1px solid rgba(16,185,129,0.3)', whiteSpace: 'pre-wrap', wordBreak: 'break-all', marginBottom: '20px', boxShadow: 'inset 0 0 20px rgba(0,0,0,0.5)' }}>
+                                    <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 10 }}>
+                                        <CopyButton text={proc?.payloadCode || gap.payloadCode || proc?.procedureSteps || gap.procedureSteps} />
+                                    </div>
+                                    <pre style={{ margin: 0, paddingTop: '16px', whiteSpace: 'pre-wrap' }}>{proc?.payloadCode || gap.payloadCode || proc?.procedureSteps || gap.procedureSteps}</pre>
                                 </div>
                             )}
 
-                            {renderTechnicalDetails(gap.details, gap, proc)}
+                            {renderTechnicalDetails(gap.details, gap, proc, campSumm, events)}
                         </div>
                     </div>
                 )}
@@ -1046,14 +1180,24 @@ export default function GapDetails({ gapIdProp, onClose, onValidate }) {
                           </div>
                           {validationFiles.length > 0 && (
                               <div style={{  display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px'  }}>
-                                  {validationFiles.map((file, idx) => (
-                                      <div key={idx} style={{  background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--success)', color: 'var(--success)', padding: '4px 10px', borderRadius: '16px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px'  }}>
-                                          {file.name}
-                                           {!isReadOnly && (
-                                               <button className="close-btn" style={{  padding: '4px'  }} onClick={(e) => { e.stopPropagation(); setValidationFiles(prev => prev.filter((_, i) => i !== idx)); }}><X size={12} /></button>
-                                           )}
-                                      </div>
-                                  ))}
+                                  {validationFiles.map((file, idx) => {
+                                      const isImg = file.type && file.type.startsWith('image/');
+                                      return (
+                                          <div key={idx} style={{  background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--success)', color: 'var(--success)', padding: '6px 10px', borderRadius: '8px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '8px'  }}>
+                                              {isImg && (
+                                                  <img 
+                                                      src={URL.createObjectURL(file)} 
+                                                      alt={file.name} 
+                                                      style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px' }} 
+                                                  />
+                                              )}
+                                              <span style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={file.name}>{file.name}</span>
+                                              {!isReadOnly && (
+                                                  <button className="close-btn" style={{  padding: '2px 4px', cursor: 'pointer', background: 'transparent', border: 'none', color: 'var(--success)'  }} onClick={(e) => { e.stopPropagation(); setValidationFiles(prev => prev.filter((_, i) => i !== idx)); }}><X size={12} /></button>
+                                              )}
+                                          </div>
+                                      );
+                                  })}
                               </div>
                           )}
                        </div>
@@ -1061,10 +1205,11 @@ export default function GapDetails({ gapIdProp, onClose, onValidate }) {
                     <div style={{  padding: '20px', borderTop: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'flex-end', gap: '10px'  }}>
                        <button className="btn" style={{  background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)'  }} onClick={() => { setShowValidationModal(false); setValidationFiles([]); }}>Cancel</button>
                        <button className="btn" disabled={!validationOutcome || !validationNotes.trim()} style={{  background: (!validationOutcome || !validationNotes.trim()) ? 'var(--bg-tertiary)' : 'var(--success)', color: (!validationOutcome || !validationNotes.trim()) ? 'var(--text-muted)' : '#fff', cursor: (!validationOutcome || !validationNotes.trim()) ? 'not-allowed' : 'pointer'  }} onClick={async () => {
-                          const finalNotes = validationNotes + (validationFiles.length > 0 ? `\n\n[Attached Evidence: ${validationFiles.map(f => f.name).join(', ')}]` : '');
+                          const b64Images = await processValidationFiles(validationFiles);
+                          const cleanNotes = validationNotes.trim();
                           let resolved = false;
                           if (updateEventValidation) {
-                              resolved = await updateEventValidation(gap, validationOutcome, finalNotes, validationDate ? new Date(validationDate).toISOString() : null);
+                              resolved = await updateEventValidation(gap, validationOutcome, cleanNotes, validationDate ? new Date(validationDate).toISOString() : null, b64Images);
                           }
                           
                           setShowValidationModal(false);
@@ -1072,7 +1217,7 @@ export default function GapDetails({ gapIdProp, onClose, onValidate }) {
                           setValidationFiles([]);
                           
                           if (resolved) {
-                              addToast("Gap Resolved successfully.", "success");
+                              addToast("Gap Resolved successfully. Evidence attached.", "success");
                           } else {
                               addToast("Gap remains In Progress. Optimal coverage (Prevented/Alerted) is required to resolve.", "warning");
                           }

@@ -97,7 +97,7 @@ const renderTechnicalDetails = (remediationStr) => {
     );
 };
 
-const MemoizedGapCard = React.memo(({ gap, handleDragStart, handleDragEnd, setSelectedGapId, getTTPName, isReadOnly }) => {
+const MemoizedGapCard = React.memo(({ gap, handleDragStart, handleDragEnd, setSelectedGapId, getTTPName, isReadOnly, simulationSummaries }) => {
     const daysOpen = Math.floor((new Date() - new Date(gap.createdDate || Date.now())) / (1000 * 60 * 60 * 24));
     
     return (
@@ -140,18 +140,24 @@ const MemoizedGapCard = React.memo(({ gap, handleDragStart, handleDragEnd, setSe
                 <span style={{  fontSize: '0.75rem', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px', color: 'var(--text-secondary)'  }}>
                     Env: {Array.isArray(gap.environment) ? gap.environment.join(', ') : (gap.environment || 'Unknown Environment')}
                 </span>
-                {gap.securityControls && gap.securityControls.length > 0 && (
-                    <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
-                        {gap.securityControls.slice(0, 2).map((ctrl, idx) => (
-                            <span key={idx} style={{ fontSize: '0.65rem', color: '#60a5fa', background: 'rgba(59, 130, 246, 0.1)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
-                                {ctrl}
-                            </span>
-                        ))}
-                        {gap.securityControls.length > 2 && (
-                            <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>+{gap.securityControls.length - 2}</span>
-                        )}
-                    </div>
-                )}
+                {(() => {
+                    const controls = (gap.securityControls && gap.securityControls.length > 0)
+                        ? gap.securityControls
+                        : (simulationSummaries && gap.simulation ? simulationSummaries[gap.simulation]?.testResults?.find(p => p.name === gap.finding || (gap.ttp && (p.ttps || []).some(t => gap.ttp.includes(t))))?.securityControls : null) || [];
+                    if (!controls || controls.length === 0) return null;
+                    return (
+                        <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }}>
+                            {controls.slice(0, 2).map((ctrl, idx) => (
+                                <span key={idx} style={{ fontSize: '0.65rem', color: '#60a5fa', background: 'rgba(59, 130, 246, 0.1)', padding: '2px 6px', borderRadius: '4px', border: '1px solid rgba(59, 130, 246, 0.2)' }}>
+                                    {ctrl}
+                                </span>
+                            ))}
+                            {controls.length > 2 && (
+                                <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>+{controls.length - 2}</span>
+                            )}
+                        </div>
+                    );
+                })()}
             </div>
             
             <div style={{  display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '5px'  }}>
@@ -191,13 +197,33 @@ import TagDropdown from '../dropdowns/TagDropdown';
  * - "Validation": Re-executing the original TTP to verify the new security control works.
  */
 export default function GapTracker() {
-  const { gaps, updateGap, createGap, deleteGap, isReadOnly, mitreData, updateEventValidation, revertEventValidation, aiSettings, setActiveAiContext, activeEnvironmentFilter, activeTagFilter, targetEnvironments, simulationSummaries, setSimulationSummaries, setExercises, allEventsData, setAllEventsData, dbAdapter, confirmAction } = useAppContext();
+  const { gaps, updateGap, createGap, deleteGap, isReadOnly, mitreData, updateEventValidation, revertEventValidation, aiSettings, setActiveAiContext, activeEnvironmentFilter, activeTagFilter, targetEnvironments, simulationSummaries, setSimulationSummaries, setExercises, allEventsData, setAllEventsData, dbAdapter, confirmAction, compressImage } = useAppContext();
   const { addToast } = useToast();
   
   const location = useLocation();
   const navigate = useNavigate();
   
   const [activeValidationGap, setActiveValidationGap] = useState(null);
+  const processValidationFiles = async (files) => {
+      const images = [];
+      for (const file of files) {
+          if (file.type && file.type.startsWith('image/')) {
+              try {
+                  const dataUrl = await new Promise((resolve, reject) => {
+                      const reader = new FileReader();
+                      reader.onload = e => resolve(e.target.result);
+                      reader.onerror = reject;
+                      reader.readAsDataURL(file);
+                  });
+                  const compressed = compressImage ? await compressImage(dataUrl) : dataUrl;
+                  images.push(compressed);
+              } catch (err) {
+                  console.error("Failed to read evidence image:", file.name, err);
+              }
+          }
+      }
+      return images;
+  };
   const [selectedGapId, setSelectedGapId] = useState(null);
   const [isResolvedCollapsed, setIsResolvedCollapsed] = useState(false);
 
@@ -728,6 +754,7 @@ export default function GapTracker() {
                           setSelectedGapId={setSelectedGapId}
                           getTTPName={getTTPName}
                           isReadOnly={isReadOnly}
+                          simulationSummaries={simulationSummaries}
                       />
                   ))}
                     </div>
@@ -870,12 +897,22 @@ export default function GapTracker() {
                   </div>
                   {validationFiles.length > 0 && (
                       <div style={{  display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '10px'  }}>
-                          {validationFiles.map((file, idx) => (
-                              <div key={idx} style={{  background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--success)', color: 'var(--success)', padding: '4px 10px', borderRadius: '16px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '6px'  }}>
-                                  {file.name}
-                                  <button className="close-btn" style={{  padding: '4px'  }} onClick={(e) => { e.stopPropagation(); setValidationFiles(prev => prev.filter((_, i) => i !== idx)); }}><X size={12} /></button>
-                              </div>
-                          ))}
+                          {validationFiles.map((file, idx) => {
+                              const isImg = file.type && file.type.startsWith('image/');
+                              return (
+                                  <div key={idx} style={{  background: 'rgba(16, 185, 129, 0.1)', border: '1px solid var(--success)', color: 'var(--success)', padding: '6px 10px', borderRadius: '8px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '8px'  }}>
+                                      {isImg && (
+                                          <img 
+                                              src={URL.createObjectURL(file)} 
+                                              alt={file.name} 
+                                              style={{ width: '28px', height: '28px', objectFit: 'cover', borderRadius: '4px' }} 
+                                          />
+                                      )}
+                                      <span style={{ maxWidth: '180px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={file.name}>{file.name}</span>
+                                      <button className="close-btn" style={{  padding: '2px 4px', cursor: 'pointer', background: 'transparent', border: 'none', color: 'var(--success)'  }} onClick={(e) => { e.stopPropagation(); setValidationFiles(prev => prev.filter((_, i) => i !== idx)); }}><X size={12} /></button>
+                                  </div>
+                              );
+                          })}
                       </div>
                   )}
                </div>
@@ -883,16 +920,12 @@ export default function GapTracker() {
             <div style={{  padding: '20px', borderTop: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'flex-end', gap: '10px'  }}>
                <button className="btn" style={{  background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)'  }} onClick={() => { setActiveValidationGap(null); setValidationFiles([]); }}>Cancel</button>
                <button className="btn" disabled={!validationOutcome || !validationNotes.trim()} style={{  background: (!validationOutcome || !validationNotes.trim()) ? 'var(--bg-tertiary)' : 'var(--success)', color: (!validationOutcome || !validationNotes.trim()) ? 'var(--text-muted)' : '#fff', cursor: (!validationOutcome || !validationNotes.trim()) ? 'not-allowed' : 'pointer'  }} onClick={async () => {
-                   console.log("Submit Validation clicked. Outcome:", validationOutcome, "Notes:", validationNotes);
                    try {
-                       const finalNotes = validationNotes + (validationFiles.length > 0 ? `\n\n[Attached Evidence: ${validationFiles.map(f => f.name).join(', ')}]` : '');
+                       const b64Images = await processValidationFiles(validationFiles);
+                       const cleanNotes = validationNotes.trim();
                        let resolved = false;
                        if (updateEventValidation) {
-                           console.log("Calling updateEventValidation...");
-                           resolved = await updateEventValidation(activeValidationGap, validationOutcome, finalNotes, validationDate ? new Date(validationDate).toISOString() : null);
-                           console.log("updateEventValidation returned resolved:", resolved);
-                       } else {
-                           console.log("updateEventValidation is undefined!");
+                           resolved = await updateEventValidation(activeValidationGap, validationOutcome, cleanNotes, validationDate ? new Date(validationDate).toISOString() : null, b64Images);
                        }
                        
                        setActiveValidationGap(null);
@@ -900,14 +933,13 @@ export default function GapTracker() {
                        setValidationFiles([]);
                        
                        if (resolved) {
-                           console.log("Adding success toast");
-                           addToast("Gap Resolved successfully.", "success");
+                           addToast("Gap Resolved successfully. Evidence attached.", "success");
                        } else {
-                           console.log("Adding warning toast");
                            addToast("Gap remains In Progress. Optimal coverage (Prevented/Alerted) is required to resolve.", "warning");
                        }
                    } catch (err) {
                        console.error("Error during Submit Validation:", err);
+                       addToast("Error submitting validation: " + (err.message || 'Unknown error'), "error");
                    }
                }}>Submit Validation</button>
             </div>

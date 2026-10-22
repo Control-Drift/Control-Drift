@@ -17,7 +17,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '../../AppContext';
 import { useToast } from '../ui/Toast';
-import { Search, ChevronDown, ChevronUp, Clock, AlertCircle, TrendingUp, Filter, Calendar, Info, FileText, Target, Play, Database, BookOpen, Layers, Zap, X, Map, ShieldAlert, Shield, Sparkles, Plus, Edit3, User, Server, ArrowLeft, Edit, Save, CheckSquare, Square, Unlock, Trash2, Code } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Download, ZoomIn, Clock, AlertCircle, TrendingUp, Filter, Calendar, Info, FileText, Target, Play, Database, BookOpen, Layers, Zap, X, Map, ShieldAlert, Shield, Sparkles, Plus, Edit3, User, Server, ArrowLeft, Edit, Save, CheckSquare, Square, Unlock, Trash2, Code } from 'lucide-react';
 import CoverageRatingDropdown from '../dropdowns/CoverageRatingDropdown';
 import SeverityDropdown from '../dropdowns/SeverityDropdown';
 import ValidationOutcomeDropdown from '../dropdowns/ValidationOutcomeDropdown';
@@ -32,6 +32,7 @@ import EnvironmentDropdown from '../dropdowns/EnvironmentDropdown';
 import InlineTagDropdown from '../dropdowns/InlineTagDropdown';
 import InlineEnvironmentDropdown from '../dropdowns/InlineEnvironmentDropdown';
 import RichMarkdownEditor from '../ui/RichMarkdownEditor';
+import CopyButton from '../ui/CopyButton';
 
 /**
  * Reports Component
@@ -66,6 +67,40 @@ export default function Reports() {
   const [unlockPromptVisible, setUnlockPromptVisible] = useState(false);
   const [unlockJustification, setUnlockJustification] = useState('');
   const [viewingCodeData, setViewingCodeData] = useState(null);
+  const [expandedEvidenceModal, setExpandedEvidenceModal] = useState(null);
+
+  useEffect(() => {
+      const handleKeyDown = (e) => {
+          if (!expandedEvidenceModal) return;
+          if (e.key === 'Escape') {
+              setExpandedEvidenceModal(null);
+          } else if (e.key === 'ArrowLeft') {
+              const list = expandedEvidenceModal.list || [];
+              if (list.length > 1) {
+                  const newIdx = expandedEvidenceModal.index > 0 ? expandedEvidenceModal.index - 1 : list.length - 1;
+                  setExpandedEvidenceModal({
+                      ...expandedEvidenceModal,
+                      index: newIdx,
+                      src: list[newIdx],
+                      title: `Attached Evidence ${newIdx + 1}`
+                  });
+              }
+          } else if (e.key === 'ArrowRight') {
+              const list = expandedEvidenceModal.list || [];
+              if (list.length > 1) {
+                  const newIdx = expandedEvidenceModal.index < list.length - 1 ? expandedEvidenceModal.index + 1 : 0;
+                  setExpandedEvidenceModal({
+                      ...expandedEvidenceModal,
+                      index: newIdx,
+                      src: list[newIdx],
+                      title: `Attached Evidence ${newIdx + 1}`
+                  });
+              }
+          }
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [expandedEvidenceModal]);
 
   
   const [showLogModal, setShowLogModal] = useState(false);
@@ -328,8 +363,11 @@ export default function Reports() {
       if (block.startsWith('```') && block.endsWith('```')) {
         const code = block.replace(/```\w*\n?/, '').replace(/```$/, '');
         return (
-          <div key={index} style={{  background: '#000', padding: '16px', borderRadius: '8px', margin: '16px 0', fontFamily: 'monospace', fontSize: '0.9rem', color: '#10b981', overflowX: 'auto', border: '1px solid rgba(16, 185, 129, 0.3)', boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.8)'  }}>
-            <pre style={{  margin: 0  }}>{code}</pre>
+          <div key={index} style={{ position: 'relative', background: '#000', padding: '16px', borderRadius: '8px', margin: '16px 0', fontFamily: 'monospace', fontSize: '0.9rem', color: '#10b981', overflowX: 'auto', border: '1px solid rgba(16, 185, 129, 0.3)', boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.8)' }}>
+            <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 10 }}>
+              <CopyButton text={code} />
+            </div>
+            <pre style={{ margin: 0, paddingTop: '24px' }}>{code}</pre>
           </div>
         );
       }
@@ -460,16 +498,20 @@ export default function Reports() {
                  const visibilityMultiplier = (covStr === 'None') ? 1.0 : (covStr === 'Minimal' ? 0.9 : (covStr === 'Partial' ? 0.75 : 0.0));
                  const priorityScore = Math.round(baseScore * visibilityMultiplier);
                  
-                 const newGap = {
-                     id: Date.now() + Math.random().toString(),
-                     displayId: 'GAP-' + Math.floor(1000 + Math.random() * 9000),
-                     ttp: (p.ttps || []).join(', ') || 'Unmapped',
-                     simulation: manualSimulation,
-                     finding: p.name || 'Unnamed Event',
-                     outcome: p.outcome || 'Missed',
-                     coverageRating: covStr,
-                     details: `Execution: ${p.execNotes || 'N/A'}\nDetection: ${p.detNotes || 'N/A'}`,
-                     severity: severity,
+                                   const eventTime = p.timestamp ? new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : '';
+                  const timeHeader = p.timestamp ? `Timestamp: ${eventTime} (${new Date(p.timestamp).toLocaleDateString()})\n` : '';
+                  const newGap = {
+                      id: Date.now() + Math.random().toString(),
+                      displayId: 'GAP-' + Math.floor(1000 + Math.random() * 9000),
+                      ttp: (p.ttps || []).join(', ') || 'Unmapped',
+                      simulation: manualSimulation,
+                      finding: p.name || 'Unnamed Event',
+                      outcome: p.outcome || 'Missed',
+                      coverageRating: covStr,
+                      details: `${timeHeader}Execution: ${p.execNotes || 'N/A'}\nDetection: ${p.detNotes || 'N/A'}`,
+                      timestamp: p.timestamp || new Date().toISOString(),
+                      eventTimestamp: p.timestamp || new Date().toISOString(),
+                      severity: severity,
                      priorityScore: priorityScore,
                      status: 'Open',
                      actionItems: 'Review telemetry and develop detection logic.',
@@ -477,6 +519,7 @@ export default function Reports() {
                      remediationNotes: "",
                      environment: manualEnvironment.length > 0 ? manualEnvironment : ['Unknown Environment'],
                      tags: manualTags || [],
+                      securityControls: Array.isArray(p.securityControls) ? p.securityControls : [],
                      createdDate: new Date().toISOString()
                  };
                  if (createGap) await createGap(newGap, true);
@@ -865,10 +908,18 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                               <div style={{  display: 'flex', flexDirection: 'column', gap: '15px'  }}>
                                   {displayResults.map((p, index) => (
                                       <div key={p.id || index} style={{  background: 'var(--bg-primary)', border: '1px solid var(--glass-border)', borderRadius: '8px', overflow: 'hidden'  }}>
-                                          <div style={{  padding: '15px', background: 'var(--bg-secondary)', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'  }}>
-                                              <h4 style={{  margin: 0, color: 'var(--text-primary)'  }}>{p.name || `Event ${index + 1}`}</h4>
-                                              <span style={{  fontSize: '0.8rem', color: 'var(--text-secondary)'  }}>{p.eventType || 'Payload'}</span>
-                                          </div>
+                                          <div style={{ padding: '15px', background: 'var(--bg-secondary)', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                                                   <h4 style={{ margin: 0, color: 'var(--text-primary)' }}>{p.name || `Event ${index + 1}`}</h4>
+                                                   {(p.timestamp || p.date) && (
+                                                       <span style={{ color: '#38bdf8', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', fontFamily: 'monospace' }} title={`Execution Timestamp: ${new Date(p.timestamp || p.date).toLocaleString()}`}>
+                                                           <Clock size={11} />
+                                                           <span>{new Date(p.timestamp || p.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</span>
+                                                       </span>
+                                                   )}
+                                               </div>
+                                               <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>{p.eventType || 'Payload'}</span>
+                                           </div>
                                           <div style={{  padding: '15px'  }}>
                                               <div style={{  display: 'flex', flexWrap: 'wrap', gap: '10px', marginBottom: '15px'  }}>
                                                   <div style={{  flex: 1, minWidth: '200px'  }}>
@@ -946,14 +997,243 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
     );
   };
 
+  const renderEvidenceModal = () => {
+      if (!expandedEvidenceModal || !expandedEvidenceModal.src) return null;
+
+      const list = expandedEvidenceModal.list || [expandedEvidenceModal.src];
+      const currentIndex = expandedEvidenceModal.index ?? 0;
+      const currentSrc = expandedEvidenceModal.src;
+      const hasMultiple = list.length > 1;
+
+      const handleDownload = () => {
+          const a = document.createElement('a');
+          a.href = currentSrc;
+          const safeName = (selectedSimulation || 'evidence').replace(/[^a-zA-Z0-9_-]+/g, '_');
+          a.download = `${safeName}_evidence_${currentIndex + 1}.png`;
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+      };
+
+      const goToIndex = (newIdx) => {
+          setExpandedEvidenceModal({
+              ...expandedEvidenceModal,
+              index: newIdx,
+              src: list[newIdx],
+              title: `Attached Evidence ${newIdx + 1}`
+          });
+      };
+
+      return (
+          <div 
+              className="animate-fade-in fixed-overlay"
+              onClick={() => setExpandedEvidenceModal(null)}
+              style={{
+                  position: 'fixed',
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  background: 'rgba(5, 7, 12, 0.92)',
+                  backdropFilter: 'blur(10px)',
+                  zIndex: 99999,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '24px',
+                  cursor: 'zoom-out'
+              }}
+          >
+              <div 
+                  className="glass-panel"
+                  onClick={(e) => e.stopPropagation()}
+                  style={{
+                      position: 'relative',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      maxWidth: '92vw',
+                      maxHeight: '92vh',
+                      background: 'rgba(12, 14, 20, 0.97)',
+                      border: '1px solid var(--glass-border)',
+                      borderRadius: '12px',
+                      boxShadow: '0 25px 60px rgba(0, 0, 0, 0.85)',
+                      overflow: 'hidden',
+                      cursor: 'default'
+                  }}
+              >
+                  {/* Top Header */}
+                  <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '12px 20px',
+                      borderBottom: '1px solid var(--glass-border)',
+                      background: 'rgba(0, 0, 0, 0.45)',
+                      gap: '15px'
+                  }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                              {expandedEvidenceModal.title || 'Attached Evidence'}
+                          </span>
+                          {hasMultiple && (
+                              <span style={{ 
+                                  fontSize: '0.75rem', 
+                                  padding: '2px 8px', 
+                                  borderRadius: '10px', 
+                                  background: 'rgba(255,255,255,0.08)',
+                                  color: 'var(--text-secondary)'
+                              }}>
+                                  {currentIndex + 1} of {list.length}
+                              </span>
+                          )}
+                      </div>
+
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <button
+                              type="button"
+                              onClick={handleDownload}
+                              className="btn hover-lift"
+                              title="Download full-resolution image"
+                              style={{
+                                  background: 'rgba(255, 255, 255, 0.05)',
+                                  border: '1px solid var(--glass-border)',
+                                  color: 'var(--text-secondary)',
+                                  padding: '6px 12px',
+                                  fontSize: '0.8rem',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  gap: '6px',
+                                  borderRadius: '6px',
+                                  cursor: 'pointer'
+                              }}
+                          >
+                              <Download size={14} />
+                              <span>Download</span>
+                          </button>
+                          <button
+                              type="button"
+                              onClick={() => setExpandedEvidenceModal(null)}
+                              className="btn close-btn"
+                              title="Close (Esc)"
+                              style={{
+                                  background: 'transparent',
+                                  border: 'none',
+                                  color: 'var(--text-muted)',
+                                  cursor: 'pointer',
+                                  padding: '4px',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  borderRadius: '6px'
+                              }}
+                          >
+                              <X size={20} />
+                          </button>
+                      </div>
+                  </div>
+
+                  {/* Image Body with Previous / Next Controls */}
+                  <div style={{
+                      position: 'relative',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      padding: '16px',
+                      overflow: 'hidden',
+                      flex: 1,
+                      minHeight: 0
+                  }}>
+                      <img 
+                          src={currentSrc} 
+                          alt={expandedEvidenceModal.title || 'Evidence Preview'} 
+                          style={{
+                              maxWidth: '88vw',
+                              maxHeight: '78vh',
+                              objectFit: 'contain',
+                              borderRadius: '6px',
+                              boxShadow: '0 8px 30px rgba(0,0,0,0.5)'
+                          }}
+                      />
+
+                      {hasMultiple && (
+                          <>
+                              <button
+                                  type="button"
+                                  onClick={(e) => {
+                                      e.stopPropagation();
+                                      goToIndex(currentIndex > 0 ? currentIndex - 1 : list.length - 1);
+                                  }}
+                                  className="btn hover-lift"
+                                  title="Previous evidence (Left arrow)"
+                                  style={{
+                                      position: 'absolute',
+                                      left: '20px',
+                                      top: '50%',
+                                      transform: 'translateY(-50%)',
+                                      background: 'rgba(10, 12, 18, 0.8)',
+                                      backdropFilter: 'blur(6px)',
+                                      border: '1px solid var(--glass-border)',
+                                      color: 'var(--text-primary)',
+                                      width: '40px',
+                                      height: '40px',
+                                      borderRadius: '50%',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      cursor: 'pointer',
+                                      boxShadow: '0 4px 15px rgba(0,0,0,0.5)'
+                                  }}
+                              >
+                                  <ChevronLeft size={20} />
+                              </button>
+                              <button
+                                  type="button"
+                                  onClick={(e) => {
+                                      e.stopPropagation();
+                                      goToIndex(currentIndex < list.length - 1 ? currentIndex + 1 : 0);
+                                  }}
+                                  className="btn hover-lift"
+                                  title="Next evidence (Right arrow)"
+                                  style={{
+                                      position: 'absolute',
+                                      right: '20px',
+                                      top: '50%',
+                                      transform: 'translateY(-50%)',
+                                      background: 'rgba(10, 12, 18, 0.8)',
+                                      backdropFilter: 'blur(6px)',
+                                      border: '1px solid var(--glass-border)',
+                                      color: 'var(--text-primary)',
+                                      width: '40px',
+                                      height: '40px',
+                                      borderRadius: '50%',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      cursor: 'pointer',
+                                      boxShadow: '0 4px 15px rgba(0,0,0,0.5)'
+                                  }}
+                              >
+                                  <ChevronRight size={20} />
+                              </button>
+                          </>
+                      )}
+                  </div>
+              </div>
+          </div>
+      );
+  };
+
   const renderPayloadModal = () => {
       if (!viewingCodeData) return null;
       return (
           <div className="animate-fade-in fixed-overlay" style={{  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', backdropFilter: 'blur(5px)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px'  }}>
               <div className="glass-panel responsive-modal" style={{  display: 'flex', flexDirection: 'column', background: 'rgba(10,11,16,0.95)', border: '1px solid var(--accent-primary)', borderRadius: '12px', overflow: 'hidden'  }}>
-                  <div style={{  display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', borderBottom: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.4)'  }}>
-                      <h3 style={{  margin: 0, color: 'var(--text-primary)'  }}>{viewingCodeData.type === 'Payload' ? 'Raw Payload' : 'Procedure Steps'}</h3>
-                      <button className="close-btn" onClick={() => setViewingCodeData(null)}><X size={20} /></button>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '15px 20px', borderBottom: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.4)' }}>
+                      <h3 style={{ margin: 0, color: 'var(--text-primary)' }}>{viewingCodeData.type === 'Payload' ? 'Raw Payload' : 'Procedure Steps'}</h3>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <CopyButton text={viewingCodeData.content} />
+                          <button className="close-btn" onClick={() => setViewingCodeData(null)}><X size={20} /></button>
+                      </div>
                   </div>
                   <div style={{  flex: 1, overflowY: 'auto', padding: '20px'  }}>
                       <pre style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontFamily: 'monospace', fontSize: '0.9rem', color: '#10b981' }}>
@@ -1207,17 +1487,29 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                                      return notes;
                                  };
                                  
-                                 return (
-                                   <tr key={i} style={{  borderBottom: '1px solid rgba(255,255,255,0.05)'  }}>
-                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '26%'  }}>
-                                         <strong style={{  fontSize: '1.05rem', color: 'var(--text-primary)', display: 'block', marginBottom: '8px'  }}>
-                                            {proc.name || 'Unnamed Event'}
-                                            {proc.outcome?.includes(' ➔ ') && (
-                                                <span style={{  marginLeft: '10px', fontSize: '0.7rem', color: '#059669', background: 'rgba(5, 150, 105, 0.15)', padding: '2px 8px', borderRadius: '12px', verticalAlign: 'middle', border: '1px solid rgba(5, 150, 105, 0.3)'  }}>
-                                                    Re-Tested ✓ {proc.validationDate ? `(${new Date(proc.validationDate).toLocaleDateString()})` : ''}
-                                                </span>
-                                            )}
-                                         </strong>
+                                                                   const eventTime = proc.timestamp || proc.date || (() => {
+                                      const match = events?.find(e => e.simulation === selectedSimulation && (e.finding === proc.name || (proc.ttps && proc.ttps.includes(e.ttp))));
+                                      return match?.date;
+                                  })();
+                                  return (
+                                    <tr key={i} style={{  borderBottom: '1px solid rgba(255,255,255,0.05)'  }}>
+                                       <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '26%'  }}>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                                              <strong style={{ fontSize: '1.05rem', color: 'var(--text-primary)' }}>
+                                                 {proc.name || 'Unnamed Event'}
+                                              </strong>
+                                              {proc.outcome?.includes(' ➔ ') && (
+                                                  <span style={{ fontSize: '0.7rem', color: '#059669', background: 'rgba(5, 150, 105, 0.15)', padding: '2px 8px', borderRadius: '12px', verticalAlign: 'middle', border: '1px solid rgba(5, 150, 105, 0.3)' }}>
+                                                      Re-Tested ✓ {proc.validationDate ? `(${new Date(proc.validationDate).toLocaleDateString()})` : ''}
+                                                  </span>
+                                              )}
+                                              {eventTime && (
+                                                  <span style={{ color: '#38bdf8', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '2px 7px', borderRadius: '4px', fontWeight: 'bold', fontFamily: 'monospace' }} title={`Execution Timestamp: ${new Date(eventTime).toLocaleString()}`}>
+                                                      <Clock size={11} />
+                                                      <span>{new Date(eventTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</span>
+                                                  </span>
+                                              )}
+                                          </div>
                                          <div style={{  display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px'  }}>
                                             {(proc.ttps || []).map(ttp => {
                                                 const ttpId = typeof ttp === 'object' ? ttp.id : ttp;
@@ -1276,6 +1568,45 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                                       <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '27%'  }}>
                                          <div style={{  marginBottom: '8px'  }}><strong style={{  color: 'var(--danger)'  }}>Red Team Notes:</strong> <div style={{ color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', wordBreak: 'break-all', overflowWrap: 'anywhere', fontSize: '0.8rem', marginTop: '4px' }}>{renderNotes(proc.execNotes)}</div></div>
                                          <div><strong style={{  color: '#3b82f6'   }}>Blue Team Notes:</strong> <div style={{ color: 'var(--text-secondary)', whiteSpace: 'pre-wrap', wordBreak: 'break-all', overflowWrap: 'anywhere', fontSize: '0.8rem', marginTop: '4px' }}>{renderNotes(proc.detNotes)}</div></div>
+                                          {(proc.evidence || []).length > 0 && (
+                                             <div style={{ marginTop: '10px', paddingTop: '8px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                                                <strong style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.7rem', color: '#22d3ee', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                                                   <ZoomIn size={12} />
+                                                   Procedure Evidence ({proc.evidence.length})
+                                                </strong>
+                                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                                   {proc.evidence.map((img, evIdx) => (
+                                                      <div 
+                                                         key={evIdx}
+                                                         className="hover-lift"
+                                                         onClick={() => setExpandedEvidenceModal({
+                                                            src: img,
+                                                            index: evIdx,
+                                                            list: proc.evidence,
+                                                            title: `${proc.name || 'Procedure'} Evidence ${evIdx + 1}`
+                                                         })}
+                                                         style={{
+                                                            position: 'relative',
+                                                            cursor: 'pointer',
+                                                            borderRadius: '4px',
+                                                            overflow: 'hidden',
+                                                            border: '1px solid var(--glass-border)',
+                                                            background: 'rgba(255,255,255,0.04)',
+                                                            padding: '3px',
+                                                            transition: 'all 0.2s ease'
+                                                         }}
+                                                         title={`Click to enlarge Evidence ${evIdx + 1}`}
+                                                      >
+                                                         <img 
+                                                            src={img} 
+                                                            alt={`Evidence ${evIdx + 1}`} 
+                                                            style={{ maxWidth: '80px', maxHeight: '50px', objectFit: 'contain', borderRadius: '2px', display: 'block' }} 
+                                                         />
+                                                      </div>
+                                                   ))}
+                                                </div>
+                                             </div>
+                                          )}
                                       </td>
                                    </tr>
                                  );
@@ -1287,9 +1618,17 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                                 const isMin = ex.status === 'minimal';
                                 return (
                                    <tr key={i} style={{  borderBottom: '1px solid rgba(255,255,255,0.05)'   }}>
-                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '26%'  }}>
-                                         <strong style={{  color: 'var(--text-primary)'  }}>{ex.ttp}</strong>
-                                         <div style={{  fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px'  }}>{getTTPName(ex.ttp)}</div>
+                                      <td style={{ padding: '15px 10px', verticalAlign: 'top', width: '26%' }}>
+                                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                              <strong style={{ color: 'var(--text-primary)' }}>{ex.ttp}</strong>
+                                              {ex.date && (
+                                                  <span style={{ color: '#38bdf8', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.72rem', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold', fontFamily: 'monospace' }} title={`Execution Timestamp: ${new Date(ex.date).toLocaleString()}`}>
+                                                      <Clock size={11} />
+                                                      <span>{new Date(ex.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</span>
+                                                  </span>
+                                              )}
+                                          </div>
+                                          <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '4px' }}>{getTTPName(ex.ttp)}</div>
                                          <div style={{  fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px'  }}>Legacy Record</div>
                                       </td>
                                       <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '26%', textAlign: 'center'  }}>
@@ -1385,8 +1724,60 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                     <h3 style={{  margin: '0 0 15px 0', borderBottom: '1px solid var(--glass-border)', paddingBottom: '10px'  }}>Attached Evidence</h3>
                     <div style={{  display: 'flex', flexWrap: 'wrap', gap: '15px'  }}>
                       {(simulationEvidence[selectedSimulation] || []).map((b64, idx) => (
-                         <div key={idx} style={{  position: 'relative', display: 'inline-block', padding: '5px', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', border: '1px solid var(--glass-border)'  }}>
-                            <img src={b64} alt={`Evidence ${idx + 1}`} style={{  maxWidth: '250px', maxHeight: '150px', objectFit: 'contain', borderRadius: '4px'  }} />
+                         <div 
+                            key={idx} 
+                            onClick={() => setExpandedEvidenceModal({
+                                src: b64,
+                                index: idx,
+                                list: simulationEvidence[selectedSimulation] || [],
+                                title: `Attached Evidence ${idx + 1}`
+                            })}
+                            className="hover-lift"
+                            style={{  
+                               position: "relative", 
+                               display: "inline-block", 
+                               padding: "6px", 
+                               background: "rgba(255,255,255,0.03)", 
+                               borderRadius: "8px", 
+                               border: "1px solid var(--glass-border)",
+                               cursor: "pointer",
+                               transition: "all 0.2s ease",
+                               overflow: "hidden"
+                            }}
+                            title={`Click to view Evidence ${idx + 1}`}
+                         >
+                            <img 
+                               src={b64} 
+                               alt={`Evidence ${idx + 1}`} 
+                               style={{  
+                                  maxWidth: "250px", 
+                                  maxHeight: "150px", 
+                                  objectFit: "contain", 
+                                  borderRadius: "4px",
+                                  display: "block"
+                               }} 
+                            />
+                            <div 
+                               style={{
+                                  position: "absolute",
+                                  bottom: "8px",
+                                  right: "8px",
+                                  background: "rgba(0, 0, 0, 0.75)",
+                                  borderRadius: "4px",
+                                  padding: "3px 7px",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: "4px",
+                                  fontSize: "0.7rem",
+                                  color: "#22d3ee",
+                                  backdropFilter: "blur(4px)",
+                                  border: "1px solid rgba(6, 182, 212, 0.35)",
+                                  pointerEvents: "none"
+                               }}
+                            >
+                               <ZoomIn size={12} />
+                               <span>Expand</span>
+                            </div>
                          </div>
                       ))}
                     </div>
@@ -1395,6 +1786,7 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
            </div>
            {renderDrilldownModal()}
            {renderPayloadModal()}
+           {renderEvidenceModal()}
        </div>
      );
   }
@@ -1624,6 +2016,7 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
       )}
       
 
+      {renderEvidenceModal()}
     </div>
   );
 }

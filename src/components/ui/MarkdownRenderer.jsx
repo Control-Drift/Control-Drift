@@ -16,6 +16,27 @@
 
 import React from 'react';
 import { Code2, BrainCircuit } from 'lucide-react';
+import CopyButton from './CopyButton';
+
+function CodeBlock({ code, onOpenStudio }) {
+  return (
+    <div style={{ position: 'relative', background: '#000', padding: '16px', borderRadius: '8px', margin: '16px 0', fontFamily: 'monospace', fontSize: '0.9rem', color: '#10b981', overflowX: 'auto', border: '1px solid rgba(16, 185, 129, 0.3)', boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.8)' }}>
+      <div style={{ position: 'absolute', top: '10px', right: '10px', display: 'flex', alignItems: 'center', gap: '8px', zIndex: 10 }}>
+        <CopyButton text={code} />
+        {onOpenStudio && (
+          <button 
+            type="button"
+            onClick={() => onOpenStudio(code)}
+            style={{ background: 'var(--glass-bg)', border: '1px solid var(--accent-secondary)', color: 'var(--accent-secondary)', padding: '4px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold' }}
+          >
+            <Code2 size={12} /> OPEN IN CODE STUDIO
+          </button>
+        )}
+      </div>
+      <pre style={{ margin: 0, paddingTop: '26px' }}>{code}</pre>
+    </div>
+  );
+}
 
 export default function MarkdownRenderer({ content, style = {}, onOpenStudio }) {
   const renderBold = (str) => {
@@ -42,21 +63,7 @@ export default function MarkdownRenderer({ content, style = {}, onOpenStudio }) 
 
       if (block.startsWith('```') && block.endsWith('```')) {
         const code = block.replace(/```\w*\n?/, '').replace(/```$/, '');
-        return (
-          <div key={index} style={{ position: 'relative', background: '#000', padding: '16px', borderRadius: '8px', margin: '16px 0', fontFamily: 'monospace', fontSize: '0.9rem', color: '#10b981', overflowX: 'auto', border: '1px solid rgba(16, 185, 129, 0.3)', boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.8)' }}>
-            {onOpenStudio && (
-              <div style={{ position: 'absolute', top: '10px', right: '10px' }}>
-                  <button 
-                    onClick={() => onOpenStudio(code)}
-                    style={{ background: 'var(--glass-bg)', border: '1px solid var(--accent-secondary)', color: 'var(--accent-secondary)', padding: '4px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', fontSize: '0.7rem', fontWeight: 'bold', zIndex: 10 }}
-                  >
-                    <Code2 size={12} /> OPEN IN CODE STUDIO
-                  </button>
-              </div>
-            )}
-            <pre style={{ margin: 0, paddingTop: onOpenStudio ? '20px' : '0' }}>{code}</pre>
-          </div>
-        );
+        return <CodeBlock key={index} code={code} onOpenStudio={onOpenStudio} />;
       }
       
       return (

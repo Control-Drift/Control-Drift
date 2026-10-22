@@ -263,6 +263,57 @@ describe('mitreUtils', () => {
       expect(aiPrompt).toContain('T1059.003');
     });
 
+    it('does NOT falsely map parent technique procedures to sub-techniques or vice-versa', () => {
+      const mockParentSims = {
+        'Parent Only Sim': {
+          timestamp: '2026-08-01T12:00:00.000Z',
+          testResults: [
+            {
+              id: 201,
+              name: 'Phase 1: Remote Thread Process Injection Simulation (T1055)',
+              mappedTTPs: ['T1055'],
+              outcome: 'Prevented & Alerted'
+            }
+          ]
+        }
+      };
+      const mockMitreT1055 = {
+        'Defense Evasion': {
+          techniques: [
+            {
+              id: 'T1055',
+              name: 'Process Injection',
+              subTechniques: [
+                { id: 'T1055.004', name: 'Asynchronous Procedure Call' },
+                { id: 'T1055.012', name: 'Process Hollowing' }
+              ]
+            }
+          ]
+        }
+      };
+      const history = getHistoricalProceduresForTTPs(
+        [
+          { id: 'T1055.012', name: 'Process Hollowing' },
+          { id: 'T1055', name: 'Process Injection' },
+          { id: 'T1055.004', name: 'Asynchronous Procedure Call' }
+        ],
+        mockParentSims,
+        [],
+        mockMitreT1055
+      );
+      
+      const sub12 = history.find(h => h.ttpId === 'T1055.012');
+      const parent = history.find(h => h.ttpId === 'T1055');
+      const sub04 = history.find(h => h.ttpId === 'T1055.004');
+
+      expect(parent.procedures).toHaveLength(1);
+      expect(parent.procedures[0].name).toBe('Phase 1: Remote Thread Process Injection Simulation (T1055)');
+
+      // Sub-techniques should NOT inherit the parent technique's procedure
+      expect(sub12.procedures).toHaveLength(0);
+      expect(sub04.procedures).toHaveLength(0);
+    });
+
     it('parses markdown code blocks and scaffolds Step 3 events with historical baselines', () => {
       const md = [
         '### Phase 1: PowerShell Execution (T1059.001)',
@@ -316,6 +367,28 @@ describe('mitreUtils', () => {
       expect(eventsWithCleanup.length).toBe(1);
       expect(eventsWithCleanup[0].mappedTTPs).toEqual(['T1059.001']);
       expect(eventsWithCleanup[0].expectedOutcome).toBe(''); // Defaults to 'Select Outcome...'
+
+      // Verifies multi-TTP chained procedure parses multiple techniques and aggregates controls
+      const mdChained = [
+        '### Phase 1: In-Memory Process Injection via PowerShell (T1059.001, T1055.001)',
+        '```powershell',
+        '# In-memory injection code',
+        '```'
+      ].join('\n');
+
+      const chainedBlocks = parseDesignCodeBlocks(mdChained, ['T1059.001', 'T1055.001']);
+      expect(chainedBlocks.length).toBe(1);
+      expect(chainedBlocks[0].mappedTTPs).toEqual(['T1059.001', 'T1055.001']);
+
+      const chainedEvents = scaffoldEventsFromDesignAndTTPs({
+        simulationPayload: mdChained,
+        selectedTTPs: ['T1059.001', 'T1055.001'],
+        simulationSummaries: mockSimulations,
+        events: []
+      });
+      expect(chainedEvents.length).toBe(1);
+      expect(chainedEvents[0].ttps).toEqual(['T1059.001', 'T1055.001']);
+      expect(chainedEvents[0].securityControls).toContain('CrowdStrike Falcon');
     });
 
     it('generates agentless self-logging harness scripts and parses structured output back with confidence tracking', () => {
