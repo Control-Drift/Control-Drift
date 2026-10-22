@@ -1216,10 +1216,19 @@ export default function GapDetails({ gapIdProp, onClose, onValidate }) {
                           setValidationNotes('');
                           setValidationFiles([]);
                           
+                          const hasEvidence = b64Images && b64Images.length > 0;
                           if (resolved) {
-                              addToast("Gap Resolved successfully. Evidence attached.", "success");
+                              if (hasEvidence) {
+                                  addToast(`Gap resolved successfully. Evidence attached (${b64Images.length}).`, "success");
+                              } else {
+                                  addToast("Gap resolved successfully.", "success");
+                              }
                           } else {
-                              addToast("Gap remains In Progress. Optimal coverage (Prevented/Alerted) is required to resolve.", "warning");
+                              if (hasEvidence) {
+                                  addToast("Validation submitted with evidence. Gap remains In Progress (Optimal coverage required to resolve).", "warning");
+                              } else {
+                                  addToast("Gap remains In Progress. Optimal coverage (Prevented/Alerted) is required to resolve.", "warning");
+                              }
                           }
                        }}>Submit Validation</button>
                     </div>
