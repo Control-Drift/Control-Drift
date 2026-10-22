@@ -422,7 +422,7 @@ export function parseDesignCodeBlocks(simulationPayload = '', selectedTTPs = [])
       inFence = false;
       const code = fenceLines.join('\n').trim();
       if (code) {
-        const searchContext = `${currentHeading}\n${contextLinesBeforeFence.slice(-4).join('\n')}\n${code}`;
+        const searchContext = `${currentHeading}\n${contextLinesBeforeFence.join('\n')}\n${code}`;
         const ttpMatches = searchContext.match(/T\d{4}(?:\.\d{3})?/gi) || [];
         const uniqueTtps = [...new Set(ttpMatches.map((m) => m.toUpperCase()))];
 

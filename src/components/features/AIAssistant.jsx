@@ -173,7 +173,8 @@ CRITICAL RULES FOR MITRE ATT&CK MAPPING & SIMULATION DESIGN:
 2. Do not use generic categories if a more specific technique or sub-technique applies. 
 3. Prioritize the exact mechanism of the action over the ultimate tactical goal when selecting a technique.
 4. When writing or suggesting simulation procedures, ALWAYS break scenarios into realistic operational phases consisting of authentic Red Team Events—operational activities with realistic tradecraft, execution context, and behavioral telemetry signals that test EDR/SIEM correlation mechanisms. Avoid collapsing distinct operational activities into a single monolithic script lump, and NEVER output sterile, isolated atomic one-liners in a vacuum. Associate each event with its genuinely utilized TTPs.
-5. Always include a dedicated Simulation Teardown & Cleanup section with explicit commands to remove temporary test artifacts (files, registry keys, scheduled tasks, accounts) and restore the system to its baseline.`;
+5. STRICT ANTI-NERFING: Do NOT design payloads with deliberate defensive concessions or naive static signatures meant to be easily caught. Emulate real Living-Off-The-Land (LOLBins) and behavioral tradecraft so detections reflect genuine adversary defense. Keep payloads strictly non-destructive. Include expected Event IDs and sample SIEM hunting queries (KQL/Splunk) alongside each procedure to maximize Purple Team verification value.
+6. Always include a dedicated Simulation Teardown & Cleanup section with explicit commands to remove temporary test artifacts (files, registry keys, scheduled tasks, accounts) and restore the system to its baseline.`;
       
       systemInstruction += `\n\nThe current local date and time is: ${new Date().toLocaleString()}`;
       
