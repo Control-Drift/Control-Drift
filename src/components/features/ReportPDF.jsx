@@ -19,7 +19,18 @@ import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/render
 
 const sanitizeText = (text) => {
     if (!text) return '';
-    return String(text).replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
+    return String(text)
+        .replace(/➔|→/g, '->')
+        .replace(/✓/g, 'Verified')
+        .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
+};
+
+const parseCommaItems = (str) => {
+    if (!str || typeof str !== 'string') return [];
+    return str
+        .split(/[,;\n]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
 };
 
 const styles = StyleSheet.create({
@@ -33,9 +44,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     borderBottomWidth: 3,
-    borderBottomColor: '#3b82f6', // Professional generic blue
+    borderBottomColor: '#3b82f6',
     paddingBottom: 20,
-    marginBottom: 30,
+    marginBottom: 24,
   },
   headerLeft: {
     maxWidth: '70%',
@@ -69,8 +80,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#0f172a',
-    marginTop: 25,
-    marginBottom: 15,
+    marginTop: 22,
+    marginBottom: 12,
     paddingBottom: 5,
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
@@ -78,7 +89,7 @@ const styles = StyleSheet.create({
   metricsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 30,
+    marginBottom: 24,
     gap: 15,
   },
   metricBox: {
@@ -103,6 +114,144 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     letterSpacing: 0.5,
     textAlign: 'center'
+  },
+  blueprintContainer: {
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderRadius: 8,
+    padding: 14,
+    marginBottom: 22,
+  },
+  blueprintHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+    paddingBottom: 8,
+    marginBottom: 12,
+  },
+  blueprintTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#0f172a',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+  },
+  methodologyBadge: {
+    backgroundColor: '#f3e8ff',
+    borderWidth: 1,
+    borderColor: '#d8b4fe',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  methodologyBadgeText: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    color: '#6b21a8',
+    textTransform: 'uppercase',
+  },
+  topologyRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    justifyContent: 'space-between',
+  },
+  topologyNode: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderRadius: 6,
+    overflow: 'hidden',
+  },
+  topologyNodeHeader: {
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+    borderBottomWidth: 1,
+  },
+  topologyNodeTitle: {
+    fontSize: 7.5,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  topologyNodeBody: {
+    padding: 8,
+  },
+  topologyConnector: {
+    width: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topologyConnectorText: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#94a3b8',
+  },
+  topologyItemPill: {
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 4,
+    paddingVertical: 3,
+    paddingHorizontal: 6,
+    marginBottom: 4,
+  },
+  topologyItemText: {
+    fontSize: 8.5,
+    color: '#1e293b',
+    fontWeight: 'bold',
+  },
+  topologyEmptyText: {
+    fontSize: 8,
+    color: '#94a3b8',
+    fontStyle: 'italic',
+  },
+  hostTtpWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 4,
+    paddingTop: 3,
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
+  },
+  hostTtpPill: {
+    backgroundColor: '#eff6ff',
+    borderWidth: 1,
+    borderColor: '#bfdbfe',
+    borderRadius: 3,
+    paddingHorizontal: 4,
+    paddingVertical: 1.5,
+    marginRight: 3,
+    marginBottom: 3,
+  },
+  hostTtpText: {
+    fontSize: 7,
+    fontWeight: 'bold',
+    color: '#1d4ed8',
+  },
+  deconflictionBar: {
+    marginTop: 10,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  deconflictionLabel: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    color: '#475569',
+    textTransform: 'uppercase',
+    marginRight: 8,
+    width: 145,
+  },
+  deconflictionValue: {
+    fontSize: 8.5,
+    color: '#0f172a',
+    flex: 1,
+    lineHeight: 1.4,
   },
   summaryText: {
     fontSize: 11,
@@ -191,28 +340,27 @@ const styles = StyleSheet.create({
 });
 
 const getOutcomeColor = (outcome) => {
-    if (!outcome) return '#dc2626'; // Missed default
+    if (!outcome) return '#dc2626';
     if (outcome.includes(' ➔ ')) outcome = outcome.split(' ➔ ')[1];
+    else if (outcome.includes('->')) outcome = outcome.split('->')[1]?.trim() || outcome;
     
     if (outcome === 'Prevented & Alerted' || outcome === 'Prevented' || outcome === 'Alerted') {
-        return '#059669'; // Green
-    } else if (outcome === 'Prevented') {
-        return '#06b6d4'; // Cyan
+        return '#059669';
     } else if (outcome === 'Logged') {
-        return '#d97706'; // Orange
+        return '#d97706';
     } else if (outcome === 'Missed' || outcome === 'Error') {
-        return '#dc2626'; // Red
+        return '#dc2626';
     }
-    return '#64748b'; // Gray for N/A or unknown
+    return '#64748b';
 };
 
 const getSeverityColor = (severity) => {
-    if (severity === 'Critical') return { bg: '#f3e8ff', text: '#7e22ce' }; // Purple
-    if (severity === 'High') return { bg: '#fef2f2', text: '#dc2626' }; // Red
-    if (severity === 'Medium') return { bg: '#fff7ed', text: '#ea580c' }; // Orange
-    if (severity === 'Low') return { bg: '#fefce8', text: '#ca8a04' }; // Yellow
-    if (severity === 'Info') return { bg: '#f1f5f9', text: '#475569' }; // Slate
-    return { bg: '#f8fafc', text: '#64748b' }; // Default
+    if (severity === 'Critical') return { bg: '#f3e8ff', text: '#7e22ce' };
+    if (severity === 'High') return { bg: '#fef2f2', text: '#dc2626' };
+    if (severity === 'Medium') return { bg: '#fff7ed', text: '#ea580c' };
+    if (severity === 'Low') return { bg: '#fefce8', text: '#ca8a04' };
+    if (severity === 'Info') return { bg: '#f1f5f9', text: '#475569' };
+    return { bg: '#f8fafc', text: '#64748b' };
 };
 
 const getCoverageColor = (coverage) => {
@@ -223,7 +371,49 @@ const getCoverageColor = (coverage) => {
     return { bg: '#f1f5f9', text: '#475569' };
 };
 
-const ReportPDF = ({ simulationName, date, summary, events, testResults, participants, blocked, medium, minimal, missed, total, evidence, tags = [] }) => {
+const ReportPDF = ({
+    simulationName,
+    date,
+    summary,
+    events,
+    testResults,
+    participants,
+    blocked,
+    medium,
+    minimal,
+    missed,
+    total,
+    evidence,
+    tags = [],
+    operationalBlueprint = null,
+    environment = null,
+    executionMethodology = null
+}) => {
+  const bp = operationalBlueprint || {};
+  const toolingList = Array.isArray(bp.tooling) ? bp.tooling.filter(Boolean) : [];
+  const infraNodes = parseCommaItems(bp.threatInfra);
+  const targetNodes = parseCommaItems(bp.targetAssets);
+  const identityNodes = parseCommaItems(bp.testAccounts);
+  const hostAssignments = bp.hostTtpAssignments && typeof bp.hostTtpAssignments === 'object' ? bp.hostTtpAssignments : {};
+  const hasBlueprint =
+    toolingList.length > 0 ||
+    infraNodes.length > 0 ||
+    targetNodes.length > 0 ||
+    identityNodes.length > 0 ||
+    Boolean(bp.stagingAndDeconfliction?.trim());
+
+  const envLabel = Array.isArray(environment)
+    ? environment.filter(Boolean).join(', ')
+    : typeof environment === 'string'
+    ? environment
+    : '';
+
+  const allFallbackTtpIds = Array.from(
+    new Set(
+      (testResults || []).flatMap((r) => (Array.isArray(r.ttps) ? r.ttps : []))
+    )
+  );
+
   const renderSummary = (text) => {
     if (!text) return <Text style={styles.summaryText}>No executive summary provided.</Text>;
     
@@ -231,25 +421,26 @@ const ReportPDF = ({ simulationName, date, summary, events, testResults, partici
       const cleanLine = line.replace(/#|\*/g, '').trim().toLowerCase();
       if (cleanLine === 'executive summary') return null;
       if (cleanLine.startsWith('participants:')) return null;
+      const stripInline = (s) => sanitizeText(s.replace(/\*\*/g, '').replace(/`/g, '').replace(/^\*|\*$/g, ''));
       if (line.startsWith('### ')) {
-         return <Text key={idx} style={{ fontSize: 13, fontWeight: 'bold', color: '#1e3a8a', marginTop: 15, marginBottom: 8 }}>{sanitizeText(line.replace('### ', ''))}</Text>;
+         return <Text key={idx} style={{ fontSize: 13, fontWeight: 'bold', color: '#1e3a8a', marginTop: 15, marginBottom: 8 }}>{stripInline(line.replace('### ', ''))}</Text>;
       } else if (line.startsWith('## ')) {
-         return <Text key={idx} style={{ fontSize: 15, fontWeight: 'bold', color: '#172554', marginTop: 20, marginBottom: 10 }}>{sanitizeText(line.replace('## ', ''))}</Text>;
+         return <Text key={idx} style={{ fontSize: 15, fontWeight: 'bold', color: '#172554', marginTop: 20, marginBottom: 10 }}>{stripInline(line.replace('## ', ''))}</Text>;
       } else if (line.startsWith('# ')) {
-         return <Text key={idx} style={{ fontSize: 18, fontWeight: 'bold', color: '#0f172a', marginTop: 25, marginBottom: 12 }}>{sanitizeText(line.replace('# ', ''))}</Text>;
+         return <Text key={idx} style={{ fontSize: 18, fontWeight: 'bold', color: '#0f172a', marginTop: 25, marginBottom: 12 }}>{stripInline(line.replace('# ', ''))}</Text>;
       } else if (line.startsWith('**') && line.endsWith('**')) {
-         return <Text key={idx} style={{ fontSize: 11, fontWeight: 'bold', color: '#1e293b', marginTop: 10, marginBottom: 4 }}>{sanitizeText(line.replace(/\*\*/g, ''))}</Text>;
+         return <Text key={idx} style={{ fontSize: 11, fontWeight: 'bold', color: '#1e293b', marginTop: 10, marginBottom: 4 }}>{stripInline(line)}</Text>;
       } else if (line.startsWith('- ') || line.startsWith('* ')) {
          return (
             <View key={idx} style={{ flexDirection: 'row', marginBottom: 4, paddingLeft: 10 }}>
                <Text style={{ fontSize: 11, color: '#334155', marginRight: 6 }}>•</Text>
-               <Text style={{ fontSize: 11, lineHeight: 1.5, color: '#334155', flex: 1 }}>{sanitizeText(line.substring(2).replace(/\*\*/g, ''))}</Text>
+               <Text style={{ fontSize: 11, lineHeight: 1.5, color: '#334155', flex: 1 }}>{stripInline(line.substring(2))}</Text>
             </View>
          );
       } else if (line.trim() === '') {
          return null;
       } else {
-         return <Text key={idx} style={styles.summaryText}>{sanitizeText(line.replace(/\*/g, '').replace(/\*\*/g, ''))}</Text>;
+         return <Text key={idx} style={styles.summaryText}>{stripInline(line)}</Text>;
       }
     });
   };
@@ -262,8 +453,11 @@ const ReportPDF = ({ simulationName, date, summary, events, testResults, partici
             <Text style={styles.reportTypeBadge}>Adversary Simulation</Text>
             <Text style={styles.title}>{sanitizeText(simulationName)}</Text>
             <Text style={styles.subtitle}>Executive After-Action Report</Text>
+            {envLabel ? (
+               <Text style={{ fontSize: 9, color: '#475569', marginTop: 8 }}>ENVIRONMENT: {sanitizeText(envLabel)}</Text>
+            ) : null}
             {participants && (
-               <Text style={{ fontSize: 9, color: '#475569', marginTop: 10 }}>PARTICIPANTS: {sanitizeText(participants)}</Text>
+               <Text style={{ fontSize: 9, color: '#475569', marginTop: envLabel ? 4 : 10 }}>PARTICIPANTS: {sanitizeText(participants)}</Text>
             )}
             {tags && tags.length > 0 && (
                <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 8, alignItems: 'center' }}>
@@ -315,6 +509,128 @@ const ReportPDF = ({ simulationName, date, summary, events, testResults, partici
           ) : null}
         </View>
 
+        {hasBlueprint && (
+          <View style={styles.blueprintContainer} wrap={false}>
+            <View style={styles.blueprintHeaderRow}>
+              <Text style={styles.blueprintTitle}>Blueprint &amp; Target Topology</Text>
+              {executionMethodology && (
+                <View style={styles.methodologyBadge}>
+                  <Text style={styles.methodologyBadgeText}>
+                    {executionMethodology === 'atomic' ? 'Atomic 1:1 Control Validation' : 'Compound Adversary Emulation'}
+                  </Text>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.topologyRow}>
+              {/* Node 1: Threat Infra */}
+              <View style={[styles.topologyNode, { borderColor: '#fecaca' }]}>
+                <View style={[styles.topologyNodeHeader, { backgroundColor: '#fef2f2', borderBottomColor: '#fecaca' }]}>
+                  <Text style={[styles.topologyNodeTitle, { color: '#b91c1c' }]}>1. Threat Infra / C2</Text>
+                </View>
+                <View style={styles.topologyNodeBody}>
+                  {infraNodes.length > 0 ? (
+                    infraNodes.map((node, i) => (
+                      <View key={i} style={styles.topologyItemPill}>
+                        <Text style={styles.topologyItemText}>{sanitizeText(node)}</Text>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={styles.topologyEmptyText}>Not specified</Text>
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.topologyConnector}>
+                <Text style={styles.topologyConnectorText}>-&gt;</Text>
+              </View>
+
+              {/* Node 2: Tooling & Frameworks */}
+              <View style={[styles.topologyNode, { borderColor: '#e9d5ff' }]}>
+                <View style={[styles.topologyNodeHeader, { backgroundColor: '#faf5ff', borderBottomColor: '#e9d5ff' }]}>
+                  <Text style={[styles.topologyNodeTitle, { color: '#7e22ce' }]}>2. Offensive Tooling</Text>
+                </View>
+                <View style={styles.topologyNodeBody}>
+                  {toolingList.length > 0 ? (
+                    toolingList.map((tool, i) => (
+                      <View key={i} style={[styles.topologyItemPill, { backgroundColor: '#faf5ff', borderColor: '#e9d5ff' }]}>
+                        <Text style={[styles.topologyItemText, { color: '#6b21a8' }]}>{sanitizeText(tool)}</Text>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={styles.topologyEmptyText}>Native / Unspecified</Text>
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.topologyConnector}>
+                <Text style={styles.topologyConnectorText}>-&gt;</Text>
+              </View>
+
+              {/* Node 3: Target Endpoints & Per-Host TTPs */}
+              <View style={[styles.topologyNode, { borderColor: '#bfdbfe', flex: 1.35 }]}>
+                <View style={[styles.topologyNodeHeader, { backgroundColor: '#eff6ff', borderBottomColor: '#bfdbfe' }]}>
+                  <Text style={[styles.topologyNodeTitle, { color: '#1d4ed8' }]}>3. Target Endpoints &amp; TTPs</Text>
+                </View>
+                <View style={styles.topologyNodeBody}>
+                  {targetNodes.length > 0 ? (
+                    targetNodes.map((host, i) => {
+                      const assignedTtps = Array.isArray(hostAssignments[host])
+                        ? hostAssignments[host]
+                        : allFallbackTtpIds;
+                      return (
+                        <View key={i} style={styles.topologyItemPill}>
+                          <Text style={styles.topologyItemText}>{sanitizeText(host)}</Text>
+                          {assignedTtps.length > 0 && (
+                            <View style={styles.hostTtpWrap}>
+                              {assignedTtps.map((tid, idx) => (
+                                <View key={idx} style={styles.hostTtpPill}>
+                                  <Text style={styles.hostTtpText}>{sanitizeText(tid)}</Text>
+                                </View>
+                              ))}
+                            </View>
+                          )}
+                        </View>
+                      );
+                    })
+                  ) : (
+                    <Text style={styles.topologyEmptyText}>Not specified</Text>
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.topologyConnector}>
+                <Text style={styles.topologyConnectorText}>-&gt;</Text>
+              </View>
+
+              {/* Node 4: Identity Context */}
+              <View style={[styles.topologyNode, { borderColor: '#fde68a' }]}>
+                <View style={[styles.topologyNodeHeader, { backgroundColor: '#fffbeb', borderBottomColor: '#fde68a' }]}>
+                  <Text style={[styles.topologyNodeTitle, { color: '#b45309' }]}>4. Identity Context</Text>
+                </View>
+                <View style={styles.topologyNodeBody}>
+                  {identityNodes.length > 0 ? (
+                    identityNodes.map((acct, i) => (
+                      <View key={i} style={styles.topologyItemPill}>
+                        <Text style={styles.topologyItemText}>{sanitizeText(acct)}</Text>
+                      </View>
+                    ))
+                  ) : (
+                    <Text style={styles.topologyEmptyText}>Not specified</Text>
+                  )}
+                </View>
+              </View>
+            </View>
+
+            {bp.stagingAndDeconfliction?.trim() && (
+              <View style={styles.deconflictionBar}>
+                <Text style={styles.deconflictionLabel}>Staging &amp; Deconfliction:</Text>
+                <Text style={styles.deconflictionValue}>{sanitizeText(bp.stagingAndDeconfliction.trim())}</Text>
+              </View>
+            )}
+          </View>
+        )}
+
         <View style={{ marginBottom: 25 }}>
           <Text style={styles.sectionTitle}>Executive Summary</Text>
           <View>
@@ -336,8 +652,8 @@ const ReportPDF = ({ simulationName, date, summary, events, testResults, partici
                           <View style={{ flex: 1, paddingRight: 10 }}>
                               <Text style={{ fontSize: 13, fontWeight: 'bold', color: '#1e293b', marginBottom: 4 }}>
                                   {j + 1}. {sanitizeText(proc.name) || 'Unnamed Event'}
-                                  {proc.outcome?.includes(' ➔ ') ? '  [Re-Tested ✓]' : ''}
-                                   {(proc.timestamp || proc.date) ? `  [${new Date(proc.timestamp || proc.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}]` : ''}
+                                  {proc.outcome?.includes(' ➔ ') || proc.outcome?.includes('->') ? '  [Re-Tested]' : ''}
+                                  {(proc.timestamp || proc.date) ? `  [${new Date(proc.timestamp || proc.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}]` : ''}
                               </Text>
                               {proc.expectedOutcome && proc.expectedOutcome !== proc.outcome && (
                                   <Text style={{ fontSize: 9, color: '#dc2626', fontStyle: 'italic' }}>Control Drift Detected</Text>
@@ -439,7 +755,7 @@ const ReportPDF = ({ simulationName, date, summary, events, testResults, partici
                         <View style={{ backgroundColor: '#f1f5f9', paddingHorizontal: 8, paddingVertical: 4, borderRadius: 4, borderWidth: 1, borderColor: '#e2e8f0' }}>
                            <Text style={[styles.tdText, badgeStyle]}>Overall: {sanitizeText((() => {
                                  if (ex.finding?.includes('[Validation Re-Test]')) {
-                                     return 'Missed ➔ Prevented ✓';
+                                     return 'Missed -> Prevented (Verified)';
                                  }
 
                                  let text = ex.finding || ex.status || 'Missed';

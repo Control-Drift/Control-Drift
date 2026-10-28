@@ -17,21 +17,18 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAppContext } from '../../AppContext';
 import { useToast } from '../ui/Toast';
-import { Search, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Download, ZoomIn, Clock, AlertCircle, TrendingUp, Filter, Calendar, Info, FileText, Target, Play, Database, BookOpen, Layers, Zap, X, Map, ShieldAlert, Shield, Sparkles, Plus, Edit3, User, Server, ArrowLeft, Edit, Save, CheckSquare, Square, Unlock, Trash2, Code } from 'lucide-react';
-import CoverageRatingDropdown from '../dropdowns/CoverageRatingDropdown';
-import SeverityDropdown from '../dropdowns/SeverityDropdown';
-import ValidationOutcomeDropdown from '../dropdowns/ValidationOutcomeDropdown';
+import { Search, ChevronLeft, ChevronRight, Download, ZoomIn, Clock, Calendar, FileText, Target, Layers, X, Shield, Sparkles, Plus, Edit3, Server, ArrowLeft, Edit, Save, CheckSquare, Square, Unlock, Trash2, Code } from 'lucide-react';
 import TTPSelector from '../features/TTPSelector';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { PDFDownloadLink } from '@react-pdf/renderer';
 import ReportPDF from '../features/ReportPDF';
-import UnifiedPosturePill from '../ui/UnifiedPosturePill';
 import EventCard from '../ui/EventCard';
 import TagDropdown from '../dropdowns/TagDropdown';
 import EnvironmentDropdown from '../dropdowns/EnvironmentDropdown';
 import InlineTagDropdown from '../dropdowns/InlineTagDropdown';
 import InlineEnvironmentDropdown from '../dropdowns/InlineEnvironmentDropdown';
 import RichMarkdownEditor from '../ui/RichMarkdownEditor';
+import MarkdownRenderer from '../ui/MarkdownRenderer';
 import CopyButton from '../ui/CopyButton';
 
 /**
@@ -48,7 +45,7 @@ import CopyButton from '../ui/CopyButton';
  * @returns {JSX.Element} The Reports dashboard view.
  */
 export default function Reports() {
-  const { dbAdapter, events, completeExercise, simulationSummaries, saveSimulationSummary, simulationEvidence, addSimulationEvidence, compressImage, mitreData, aiSettings, generateAIContent, gaps, setActiveAiContext, isAuthenticated, isAiActive, activeTagFilter, activeEnvironmentFilter, deleteSimulation, confirmAction, createGap } = useAppContext();
+  const { dbAdapter, events, completeExercise, simulationSummaries, saveSimulationSummary, simulationEvidence, addSimulationEvidence, compressImage, mitreData, gaps, setActiveAiContext, isAuthenticated, activeTagFilter, activeEnvironmentFilter, deleteSimulation, confirmAction, createGap } = useAppContext();
   const { addToast } = useToast();
   
   const isMounted = React.useRef(true);
@@ -109,7 +106,6 @@ export default function Reports() {
   const [manualEnvironment, setManualEnvironment] = useState([]);
   const [manualTags, setManualTags] = useState([]);
   const [manualProcedures, setManualProcedures] = useState([{ id: 1, name: 'Event 1', ttps: [], coverageRating: 'None', severity: 'High', outcome: 'Missed' }]);
-  const [isDrafting, setIsDrafting] = useState(false);
   const [activeManualProcedureId, setActiveManualProcedureId] = useState(1);
   const [collapsedCards, setCollapsedCards] = useState({});
 
@@ -319,7 +315,7 @@ export default function Reports() {
       computeCounts();
   }, [selectedSimulation, simulationList, simulationSummaries]);
 
-  const toggleManualSimulationTTP = (techId, techName) => {
+  const toggleManualSimulationTTP = (techId) => {
       setManualProcedures(prev => prev.map(p => {
           if (p.id === activeManualProcedureId) {
               if (p.ttps.includes(techId)) {
@@ -346,56 +342,7 @@ export default function Reports() {
       return '';
   };
 
-  const renderBold = (str) => {
-     const parts = str.split(/(\*\*.*?\*\*)/g);
-     return parts.map((bp, i) => {
-       if (bp.startsWith('**') && bp.endsWith('**')) {
-          return <strong key={i} style={{  color: 'var(--text-primary)'  }}>{bp.slice(2, -2)}</strong>;
-       }
-       return bp;
-     });
-  };
-
-  const formatMarkdown = (text) => {
-    if (!text) return null;
-    const blocks = text.split(/(```[\s\S]*?```)/g);
-    return blocks.map((block, index) => {
-      if (block.startsWith('```') && block.endsWith('```')) {
-        const code = block.replace(/```\w*\n?/, '').replace(/```$/, '');
-        return (
-          <div key={index} style={{ position: 'relative', background: '#000', padding: '16px', borderRadius: '8px', margin: '16px 0', fontFamily: 'monospace', fontSize: '0.9rem', color: '#10b981', overflowX: 'auto', border: '1px solid rgba(16, 185, 129, 0.3)', boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.8)' }}>
-            <div style={{ position: 'absolute', top: '10px', right: '10px', zIndex: 10 }}>
-              <CopyButton text={code} />
-            </div>
-            <pre style={{ margin: 0, paddingTop: '24px' }}>{code}</pre>
-          </div>
-        );
-      }
-      
-      return (
-        <div key={index} style={{  color: 'var(--text-primary)'  }}>
-          {block.split('\n').map((line, j) => {
-            if (!line.trim()) return <br key={j} />;
-            if (line.startsWith('#### ')) return <h4 key={j} style={{ color: 'var(--text-primary)', marginTop: '10px', marginBottom: '5px', fontSize: '0.95rem', letterSpacing: '0.1px' }}>{line.substring(5)}</h4>;
-            if (line.startsWith('### ')) return <h3 key={j} style={{ color: 'var(--text-primary)', marginTop: '15px', marginBottom: '5px', fontSize: '1.05rem', letterSpacing: '0.2px' }}>{line.substring(4)}</h3>;
-            if (line.startsWith('## ')) return <h2 key={j} style={{ color: 'var(--text-primary)', marginTop: '20px', marginBottom: '8px', borderBottom: '1px solid var(--glass-border)', paddingBottom: '5px', fontSize: '1.2rem' }}>{line.substring(3)}</h2>;
-            if (line.startsWith('# ')) return <h1 key={j} style={{ color: 'var(--text-primary)', marginTop: '20px', marginBottom: '10px', fontSize: '1.4rem' }}>{line.substring(2)}</h1>;
-            if (line.startsWith('- ') || line.startsWith('* ')) return <li key={j} style={{ marginLeft: '20px', marginBottom: '4px', lineHeight: '1.4', color: 'var(--text-primary)' }}>{renderBold(line.substring(2))}</li>;
-            if (/^\d+\.\s/.test(line)) return <li key={j} style={{  marginLeft: '20px', marginBottom: '4px', lineHeight: '1.4', listStyleType: 'decimal', color: 'var(--text-primary)', paddingLeft: '5px'  }}>{renderBold(line.replace(/^\d+\.\s/, ''))}</li>;
-            if (line.startsWith('> ')) {
-              return (
-                <div key={j} style={{  borderLeft: '3px solid var(--accent-secondary)', margin: '10px 0', background: 'rgba(192, 132, 252, 0.05)', padding: '10px 15px', borderRadius: '0 4px 4px 0', fontStyle: 'italic', color: 'var(--text-secondary)', lineHeight: '1.4'  }}>
-                  {renderBold(line.substring(2))}
-                </div>
-              );
-            }
-            
-            return <p key={j} style={{  margin: '8px 0', lineHeight: '1.5', color: 'var(--text-primary)', fontSize: '0.9rem'  }}>{renderBold(line)}</p>;
-          })}
-        </div>
-      );
-    });
-  };
+  const formatMarkdown = (text) => (text ? <MarkdownRenderer content={text} /> : null);
 
   useEffect(() => {
     if (location.state) {
@@ -415,8 +362,6 @@ export default function Reports() {
         addToast("At least one TTP must be mapped in the procedures.", 'warning');
         return;
      }
-     
-
 
      const uniqueTTPs = [];
      validProcedures.forEach(p => {
@@ -498,20 +443,20 @@ export default function Reports() {
                  const visibilityMultiplier = (covStr === 'None') ? 1.0 : (covStr === 'Minimal' ? 0.9 : (covStr === 'Partial' ? 0.75 : 0.0));
                  const priorityScore = Math.round(baseScore * visibilityMultiplier);
                  
-                                   const eventTime = p.timestamp ? new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : '';
-                  const timeHeader = p.timestamp ? `Timestamp: ${eventTime} (${new Date(p.timestamp).toLocaleDateString()})\n` : '';
-                  const newGap = {
-                      id: Date.now() + Math.random().toString(),
-                      displayId: 'GAP-' + Math.floor(1000 + Math.random() * 9000),
-                      ttp: (p.ttps || []).join(', ') || 'Unmapped',
-                      simulation: manualSimulation,
-                      finding: p.name || 'Unnamed Event',
-                      outcome: p.outcome || 'Missed',
-                      coverageRating: covStr,
-                      details: `${timeHeader}Execution: ${p.execNotes || 'N/A'}\nDetection: ${p.detNotes || 'N/A'}`,
-                      timestamp: p.timestamp || new Date().toISOString(),
-                      eventTimestamp: p.timestamp || new Date().toISOString(),
-                      severity: severity,
+                 const eventTime = p.timestamp ? new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : '';
+                 const timeHeader = p.timestamp ? `Timestamp: ${eventTime} (${new Date(p.timestamp).toLocaleDateString()})\n` : '';
+                 const newGap = {
+                     id: Date.now() + Math.random().toString(),
+                     displayId: 'GAP-' + Math.floor(1000 + Math.random() * 9000),
+                     ttp: (p.ttps || []).join(', ') || 'Unmapped',
+                     simulation: manualSimulation,
+                     finding: p.name || 'Unnamed Event',
+                     outcome: p.outcome || 'Missed',
+                     coverageRating: covStr,
+                     details: `${timeHeader}Execution: ${p.execNotes || 'N/A'}\nDetection: ${p.detNotes || 'N/A'}`,
+                     timestamp: p.timestamp || new Date().toISOString(),
+                     eventTimestamp: p.timestamp || new Date().toISOString(),
+                     severity: severity,
                      priorityScore: priorityScore,
                      status: 'Open',
                      actionItems: 'Review telemetry and develop detection logic.',
@@ -519,7 +464,7 @@ export default function Reports() {
                      remediationNotes: "",
                      environment: manualEnvironment.length > 0 ? manualEnvironment : ['Unknown Environment'],
                      tags: manualTags || [],
-                      securityControls: Array.isArray(p.securityControls) ? p.securityControls : [],
+                     securityControls: Array.isArray(p.securityControls) ? p.securityControls : [],
                      createdDate: new Date().toISOString()
                  };
                  if (createGap) await createGap(newGap, true);
@@ -539,39 +484,6 @@ export default function Reports() {
      setManualEnvironment([]);
      setManualTags([]);
      setManualProcedures([{ id: 1, name: 'Event 1', ttps: [], coverageRating: 'None', severity: 'High', outcome: 'Missed' }]);
-  };
-
-  const handleDraftSummary = async () => {
-      if (!isAiActive) return;
-      if (!manualSimulation) {
-          addToast("Please provide a Simulation Name first so the AI has context.", 'warning');
-          return;
-      }
-      
-      const validProcedures = manualProcedures.filter(p => p.ttps.length > 0);
-      if (validProcedures.length === 0) {
-          addToast("Please map at least one TTP to an event so the AI has data to analyze.", 'warning');
-          return;
-      }
-      
-      setIsDrafting(true);
-      try {
-          const prompt = `Draft an Executive Summary for a Purple Team simulation named "${manualSimulation}".
-          
-Here are the procedural logs from the simulation:
-${JSON.stringify(validProcedures, null, 2)}
-
-Provide a highly professional, concise executive summary in markdown. Focus on high-level risk, business impact, and strategic recommendations based on the outcomes. Do not include filler text. Include a dedicated section titled "## Risk Analysis" that ties technical gaps to potential business consequences.`;
-
-          const response = await generateAIContent(prompt, "You are an elite cybersecurity AI. Write professional executive summaries based on technical simulation data.");
-          if (!isMounted.current) return;
-          setManualSummary(response);
-      } catch (err) {
-          if (!isMounted.current) return;
-          addToast("Failed to generate summary: " + err.message, 'error');
-      } finally {
-          if (isMounted.current) setIsDrafting(false);
-      }
   };
 
   const updateManualProcedure = (id, field, value) => {
@@ -1302,6 +1214,9 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                               : simulationSummaries[selectedSimulation]?.details?.participants
                         }
                         tags={simulationSummaries[selectedSimulation]?.details?.tags || []}
+                        operationalBlueprint={simulationSummaries[selectedSimulation]?.details?.operationalBlueprint}
+                        environment={simulationSummaries[selectedSimulation]?.details?.environmentCategory}
+                        executionMethodology={simulationSummaries[selectedSimulation]?.details?.executionMethodology}
                         blocked={blocked}
                         medium={medium}
                         minimal={minimal}
@@ -1314,7 +1229,7 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                    className="btn"
                    style={{  display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--accent-primary)', textDecoration: 'none', color: 'inherit', padding: '8px 16px', borderRadius: '8px', fontWeight: 'bold'  }}
                  >
-                   {({ blob, url, loading, error }) => (
+                   {({ loading }) => (
                      <>
                         <FileText size={16} /> {loading ? 'Preparing PDF...' : 'Export to PDF'}
                      </>
@@ -1352,6 +1267,61 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                 </div>
              </div>
 
+             {(() => {
+                const bp = simulationSummaries[selectedSimulation]?.details?.operationalBlueprint || {};
+                const hasBp = (Array.isArray(bp.tooling) && bp.tooling.length > 0) || Boolean(bp.threatInfra?.trim()) || Boolean(bp.targetAssets?.trim()) || Boolean(bp.testAccounts?.trim()) || Boolean(bp.stagingAndDeconfliction?.trim());
+                if (!hasBp) return null;
+                return (
+                    <div style={{ padding: '14px 18px', borderRadius: '10px', background: 'rgba(168, 85, 247, 0.06)', border: '1px solid rgba(168, 85, 247, 0.22)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#d8b4fe', textTransform: 'uppercase', letterSpacing: '0.6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Layers size={13} color="#c084fc" /> Blueprint &amp; Target Topology
+                        </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', fontSize: '0.8rem' }}>
+                            {Array.isArray(bp.tooling) && bp.tooling.length > 0 && (
+                                <div>
+                                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.7rem', marginBottom: '2px' }}>Offensive Tooling &amp; Frameworks</span>
+                                    <span style={{ color: 'var(--text-primary)', fontWeight: 600 }}>{bp.tooling.join(', ')}</span>
+                                </div>
+                            )}
+                            {bp.threatInfra?.trim() && (
+                                <div>
+                                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.7rem', marginBottom: '2px' }}>Simulated Threat Infrastructure</span>
+                                    <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>{bp.threatInfra}</span>
+                                </div>
+                            )}
+                            {bp.targetAssets?.trim() && (
+                                <div>
+                                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.7rem', marginBottom: '2px' }}>Target Host(s) &amp; Per-Host TTPs</span>
+                                    <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>{bp.targetAssets}</span>
+                                    {bp.hostTtpAssignments && Object.keys(bp.hostTtpAssignments).length > 0 && (
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '4px' }}>
+                                            {Object.entries(bp.hostTtpAssignments).map(([host, ids]) =>
+                                                Array.isArray(ids) && ids.length > 0 ? (
+                                                    <span key={host} style={{ fontSize: '0.68rem', padding: '1px 6px', borderRadius: '4px', background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.3)', color: '#7dd3fc', fontFamily: 'monospace' }}>
+                                                        {host}: {ids.join(', ')}
+                                                    </span>
+                                                ) : null
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                            {bp.testAccounts?.trim() && (
+                                <div>
+                                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.7rem', marginBottom: '2px' }}>Test Identity / Context</span>
+                                    <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>{bp.testAccounts}</span>
+                                </div>
+                            )}
+                            {bp.stagingAndDeconfliction?.trim() && (
+                                <div>
+                                    <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.7rem', marginBottom: '2px' }}>Staging &amp; Deconfliction</span>
+                                    <span style={{ color: 'var(--text-primary)', fontFamily: 'monospace' }}>{bp.stagingAndDeconfliction}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                );
+             })()}
              <div className="glass-panel" style={{  padding: '20px', background: 'rgba(156, 39, 176, 0.05)', borderLeft: '4px solid var(--accent-primary)'  }}>
                 {(() => {
                     const summaryText = simulationSummaries[selectedSimulation] ? (typeof simulationSummaries[selectedSimulation] === 'string' ? simulationSummaries[selectedSimulation] : (simulationSummaries[selectedSimulation].summary || '')) : '';
@@ -1487,29 +1457,29 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                                      return notes;
                                  };
                                  
-                                                                   const eventTime = proc.timestamp || proc.date || (() => {
-                                      const match = events?.find(e => e.simulation === selectedSimulation && (e.finding === proc.name || (proc.ttps && proc.ttps.includes(e.ttp))));
-                                      return match?.date;
-                                  })();
-                                  return (
-                                    <tr key={i} style={{  borderBottom: '1px solid rgba(255,255,255,0.05)'  }}>
-                                       <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '26%'  }}>
-                                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
-                                              <strong style={{ fontSize: '1.05rem', color: 'var(--text-primary)' }}>
-                                                 {proc.name || 'Unnamed Event'}
-                                              </strong>
-                                              {proc.outcome?.includes(' ➔ ') && (
-                                                  <span style={{ fontSize: '0.7rem', color: '#059669', background: 'rgba(5, 150, 105, 0.15)', padding: '2px 8px', borderRadius: '12px', verticalAlign: 'middle', border: '1px solid rgba(5, 150, 105, 0.3)' }}>
-                                                      Re-Tested ✓ {proc.validationDate ? `(${new Date(proc.validationDate).toLocaleDateString()})` : ''}
-                                                  </span>
-                                              )}
-                                              {eventTime && (
-                                                  <span style={{ color: '#38bdf8', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '2px 7px', borderRadius: '4px', fontWeight: 'bold', fontFamily: 'monospace' }} title={`Execution Timestamp: ${new Date(eventTime).toLocaleString()}`}>
-                                                      <Clock size={11} />
-                                                      <span>{new Date(eventTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</span>
-                                                  </span>
-                                              )}
-                                          </div>
+                                 const eventTime = proc.timestamp || proc.date || (() => {
+                                     const match = events?.find(e => e.simulation === selectedSimulation && (e.finding === proc.name || (proc.ttps && proc.ttps.includes(e.ttp))));
+                                     return match?.date;
+                                 })();
+                                 return (
+                                   <tr key={i} style={{  borderBottom: '1px solid rgba(255,255,255,0.05)'  }}>
+                                      <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '26%'  }}>
+                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                                             <strong style={{ fontSize: '1.05rem', color: 'var(--text-primary)' }}>
+                                                {proc.name || 'Unnamed Event'}
+                                             </strong>
+                                             {proc.outcome?.includes(' ➔ ') && (
+                                                 <span style={{ fontSize: '0.7rem', color: '#059669', background: 'rgba(5, 150, 105, 0.15)', padding: '2px 8px', borderRadius: '12px', verticalAlign: 'middle', border: '1px solid rgba(5, 150, 105, 0.3)' }}>
+                                                     Re-Tested ✓ {proc.validationDate ? `(${new Date(proc.validationDate).toLocaleDateString()})` : ''}
+                                                 </span>
+                                             )}
+                                             {eventTime && (
+                                                 <span style={{ color: '#38bdf8', whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.25)', padding: '2px 7px', borderRadius: '4px', fontWeight: 'bold', fontFamily: 'monospace' }} title={`Execution Timestamp: ${new Date(eventTime).toLocaleString()}`}>
+                                                     <Clock size={11} />
+                                                     <span>{new Date(eventTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })}</span>
+                                                 </span>
+                                             )}
+                                         </div>
                                          <div style={{  display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '8px'  }}>
                                             {(proc.ttps || []).map(ttp => {
                                                 const ttpId = typeof ttp === 'object' ? ttp.id : ttp;
@@ -1613,9 +1583,6 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                              });
                          } else {
                              return simulationExercises.map((ex, i) => {
-                                const isHigh = ex.status === 'high';
-                                const isMed = ex.status === 'medium';
-                                const isMin = ex.status === 'minimal';
                                 return (
                                    <tr key={i} style={{  borderBottom: '1px solid rgba(255,255,255,0.05)'   }}>
                                       <td style={{ padding: '15px 10px', verticalAlign: 'top', width: '26%' }}>
@@ -1961,7 +1928,6 @@ Provide a highly professional, concise executive summary in markdown. Focus on h
                     <div style={{  background: 'rgba(0,0,0,0.2)', padding: '20px', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)'  }}>
                        <label style={{  display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px', fontSize: '0.95rem', color: 'var(--text-primary)', fontWeight: 500  }}>
                            <div style={{  display: 'flex', alignItems: 'center', gap: '8px'  }}><FileText size={16} color="var(--accent-secondary)" /> Executive Summary</div>
-
                        </label>
                        <textarea className="ai-input" style={{  width: '100%', boxSizing: 'border-box', height: '120px', resize: 'vertical', lineHeight: '1.5'  }} placeholder="Provide a brief summary of the simulation context, goals, and high-level outcomes..." value={manualSummary} onChange={e => setManualSummary(e.target.value)} />
                     </div>

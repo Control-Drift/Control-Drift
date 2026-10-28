@@ -17,8 +17,7 @@
 // src/lib/db/adapters/SupabaseAdapter.js
 import { DatabaseAdapter } from '../core.js';
 
-// We import this dynamically or assume the user has installed @supabase/supabase-js
-// import { createClient } from '@supabase/supabase-js';
+const DRAFT_NAMESPACE_PREFIX = '__draft__:';
 
 export class SupabaseAdapter extends DatabaseAdapter {
     constructor(config) {
@@ -144,17 +143,19 @@ export class SupabaseAdapter extends DatabaseAdapter {
     }
 
     async fetchSimulations() {
-        // In a real schema, simulations might be a separate table.
-        // For simplicity, doing a distinct select if supported, or falling back to a function.
         const { data, error } = await this.supabase.rpc('get_distinct_simulations');
         if (error) {
-            // Fallback: fetch all and extract (not efficient for large datasets)
             const { data: allData } = await this.supabase.from('events').select('simulation');
             const simulations = new Set();
-            allData?.forEach(e => { if (e.simulation) simulations.add(e.simulation); });
+            allData?.forEach(e => {
+                if (e.simulation && !String(e.simulation).startsWith(DRAFT_NAMESPACE_PREFIX)) {
+                    simulations.add(e.simulation);
+                }
+            });
             return Array.from(simulations);
         }
-        return Array.isArray(data) ? data.map(d => d.simulation || d) : data;
+        const list = Array.isArray(data) ? data.map(d => d.simulation || d) : [];
+        return list.filter(s => !String(s).startsWith(DRAFT_NAMESPACE_PREFIX));
     }
 
     async createEvent(eventObj) {
@@ -216,27 +217,32 @@ export class SupabaseAdapter extends DatabaseAdapter {
     }
 
     async bulkUpdateGaps(updates) {
-        // Supabase supports bulk upsert
         const { error } = await this.supabase.from('gaps').upsert(updates);
         if (error) throw new Error(error.message);
         return { success: true };
     }
 
-    // fetchMitreCoverage is omitted. The application will use client-side mitreDataCalculated
-    // which accurately computes coverage locally from fetched events.
-
     // --- Relational Simulations Methods ---
     
     async fetchSimulationsData() {
+        if (this.initPromise) await this.initPromise;
+        if (!this.supabase) return [];
         const { data, error } = await this.supabase.from('simulations').select('*');
         if (error) {
             console.warn("simulations table not found or error. Returning empty arrays.", error.message);
             return [];
         }
-        return data;
+        // Strictly exclude any namespaced in-progress draft rows so completed reports remain pristine
+        return (data || []).filter(row => {
+            const idStr = String(row?.id || '');
+            if (idStr.startsWith(DRAFT_NAMESPACE_PREFIX)) return false;
+            if (row?.summary && typeof row.summary === 'object' && row.summary.__isSimulationDraft) return false;
+            return true;
+        });
     }
 
     async upsertSimulation(simulationData) {
+        if (this.initPromise) await this.initPromise;
         const { data, error } = await this.supabase
             .from('simulations')
             .upsert([simulationData])
@@ -248,6 +254,7 @@ export class SupabaseAdapter extends DatabaseAdapter {
     }
 
     async deleteSimulation(id) {
+        if (this.initPromise) await this.initPromise;
         // First delete associated events
         const { error: eventsError } = await this.supabase
             .from('events')
@@ -267,7 +274,6 @@ export class SupabaseAdapter extends DatabaseAdapter {
             .from('simulations')
             .delete()
             .eq('id', id);
-        // It's possible the simulations table doesn't exist yet for some users, so we won't hard-fail if it doesn't
         if (simError && simError.code !== '42P01') { 
             console.warn(`Simulation record deletion failed: ${simError.message}`);
         }
@@ -275,8 +281,186 @@ export class SupabaseAdapter extends DatabaseAdapter {
         return true;
     }
 
+    // --- Dedicated In-Progress Simulation Drafts Section ---
+    // Primary storage: dedicated `simulation_drafts` table in Supabase.
+    // Zero-migration fallback: if `simulation_drafts` hasn't been created yet in SQL,
+    // transparently stores under `__draft__:<id>` in `simulations` (isolated from reports).
+
+    _normalizeDraftRecord(raw) {
+        if (!raw) return null;
+        // Case 1: Row from `simulation_drafts` table
+        if (raw.data && typeof raw.data === 'object' && !raw.summary) {
+            return {
+                id: String(raw.id),
+                name: raw.name || raw.data?.simulationDetails?.name || 'Unnamed Simulation',
+                step: Number(raw.step || raw.data?.step || 1),
+                timestamp: raw.updated_at || raw.timestamp || raw.created_at || new Date().toISOString(),
+                data: raw.data,
+                storageSource: 'supabase'
+            };
+        }
+        // Case 2: Namespaced fallback row from `simulations` table
+        if (raw.summary && typeof raw.summary === 'object' && raw.summary.__isSimulationDraft) {
+            const s = raw.summary;
+            const cleanId = String(s.id || String(raw.id || '').replace(DRAFT_NAMESPACE_PREFIX, ''));
+            return {
+                id: cleanId,
+                name: s.name || s.data?.simulationDetails?.name || 'Unnamed Simulation',
+                step: Number(s.step || s.data?.step || 1),
+                timestamp: s.timestamp || s.updated_at || new Date().toISOString(),
+                data: s.data || {},
+                storageSource: 'supabase'
+            };
+        }
+        return null;
+    }
+
+    async fetchDrafts() {
+        if (this.initPromise) await this.initPromise;
+        if (!this.supabase) return [];
+
+        const draftMap = new Map();
+
+        // 1. Try dedicated `simulation_drafts` table first
+        try {
+            const { data: tableDrafts, error: tableErr } = await this.supabase
+                .from('simulation_drafts')
+                .select('*')
+                .order('updated_at', { ascending: false });
+
+            if (!tableErr && Array.isArray(tableDrafts)) {
+                tableDrafts.forEach(row => {
+                    const norm = this._normalizeDraftRecord(row);
+                    if (norm && norm.id) draftMap.set(norm.id, norm);
+                });
+            }
+        } catch (err) {
+            // Ignore if table doesn't exist yet; fallback below handles it
+        }
+
+        // 2. Also check namespaced `__draft__:` records in `simulations` so zero drafts are ever stranded
+        try {
+            const { data: nsDrafts, error: nsErr } = await this.supabase
+                .from('simulations')
+                .select('*')
+                .like('id', `${DRAFT_NAMESPACE_PREFIX}%`);
+
+            if (!nsErr && Array.isArray(nsDrafts)) {
+                nsDrafts.forEach(row => {
+                    const norm = this._normalizeDraftRecord(row);
+                    if (norm && norm.id) {
+                        const existing = draftMap.get(norm.id);
+                        if (!existing || new Date(norm.timestamp) > new Date(existing.timestamp)) {
+                            draftMap.set(norm.id, norm);
+                        }
+                    }
+                });
+            }
+        } catch (err) {
+            console.warn('Could not query namespaced drafts from Supabase:', err);
+        }
+
+        return Array.from(draftMap.values()).sort(
+            (a, b) => new Date(b.timestamp) - new Date(a.timestamp)
+        );
+    }
+
+    async saveDraft(draft) {
+        if (this.initPromise) await this.initPromise;
+        if (!this.supabase) throw new Error('Supabase client not initialized');
+
+        const cleanId = String(draft.id || Date.now()).replace(DRAFT_NAMESPACE_PREFIX, '');
+        const nowIso = draft.timestamp || new Date().toISOString();
+        const stepNum = Number(draft.step || draft.data?.step || 1);
+        const draftName = draft.name || draft.data?.simulationDetails?.name || 'Unnamed Simulation';
+        const draftPayload = draft.data || {};
+
+        const dedicatedRow = {
+            id: cleanId,
+            name: draftName,
+            step: stepNum,
+            data: draftPayload,
+            updated_at: nowIso
+        };
+
+        // 1. Attempt upsert into dedicated `simulation_drafts` table
+        const { data: savedRow, error: tableErr } = await this.supabase
+            .from('simulation_drafts')
+            .upsert([dedicatedRow])
+            .select()
+            .single();
+
+        if (!tableErr && savedRow) {
+            // Clean up any legacy namespaced copy if it existed
+            await this.supabase
+                .from('simulations')
+                .delete()
+                .eq('id', `${DRAFT_NAMESPACE_PREFIX}${cleanId}`)
+                .catch(() => {});
+
+            return this._normalizeDraftRecord(savedRow);
+        }
+
+        // 2. Bulletproof Fallback: If `simulation_drafts` table hasn't been created in Supabase yet,
+        // store in the isolated `__draft__:` partition of `simulations`
+        const fallbackRow = {
+            id: `${DRAFT_NAMESPACE_PREFIX}${cleanId}`,
+            summary: {
+                __isSimulationDraft: true,
+                id: cleanId,
+                name: draftName,
+                step: stepNum,
+                timestamp: nowIso,
+                data: draftPayload
+            },
+            evidence: []
+        };
+
+        const { data: fbData, error: fbErr } = await this.supabase
+            .from('simulations')
+            .upsert([fallbackRow])
+            .select()
+            .single();
+
+        if (fbErr) {
+            throw new Error(`Failed to save draft to Supabase: ${fbErr.message}`);
+        }
+
+        return this._normalizeDraftRecord(fbData);
+    }
+
+    async deleteDraft(id) {
+        if (this.initPromise) await this.initPromise;
+        if (!this.supabase) throw new Error('Supabase client not initialized');
+
+        const cleanId = String(id).replace(DRAFT_NAMESPACE_PREFIX, '');
+
+        // Delete from dedicated `simulation_drafts` table (if present)
+        const { error: tableErr } = await this.supabase
+            .from('simulation_drafts')
+            .delete()
+            .eq('id', cleanId);
+
+        if (tableErr && tableErr.code !== '42P01' && tableErr.code !== 'PGRST205') {
+            console.warn('Warning deleting from simulation_drafts:', tableErr.message);
+        }
+
+        // Also delete from namespaced `simulations` fallback (if present)
+        const { error: nsErr } = await this.supabase
+            .from('simulations')
+            .delete()
+            .eq('id', `${DRAFT_NAMESPACE_PREFIX}${cleanId}`);
+
+        if (nsErr && nsErr.code !== '42P01') {
+            console.warn('Warning deleting namespaced draft:', nsErr.message);
+        }
+
+        return { success: true };
+    }
+
     async bulkImport(backupData) {
-        // Run sequential bulk upserts for all 3 core entities
+        if (this.initPromise) await this.initPromise;
+        // Run sequential bulk upserts for all core entities
         if (backupData.gaps && backupData.gaps.length > 0) {
             const { error: gapsErr } = await this.supabase.from('gaps').upsert(backupData.gaps);
             if (gapsErr) throw new Error(`Gaps Import Error: ${gapsErr.message}`);
@@ -304,6 +488,17 @@ export class SupabaseAdapter extends DatabaseAdapter {
         if (simulationRows.length > 0) {
             const { error: simErr } = await this.supabase.from('simulations').upsert(simulationRows);
             if (simErr) throw new Error(`Simulations Import Error: ${simErr.message}`);
+        }
+
+        // Also import in-progress drafts if included in backup snapshot
+        if (Array.isArray(backupData.simulationDrafts) && backupData.simulationDrafts.length > 0) {
+            for (const draft of backupData.simulationDrafts) {
+                try {
+                    await this.saveDraft(draft);
+                } catch (e) {
+                    console.warn('Failed to import draft:', e);
+                }
+            }
         }
         
         return { success: true };

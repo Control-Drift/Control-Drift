@@ -34,6 +34,14 @@ const PHASE_ICONS = {
   "Action on Objective": Target
 };
 
+const KILL_CHAIN_PHASES = {
+  "Initial Access": ["Initial Access"],
+  "Execution": ["Execution", "Persistence", "Privilege Escalation"],
+  "Evasion": ["Defense Evasion", "Defense Impairment", "Stealth"],
+  "Movement": ["Discovery", "Lateral Movement", "Credential Access"],
+  "Action on Objective": ["Collection", "Command and Control", "Exfiltration", "Impact"]
+};
+
 // Custom Cyber Metric Icons - Minimalist & Sleek
 const CyberResolutionIcon = ({ size = 150, color = "currentColor", ...props }) => (
     <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="1" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -129,7 +137,30 @@ const getNormalizedPosture = (ex) => {
     let outcome = 'Unknown';
     let coverage = 'Unknown';
 
-    if (ex.coverageRating && ex.coverageRating !== 'N/A' && ex.coverageRating !== 'na') {
+    const rawOutcomeField = typeof (ex?.outcome || ex?.finding || ex?.status) === 'string'
+        ? (ex.outcome || ex.finding || ex.status)
+        : '';
+    const hasRetestArrow = rawOutcomeField.includes(' ➔ ') || rawOutcomeField.includes('->');
+    const effectiveRawOutcome = hasRetestArrow
+        ? rawOutcomeField.split(/ ➔ |->/).pop().trim()
+        : rawOutcomeField.trim();
+
+    if (hasRetestArrow && effectiveRawOutcome) {
+        const r = effectiveRawOutcome.toLowerCase();
+        if (r === 'high' || r.includes('prevented') || r.includes('alerted') || r.includes('resolved')) {
+            outcome = 'Prevented';
+            coverage = 'Optimal';
+        } else if (r === 'minimal') {
+            outcome = 'Logged';
+            coverage = 'Minimal';
+        } else if (r === 'medium' || r.includes('logged')) {
+            outcome = 'Logged';
+            coverage = 'Partial';
+        } else if (r === 'low' || r.includes('missed') || r.includes('accepted')) {
+            outcome = 'Missed';
+            coverage = 'None';
+        }
+    } else if (ex?.coverageRating && ex.coverageRating !== 'N/A' && ex.coverageRating !== 'na') {
         const cr = ex.coverageRating.toLowerCase();
         if (cr === 'optimal' || cr === 'optimal coverage') {
             outcome = 'Prevented';
@@ -145,22 +176,97 @@ const getNormalizedPosture = (ex) => {
             coverage = 'None';
         }
     } else {
-        let rawOutcome = ex.outcome || ex.finding || ex.status;
-        if (typeof rawOutcome === 'string') {
-            const r = rawOutcome.toLowerCase();
-            if (r === 'high' || r.includes('prevented') || r.includes('alerted')) outcome = 'Prevented';
-            else if (r === 'medium' || r === 'minimal' || r.includes('logged')) outcome = 'Logged';
-            else if (r === 'low' || r.includes('missed')) outcome = 'Missed';
+        if (effectiveRawOutcome) {
+            const r = effectiveRawOutcome.toLowerCase();
+            if (r === 'high' || r.includes('prevented') || r.includes('alerted') || r.includes('resolved')) outcome = 'Prevented';
+            else if (r === 'minimal') {
+                outcome = 'Logged';
+                coverage = 'Minimal';
+            } else if (r === 'medium' || r.includes('logged')) outcome = 'Logged';
+            else if (r === 'low' || r.includes('missed') || r.includes('accepted')) outcome = 'Missed';
         }
-        
-        let rawCoverage = ex.coverageRating || ex.coverage;
-        coverage = rawCoverage;
-        if (!coverage || coverage === 'N/A' || coverage === 'na') {
+
+        let rawCoverage = ex?.coverageRating || ex?.coverage;
+        if (!coverage || coverage === 'Unknown') {
+            coverage = rawCoverage;
+        }
+        if (!coverage || coverage === 'N/A' || coverage === 'na' || coverage === 'Unknown') {
             coverage = outcome === 'Prevented' ? 'Optimal' : outcome === 'Logged' ? 'Partial' : outcome === 'Missed' ? 'None' : 'Unknown';
         }
     }
-    
-    return { outcome, coverage };
+
+    let exposure = null;
+    if (coverage === 'Optimal') exposure = 0.0;
+    else if (coverage === 'Partial') exposure = 0.5;
+    else if (coverage === 'Minimal') exposure = 0.75;
+    else if (coverage === 'None') exposure = 1.0;
+
+    return { outcome, coverage, exposure };
+};
+
+const getPhaseRiskMeta = (risk, tested, subject) => {
+    const eventLabel = tested === 1 ? 'tested event' : 'tested events';
+    if (!tested || tested === 0) {
+        return {
+            color: 'var(--text-muted)',
+            glow: 'rgba(255, 255, 255, 0.1)',
+            statusText: 'UNTESTED / NO DATA',
+            shortStatusText: 'UNTESTED',
+            desc: `No empirical test data exists for ${subject}. Run simulations targeting this phase to establish a baseline.`
+        };
+    }
+    if (risk >= 75) {
+        return {
+            color: '#ef4444',
+            glow: 'rgba(239, 68, 68, 0.4)',
+            statusText: 'Critical Risk',
+            shortStatusText: 'Critical Risk',
+            desc: `High exposure rate across the ${tested} ${eventLabel} in ${subject}. Significant defense gaps observed.`
+        };
+    }
+    if (risk > 50) {
+        return {
+            color: '#f97316',
+            glow: 'rgba(249, 115, 22, 0.4)',
+            statusText: 'High Risk',
+            shortStatusText: 'High Risk',
+            desc: `Elevated exposure across the ${tested} ${eventLabel} in ${subject}. Frequent defense or alerting misses observed.`
+        };
+    }
+    if (risk >= 30) {
+        return {
+            color: '#eab308',
+            glow: 'rgba(234, 179, 8, 0.4)',
+            statusText: 'Moderate Risk',
+            shortStatusText: 'Moderate Risk',
+            desc: `Moderate exposure across the ${tested} ${eventLabel} in ${subject}. Activity was partially logged without full alerting or prevention.`
+        };
+    }
+    if (risk >= 10) {
+        return {
+            color: '#84cc16',
+            glow: 'rgba(132, 204, 22, 0.35)',
+            statusText: 'Low Risk',
+            shortStatusText: 'Low Risk',
+            desc: `Low exposure across the ${tested} ${eventLabel} in ${subject}. Defenses prevented or alerted on most activity.`
+        };
+    }
+    if (risk > 0) {
+        return {
+            color: '#10b981',
+            glow: 'rgba(16, 185, 129, 0.35)',
+            statusText: 'Minimal Risk',
+            shortStatusText: 'Minimal Risk',
+            desc: `Minimal exposure across the ${tested} ${eventLabel} in ${subject}. Defenses were largely effective.`
+        };
+    }
+    return {
+        color: 'var(--success)',
+        glow: 'rgba(16, 185, 129, 0.4)',
+        statusText: 'SECURED',
+        shortStatusText: 'SECURED',
+        desc: `Defenses successfully prevented or alerted on all ${tested === 1 ? 'tested event' : `${tested} tested events`} in ${subject}.`
+    };
 };
 
 const CustomTimeframeDropdown = ({ value, onChange }) => {
@@ -265,7 +371,7 @@ export default function Dashboard() {
   const [topTTPs, setTopTTPs] = React.useState([]);
   const [trendTimeframe, setTrendTimeframe] = React.useState('30 Days');
   const [isLoading, setIsLoading] = React.useState(true);
-  const [activePhaseSubject, setActivePhaseSubject] = React.useState("Pre-Attack");
+  const [activePhaseSubject, setActivePhaseSubject] = React.useState("Initial Access");
   const [expandedPhaseSubject, setExpandedPhaseSubject] = React.useState(null);
   const [isMounted, setIsMounted] = React.useState(false);
   const rightCardRef = React.useRef(null);
@@ -337,8 +443,9 @@ export default function Dashboard() {
                }
 
                if (simulationSummaries) {
-                   Object.values(simulationSummaries).forEach(sim => {
+                   Object.entries(simulationSummaries).forEach(([simKey, sim]) => {
                        if (sim && sim.testResults && sim.testResults.length > 0) {
+                           const simName = sim.details?.name || sim.name || simKey;
                            const simTags = sim.details?.tags || [];
                            const simControls = sim.details?.securityControls || [];
                            const simEnvironment = sim.details?.environment || sim.details?.environmentCategory || [];
@@ -353,38 +460,64 @@ export default function Dashboard() {
                                      return '';
                                  };
                                  const trTtpStr = getTtpString(tr);
-                                 
-                                  const existingIndex = allExercises.findIndex(ex => {
-                                      if (!ex || !tr) return false;
-                                      if (tr.id && ex.id === tr.id) return true;
-                                      const exTtpStr = getTtpString(ex);
-                                      const trTtpsArr = Array.isArray(tr.ttps) ? tr.ttps : trTtpStr.split(',').map(s => s.trim());
-                                      const isTtpMatch = trTtpsArr.some(t => t && exTtpStr.includes(t));
-                                      const exEffectiveDate = ex.date || ex.created_at || '';
-                                      const trEffectiveDate = tr.date || sim.timestamp || sim.date || sim.created_at || (sim.details && sim.details.date) || '';
-                                      return isTtpMatch && normalizeDate(exEffectiveDate) === normalizeDate(trEffectiveDate) && (ex.simulation === sim.name || ex.simulation === sim.id || ex.simId === sim.id || !ex.simulation);
-                                  });
+                                 const trTtpsArr = Array.isArray(tr.ttps) ? tr.ttps : trTtpStr.split(',').map(s => s.trim()).filter(Boolean);
+                                 const isRetestedTr = Boolean(tr.validationDate || (typeof tr.outcome === 'string' && tr.outcome.includes(' ➔ ')));
+                                 const trEffectiveDate = tr.date || sim.timestamp || sim.date || sim.created_at || (sim.details && sim.details.date) || '';
 
-                                  if (existingIndex !== -1) {
-                                      // Merge dynamic updates from simulationSummaries (like validation re-tests) into the static historical event
-                                      allExercises[existingIndex] = {
-                                          ...allExercises[existingIndex],
-                                          outcome: tr.outcome || allExercises[existingIndex].outcome,
-                                          coverageRating: tr.coverageRating || allExercises[existingIndex].coverageRating,
-                                          validationDate: tr.validationDate || allExercises[existingIndex].validationDate,
-                                      };
-                                      return;
-                                  }
+                                 // Check if static per-TTP exercise records already exist for this simulation
+                                 const matchingStaticIndices = [];
+                                 allExercises.forEach((ex, idx) => {
+                                     if (!ex || !tr || ex.isSimEvent) return;
+                                     const exTtpStr = getTtpString(ex);
+                                     const isTtpMatch = trTtpsArr.some(t => t && exTtpStr.split(',').map(s => s.trim()).includes(t));
+                                     const exEffectiveDate = ex.date || ex.created_at || '';
+                                     const isSameSim = ex.simulation === simName || ex.simulation === sim.name || ex.simulation === sim.id || ex.simId === sim.id || !ex.simulation;
+                                     if (isTtpMatch && normalizeDate(exEffectiveDate) === normalizeDate(trEffectiveDate) && isSameSim) {
+                                         matchingStaticIndices.push(idx);
+                                     }
+                                 });
+
+                                 if (matchingStaticIndices.length > 0) {
+                                     // Only overwrite static per-TTP records when a validation re-test occurred
+                                     if (isRetestedTr) {
+                                         matchingStaticIndices.forEach(idx => {
+                                             allExercises[idx] = {
+                                                 ...allExercises[idx],
+                                                 outcome: tr.outcome || allExercises[idx].outcome,
+                                                 coverageRating: tr.coverageRating || allExercises[idx].coverageRating,
+                                                 validationDate: tr.validationDate || allExercises[idx].validationDate,
+                                             };
+                                         });
+                                     }
+                                     return;
+                                 }
+
+                                 const existingSimEventIndex = allExercises.findIndex(ex => {
+                                     if (!ex || !tr || !ex.isSimEvent) return false;
+                                     if (tr.id && ex.id === tr.id) return true;
+                                     return Boolean(ex.name && tr.name && ex.name === tr.name && (ex.simId === (sim.id || simName) || ex.simulation === simName));
+                                 });
+
+                                 if (existingSimEventIndex !== -1) {
+                                     allExercises[existingSimEventIndex] = {
+                                         ...allExercises[existingSimEventIndex],
+                                         outcome: tr.outcome || allExercises[existingSimEventIndex].outcome,
+                                         coverageRating: tr.coverageRating || allExercises[existingSimEventIndex].coverageRating,
+                                         validationDate: tr.validationDate || allExercises[existingSimEventIndex].validationDate,
+                                     };
+                                     return;
+                                 }
                                 
-                                allExercises.push({
-                                    ...tr,
-                                    ttp: trTtpStr,
-                                   tags: Array.isArray(tr.tags) && tr.tags.length > 0 ? tr.tags : simTags,
-                                   securityControls: Array.isArray(tr.securityControls) && tr.securityControls.length > 0 ? tr.securityControls : simControls,
-                                   environment: Array.isArray(tr.environment) && tr.environment.length > 0 ? tr.environment : simEnvironment,
-                                   isSimEvent: true,
-                                   simId: sim.id || sim.name
-                               });
+                                 allExercises.push({
+                                     ...tr,
+                                     ttp: trTtpStr,
+                                     simulation: simName,
+                                     tags: Array.isArray(tr.tags) && tr.tags.length > 0 ? tr.tags : simTags,
+                                     securityControls: Array.isArray(tr.securityControls) && tr.securityControls.length > 0 ? tr.securityControls : simControls,
+                                     environment: Array.isArray(tr.environment) && tr.environment.length > 0 ? tr.environment : simEnvironment,
+                                     isSimEvent: true,
+                                     simId: sim.id || simName
+                                 });
                            });
                        }
                    });
@@ -406,8 +539,8 @@ export default function Dashboard() {
                }
 
                // Filter out historical events that map entirely to globally de-scoped TTPs
+               const outOfScopeTTPs = new Set();
                if (mitreData && Object.keys(mitreData).length > 0) {
-                   const outOfScopeTTPs = new Set();
                    Object.values(mitreData).forEach(tactic => {
                        tactic.techniques.forEach(tech => {
                            if (tech.environments?.['All'] === 'na') outOfScopeTTPs.add(tech.id);
@@ -669,68 +802,161 @@ export default function Dashboard() {
                     }
                }
                
-               const tacticExposure = {};
-                const trackExposure = (items, isGap) => {
-                    items.forEach(item => {
-                        if (!mitreData || Object.keys(mitreData).length === 0 || !item.ttp) return;
-                        const ttpList = item.ttp.split(',').map(t => t.trim());
-                        ttpList.forEach(ttp => {
-                            const tacticName = Object.keys(mitreData).find(t => mitreData[t].techniques.find(tech => tech.id === ttp || (tech.subTechniques && tech.subTechniques.find(sub => sub.id === ttp))));
-                            if (tacticName) {
-                               if (!tacticExposure[tacticName]) tacticExposure[tacticName] = { tested: new Set(), missed: new Set() };
-                               
-                               if (isGap) {
-                                   if (item.status === 'Open' || item.status === 'In Progress' || item.status === 'Risk Accepted') {
-                                       tacticExposure[tacticName].tested.add(ttp);
-                                       tacticExposure[tacticName].missed.add(ttp);
-                                   } else if (item.status === 'Resolved') {
-                                       tacticExposure[tacticName].tested.add(ttp);
-                                       tacticExposure[tacticName].missed.delete(ttp);
-                                   }
-                               } else {
-                                   tacticExposure[tacticName].tested.add(ttp);
-                                   const posture = getNormalizedPosture(item);
-                                   if (posture.coverage === 'None' || posture.coverage === 'Minimal') {
-                                       tacticExposure[tacticName].missed.add(ttp);
-                                   } else if (posture.coverage === 'Optimal' || posture.coverage === 'Partial') {
-                                       tacticExposure[tacticName].missed.delete(ttp);
-                                   }
-                               }
-                            }
-                        });
-                    });
-                };
-                
-                trackExposure(allExercises, false);
-                trackExposure(allGaps.filter(g => g.status === 'Resolved'), true);
-                trackExposure(allGaps.filter(g => g.status === 'Open' || g.status === 'In Progress' || g.status === 'Risk Accepted'), true);
-                
-                const killChainPhases = {
-                    "Initial Access": ["Initial Access"],
-                    "Execution": ["Execution", "Persistence", "Privilege Escalation"],
-                    "Evasion": ["Defense Evasion", "Defense Impairment", "Stealth"],
-                    "Movement": ["Discovery", "Lateral Movement", "Credential Access"],
-                    "Action on Objective": ["Collection", "Command and Control", "Exfiltration", "Impact"]
-                };
+               // Build unified Kill Chain Exposure & Drilldown Event model
+               const doesTtpMatchTactics = (ttp, tacticsList) => {
+                   if (!mitreData || !ttp) return false;
+                   const cleanTtp = ttp.trim();
+                   const parentTtp = cleanTtp.includes('.') ? cleanTtp.split('.')[0] : null;
+                   return tacticsList.some(tacticName => {
+                       const tacticObj = mitreData[tacticName];
+                       if (!tacticObj || !Array.isArray(tacticObj.techniques)) return false;
+                       return tacticObj.techniques.some(tech =>
+                           tech.id === cleanTtp ||
+                           (parentTtp && tech.id === parentTtp) ||
+                           (Array.isArray(tech.subTechniques) && tech.subTechniques.some(sub => sub.id === cleanTtp))
+                       );
+                   });
+               };
 
-                const radarData = Object.entries(killChainPhases).map(([phase, tactics]) => {
-                    const missedSet = new Set();
-                    const testedSet = new Set();
-                    tactics.forEach(t => {
-                        if (tacticExposure[t]) {
-                            tacticExposure[t].missed.forEach(ttp => missedSet.add(ttp));
-                            tacticExposure[t].tested.forEach(ttp => testedSet.add(ttp));
-                        }
-                    });
-                    const missed = missedSet.size;
-                    const tested = testedSet.size;
-                    return {
-                        subject: phase,
-                        risk: tested > 0 ? Math.round((missed / tested) * 100) : 0,
-                        tested: tested,
-                        fullMark: 100
-                    };
-                });
+               const killChainEvents = [];
+               const coveredSimulations = new Set();
+
+               if (simulationSummaries) {
+                   Object.entries(simulationSummaries).forEach(([simKey, sim]) => {
+                       if (!sim || !Array.isArray(sim.testResults) || sim.testResults.length === 0) return;
+                       const simName = sim.details?.name || sim.name || simKey;
+                       const simTags = sim.details?.tags || [];
+
+                       if (activeTagFilter !== 'All') {
+                           const simTagMatch = Array.isArray(simTags) ? simTags.includes(activeTagFilter) : simTags === activeTagFilter;
+                           if (!simTagMatch) {
+                               const anyEvtTagMatch = sim.testResults.some(evt =>
+                                   Array.isArray(evt?.tags) ? evt.tags.includes(activeTagFilter) : evt?.tags === activeTagFilter
+                               );
+                               if (!anyEvtTagMatch) return;
+                           }
+                       }
+
+                       coveredSimulations.add(simName);
+                       coveredSimulations.add(simKey);
+                       if (sim.id) coveredSimulations.add(sim.id);
+
+                       sim.testResults.forEach(evt => {
+                           if (!evt) return;
+                           const evtTags = Array.isArray(evt.tags) && evt.tags.length > 0 ? evt.tags : simTags;
+                           if (activeTagFilter !== 'All') {
+                               const tagMatches = Array.isArray(evtTags) ? evtTags.includes(activeTagFilter) : evtTags === activeTagFilter;
+                               if (!tagMatches) return;
+                           }
+
+                           const rawTtps = Array.isArray(evt.ttps)
+                               ? evt.ttps
+                               : (typeof evt.ttp === 'string' ? evt.ttp.split(',').map(t => t.trim()) : []);
+                           const validTtps = rawTtps.map(t => t.trim()).filter(t => t && !outOfScopeTTPs.has(t));
+                           if (validTtps.length === 0) return;
+
+                           const rawOutcome = (evt.outcome || '').trim();
+                           const lowerOutcome = rawOutcome.toLowerCase();
+                           if (lowerOutcome === 'n/a' || lowerOutcome === 'na' || lowerOutcome === 'error' || lowerOutcome === 'pending' || evt.coverageRating === 'N/A') {
+                               return;
+                           }
+
+                           // Synchronize with any matching gap status updates (e.g., Resolved or Risk Accepted or Re-Tested)
+                           const ttpStr = validTtps.join(', ');
+                           const matchingGap = allGaps.find(g =>
+                               (g.simulation === simName || g.simulation === simKey) &&
+                               ((evt.name && g.finding === evt.name) || g.ttp === ttpStr)
+                           );
+
+                           let effectiveOutcome = rawOutcome || 'Unknown';
+                           let effectiveCoverage = evt.coverageRating;
+
+                           if (matchingGap) {
+                               if (typeof matchingGap.outcome === 'string' && (matchingGap.outcome.includes(' ➔ ') || matchingGap.outcome.includes('->'))) {
+                                   effectiveOutcome = matchingGap.outcome;
+                                   effectiveCoverage = matchingGap.coverageRating || effectiveCoverage;
+                               } else if (matchingGap.status === 'Resolved') {
+                                   const currentPosture = getNormalizedPosture({ outcome: effectiveOutcome, coverageRating: effectiveCoverage });
+                                   if (currentPosture.coverage !== 'Optimal') {
+                                       effectiveOutcome = effectiveOutcome && !effectiveOutcome.includes('➔')
+                                           ? `${effectiveOutcome} ➔ Resolved`
+                                           : (matchingGap.outcome || 'Resolved');
+                                   }
+                                   effectiveCoverage = 'Optimal';
+                               } else if (matchingGap.status === 'Risk Accepted') {
+                                   effectiveOutcome = 'Risk Accepted';
+                                   effectiveCoverage = 'None';
+                               }
+                           }
+
+                           const posture = getNormalizedPosture({
+                               ...evt,
+                               outcome: effectiveOutcome,
+                               coverageRating: effectiveCoverage
+                           });
+                           if (posture.exposure === null) return;
+
+                           killChainEvents.push({
+                               ...evt,
+                               name: evt.name || 'Simulated Event',
+                               ttps: validTtps,
+                               outcome: effectiveOutcome,
+                               coverageRating: posture.coverage,
+                               exposure: posture.exposure,
+                               simulationName: simName
+                           });
+                       });
+                   });
+               }
+
+               // Include standalone/historical exercises whose simulation is not already represented in simulationSummaries
+               allExercises.forEach(ex => {
+                   if (!ex || ex.isSimEvent || ex.status === 'unknown' || ex.status === 'na' || ex.coverageRating === 'N/A' || !ex.ttp) return;
+                   const simKey = ex.simulation || ex.simId || '';
+                   if (simKey && coveredSimulations.has(simKey)) return;
+
+                   const validTtps = ex.ttp.split(',').map(t => t.trim()).filter(t => t && !outOfScopeTTPs.has(t));
+                   if (validTtps.length === 0) return;
+
+                   const posture = getNormalizedPosture(ex);
+                   if (posture.exposure === null) return;
+
+                   killChainEvents.push({
+                       id: ex.id,
+                       name: ex.name || ex.finding || `${validTtps[0]} Validation`,
+                       ttps: validTtps,
+                       outcome: ex.outcome || posture.outcome,
+                       coverageRating: posture.coverage,
+                       exposure: posture.exposure,
+                       simulationName: simKey || 'Historical Validation'
+                   });
+               });
+
+               const radarData = Object.entries(KILL_CHAIN_PHASES).map(([phase, tactics]) => {
+                   const phaseEvents = killChainEvents.filter(evt =>
+                       evt.ttps.some(ttp => doesTtpMatchTactics(ttp, tactics))
+                   );
+                   const testedTechniquesSet = new Set();
+                   phaseEvents.forEach(evt => {
+                       evt.ttps.forEach(ttp => {
+                           if (doesTtpMatchTactics(ttp, tactics)) {
+                               testedTechniquesSet.add(ttp);
+                           }
+                       });
+                   });
+                   const testedCount = phaseEvents.length;
+                   const totalExposure = phaseEvents.reduce((sum, evt) => sum + (evt.exposure ?? 0), 0);
+                   const riskScore = testedCount > 0 ? Math.round((totalExposure / testedCount) * 100) : 0;
+
+                   return {
+                       subject: phase,
+                       risk: riskScore,
+                       tested: testedCount,
+                       testedTechniques: testedTechniquesSet.size,
+                       events: phaseEvents,
+                       fullMark: 100
+                   };
+               });
 
                const trendEvents = [];
                allExercises.forEach(ex => {
@@ -931,7 +1157,7 @@ export default function Dashboard() {
        } finally {
            setIsLoading(false);
        }
-   }, [dbAdapter, allEventsData, contextGaps, mitreData, activeTagFilter, trendTimeframe]);
+   }, [dbAdapter, allEventsData, contextGaps, mitreData, activeTagFilter, trendTimeframe, simulationSummaries]);
 
   React.useEffect(() => {
       loadDashboardData();
@@ -1219,26 +1445,10 @@ export default function Dashboard() {
                             </div>
                             
                             <div style={{ display: 'flex', justifyContent: 'space-between', zIndex: 1, position: 'relative', minWidth: 'max-content', gap: '20px' }}>
-                                {radarData && radarData.map((phase, i) => {
-                                    const risk = phase.risk;
-                                    const tested = phase.tested;
+                                {radarData && radarData.map((phase) => {
                                     const isActive = activePhaseSubject === phase.subject;
                                     const IconComponent = PHASE_ICONS[phase.subject] || Target;
-                                    let color = 'var(--success)';
-                                    let glow = 'rgba(16, 185, 129, 0.4)';
-                                    
-                                    if (tested === 0) { 
-                                        color = 'var(--text-muted)'; 
-                                        glow = 'rgba(255, 255, 255, 0.1)'; 
-                                    }
-                                    else if (risk >= 50) { 
-                                        color = 'var(--danger)'; 
-                                        glow = 'rgba(239, 68, 68, 0.4)'; 
-                                    }
-                                    else if (risk >= 20) { 
-                                        color = 'var(--warning)'; 
-                                        glow = 'rgba(245, 158, 11, 0.4)'; 
-                                    }
+                                    const { color, glow } = getPhaseRiskMeta(phase.risk, phase.tested, phase.subject);
                                     
                                     return (
                                         <div key={phase.subject} 
@@ -1283,41 +1493,7 @@ export default function Dashboard() {
                                 if (!activeData) return null;
                                 const risk = activeData.risk;
                                 const tested = activeData.tested;
-                                let color = 'var(--success)';
-                                let statusText = 'SECURED';
-                                const ttpText = tested === 1 ? 'tested technique' : 'tested techniques';
-                                let desc = `Defenses successfully prevented the ${ttpText} in this phase.`;
-                                
-                                if (tested === 0) { 
-                                    color = 'var(--text-muted)'; 
-                                    statusText = 'UNTESTED / NO DATA';
-                                    desc = `No empirical test data exists for ${activeData.subject}. Run simulations targeting this phase to establish a baseline.`;
-                                }
-                                else if (risk >= 70) { 
-                                    color = '#ef4444'; 
-                                    statusText = 'Critical Risk';
-                                    desc = `High exposure rate for the ${ttpText} in ${activeData.subject}. Significant defense gaps observed.`;
-                                }
-                                else if (risk >= 50) { 
-                                    color = '#f97316'; 
-                                    statusText = 'High Risk';
-                                    desc = `Elevated exposure for the ${ttpText} in ${activeData.subject}. Frequent defense misses observed.`;
-                                }
-                                else if (risk >= 30) { 
-                                    color = '#eab308'; 
-                                    statusText = 'Moderate Risk';
-                                    desc = `Moderate exposure for the ${ttpText} in this phase. Defenses were partially bypassed.`;
-                                }
-                                else if (risk >= 10) { 
-                                    color = '#84cc16'; 
-                                    statusText = 'Low Risk';
-                                    desc = `Low exposure for the ${ttpText} in this phase. Defenses prevented most activity.`;
-                                }
-                                else if (risk > 0) {
-                                    color = '#10b981'; 
-                                    statusText = 'Minimal Risk';
-                                    desc = `Minimal exposure for the ${ttpText} in this phase. Defenses were largely effective.`;
-                                }
+                                const { color, statusText, desc } = getPhaseRiskMeta(risk, tested, activeData.subject);
 
                                 return (
                                     <div className="animate-fade-in" key={activeData.subject} style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'space-between' }}>
@@ -1358,71 +1534,8 @@ export default function Dashboard() {
                     if (!activeData) return null;
                     const risk = activeData.risk;
                     const tested = activeData.tested;
-                    let color = 'var(--success)';
-                    let statusText = 'SECURED';
-                    
-                    if (tested === 0) { 
-                        color = 'var(--text-muted)'; 
-                        statusText = 'UNTESTED';
-                    } else if (risk >= 70) { 
-                        color = '#ef4444'; 
-                        statusText = 'Critical Risk';
-                    } else if (risk >= 50) { 
-                        color = '#f97316'; 
-                        statusText = 'High Risk';
-                    } else if (risk >= 30) { 
-                        color = '#eab308'; 
-                        statusText = 'Moderate Risk';
-                    } else if (risk >= 10) { 
-                        color = '#84cc16'; 
-                        statusText = 'Low Risk';
-                    } else if (risk > 0) {
-                        color = '#10b981'; 
-                        statusText = 'Minimal Risk';
-                    }
-
-                    // Compute relevant events
-                    const getTTPName = (id) => {
-                        if (!mitreData || !id) return '';
-                        for (const tactic in mitreData) {
-                            const tech = mitreData[tactic].techniques.find(t => t.id === id);
-                            if (tech) return tech.name;
-                            for (const t2 of mitreData[tactic].techniques) {
-                                if (t2.subTechniques) {
-                                    const sub = t2.subTechniques.find(s => s.id === id);
-                                    if (sub) return sub.name;
-                                }
-                            }
-                        }
-                        return '';
-                    };
-                    const killChainPhases = {
-                        "Initial Access": ["Initial Access"],
-                        "Execution": ["Execution", "Persistence", "Privilege Escalation"],
-                        "Evasion": ["Defense Evasion", "Defense Impairment", "Stealth"],
-                        "Movement": ["Discovery", "Lateral Movement", "Credential Access"],
-                        "Action on Objective": ["Collection", "Command and Control", "Exfiltration", "Impact"]
-                    };
-                    const activeTactics = killChainPhases[expandedPhaseSubject] || [];
-                    const relevantEvents = [];
-                    if (simulationSummaries) {
-                        Object.entries(simulationSummaries).forEach(([simName, sim]) => {
-                            if (sim.testResults && Array.isArray(sim.testResults)) {
-                                sim.testResults.forEach(evt => {
-                                    if (!evt.ttps || evt.ttps.length === 0) return;
-                                    const match = evt.ttps.some(ttp => {
-                                        const tacticName = Object.keys(mitreData || {}).find(t => 
-                                             mitreData[t].techniques.find(tech => tech.id === ttp || (tech.subTechniques && tech.subTechniques.find(sub => sub.id === ttp)))
-                                        );
-                                        return activeTactics.includes(tacticName);
-                                    });
-                                    if (match) {
-                                        relevantEvents.push({ ...evt, simulationName: simName });
-                                    }
-                                });
-                            }
-                        });
-                    }
+                    const { color, shortStatusText: statusText } = getPhaseRiskMeta(risk, tested, expandedPhaseSubject);
+                    const relevantEvents = Array.isArray(activeData.events) ? activeData.events : [];
 
                     return (
                         <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', height: '100%', minHeight: 0 }}>
@@ -1458,11 +1571,14 @@ export default function Dashboard() {
                                 ) : (
                                     relevantEvents.map((evt, i) => {
                                         const actualOutcome = evt.outcome || 'Unknown';
-                                        const lowerOutcome = actualOutcome.toLowerCase();
+                                        const effectiveOutcome = (actualOutcome.includes(' ➔ ') || actualOutcome.includes('->'))
+                                            ? actualOutcome.split(/ ➔ |->/).pop().trim()
+                                            : actualOutcome;
+                                        const lowerOutcome = effectiveOutcome.toLowerCase();
 
                                         let outcomeStyle = { color: 'var(--text-primary)', bg: 'rgba(255,255,255,0.1)', border: 'rgba(255,255,255,0.2)' };
                                         
-                                        if (lowerOutcome.includes('prevented & alerted') || (lowerOutcome.includes('prevented') && lowerOutcome.includes('alerted'))) {
+                                        if (lowerOutcome.includes('prevented & alerted') || (lowerOutcome.includes('prevented') && lowerOutcome.includes('alerted')) || lowerOutcome.includes('resolved')) {
                                             outcomeStyle = { color: 'var(--success)', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)' };
                                         } else if (lowerOutcome.includes('prevented')) {
                                             outcomeStyle = { color: '#06b6d4', bg: 'rgba(6, 182, 212, 0.15)', border: 'rgba(6, 182, 212, 0.3)' };
@@ -1489,19 +1605,20 @@ export default function Dashboard() {
                                                 display: 'flex', 
                                                 justifyContent: 'space-between', 
                                                 alignItems: 'center',
+                                                gap: '12px',
                                                 transition: 'all 0.2s ease',
                                                 cursor: 'pointer'
                                             }}>
-                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                        <Shield size={14} color={outcomeStyle.color} />
+                                                        <Shield size={14} color={outcomeStyle.color} style={{ flexShrink: 0 }} />
                                                         <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '0.3px' }}>
                                                             {eventName}
                                                         </span>
                                                     </div>
                                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                                                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontFamily: 'monospace' }}>
-                                                            <Target size={12} /> {ttps}
+                                                            <Target size={12} style={{ flexShrink: 0 }} /> {ttps}
                                                         </span>
                                                     </div>
                                                 </div>
@@ -1516,6 +1633,9 @@ export default function Dashboard() {
                                                     fontWeight: 800, 
                                                     textTransform: 'uppercase',
                                                     letterSpacing: '0.5px',
+                                                    whiteSpace: 'nowrap',
+                                                    textAlign: 'center',
+                                                    flexShrink: 0,
                                                     boxShadow: `0 0 10px ${outcomeStyle.bg}`
                                                 }}>
                                                     {actualOutcome}

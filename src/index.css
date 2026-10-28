@@ -592,6 +592,15 @@ select.ai-input option {
 }
 
 /* Custom Markdown Preview (ReadOnly Mode) */
+.ql-editor h1 { color: var(--text-primary) !important; margin-top: 22px !important; margin-bottom: 12px !important; font-size: 1.35rem !important; font-weight: 800 !important; }
+.ql-editor h2 { color: #d8b4fe !important; margin-top: 22px !important; margin-bottom: 10px !important; border-bottom: 1px solid rgba(168, 85, 247, 0.28) !important; padding-bottom: 6px !important; font-size: 1.16rem !important; font-weight: 800 !important; letter-spacing: 0.3px !important; }
+.ql-editor h2:first-child { margin-top: 4px !important; }
+.ql-editor h3 { color: var(--accent-secondary) !important; margin-top: 18px !important; margin-bottom: 8px !important; font-size: 1.06rem !important; font-weight: 700 !important; letter-spacing: 0.3px !important; }
+.ql-editor p { margin: 8px 0 !important; line-height: 1.6 !important; color: var(--text-primary) !important; font-size: 0.9rem !important; }
+.ql-editor li { margin-bottom: 6px !important; line-height: 1.55 !important; color: var(--text-primary) !important; font-size: 0.9rem !important; }
+.ql-editor code { background: rgba(168, 85, 247, 0.14) !important; border: 1px solid rgba(168, 85, 247, 0.3) !important; color: #67e8f9 !important; padding: 1px 6px !important; border-radius: 4px !important; font-family: monospace !important; font-size: 0.84em !important; }
+.ql-editor pre, .ql-syntax { background: #05070d !important; padding: 14px 16px !important; border-radius: 8px !important; margin: 12px 0 18px 0 !important; font-family: monospace !important; font-size: 0.86rem !important; color: #10b981 !important; border: 1px solid rgba(16, 185, 129, 0.3) !important; box-shadow: inset 0 4px 12px rgba(0,0,0,0.85) !important; line-height: 1.55 !important; }
+.ql-editor pre code { background: transparent !important; border: none !important; color: inherit !important; padding: 0 !important; }
 .markdown-preview {
   color: var(--text-primary);
   font-size: 0.95rem;
@@ -1349,3 +1358,254 @@ input:-webkit-autofill:active {
   -webkit-text-fill-color: var(--text-primary) !important;
   transition: background-color 5000s ease-in-out 0s !important;
 }
+
+/* ============================================================================
+   Threat Research Page Micro-Animations
+   ============================================================================ */
+@keyframes researchWorkspaceSwap {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes researchStaggerFadeUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes researchBadgePop {
+  0% {
+    opacity: 0;
+    transform: scale(0.75);
+  }
+  70% {
+    transform: scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes researchCheckPop {
+  0% {
+    transform: scale(0.75);
+  }
+  60% {
+    transform: scale(1.18);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes researchBackdropFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes researchDrawerSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.research-workspace-animate {
+  animation: researchWorkspaceSwap 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.research-entity-card {
+  position: relative;
+  transition:
+    transform 0.22s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.22s ease,
+    border-color 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.research-entity-card:hover {
+  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-color: rgba(6, 182, 212, 0.3) !important;
+}
+
+.research-entity-card.is-selected {
+  box-shadow: 0 4px 16px rgba(6, 182, 212, 0.14), inset 3px 0 0 #22d3ee;
+}
+
+.research-phase-tile {
+  animation: researchStaggerFadeUp 0.36s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition:
+    transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.24s ease,
+    border-color 0.24s ease,
+    box-shadow 0.24s ease;
+}
+
+.research-phase-tile:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.05) !important;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.research-phase-tile:active {
+  transform: translateY(-1px) scale(0.985);
+}
+
+.research-filter-pill {
+  transition:
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.research-filter-pill:hover {
+  transform: translateY(-1px);
+  border-color: rgba(6, 182, 212, 0.35) !important;
+  color: var(--text-primary) !important;
+}
+
+.research-filter-pill:active {
+  transform: scale(0.96);
+}
+
+.research-phase-section {
+  animation: researchStaggerFadeUp 0.38s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transition:
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.research-phase-section:hover {
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.28);
+}
+
+.research-accordion-grid {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 0.32s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 0.26s ease;
+}
+
+.research-accordion-grid.is-open {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.research-accordion-inner {
+  overflow: hidden;
+  min-height: 0;
+}
+
+.research-chevron {
+  transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.research-chevron.is-collapsed {
+  transform: rotate(-90deg);
+}
+
+.research-chevron.is-flipped {
+  transform: rotate(180deg);
+}
+
+.research-ttp-row {
+  transition:
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.18s ease,
+    box-shadow 0.2s ease;
+}
+
+.research-ttp-row:hover {
+  background: rgba(255, 255, 255, 0.035) !important;
+  transform: translateX(3px);
+}
+
+.research-ttp-row.is-staged {
+  box-shadow: inset 3px 0 0 #c084fc;
+}
+
+.research-ttp-row.is-staged:hover {
+  background: rgba(168, 85, 247, 0.13) !important;
+}
+
+.research-check-pop {
+  animation: researchCheckPop 0.26s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.research-badge-pop {
+  animation: researchBadgePop 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.research-inspect-btn {
+  transition:
+    transform 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.research-inspect-btn:hover {
+  background: rgba(6, 182, 212, 0.14) !important;
+  border-color: rgba(6, 182, 212, 0.45) !important;
+  color: #22d3ee !important;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(6, 182, 212, 0.18);
+}
+
+.research-launch-btn {
+  transition:
+    transform 0.24s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.24s ease,
+    filter 0.24s ease,
+    background 0.24s ease;
+}
+
+.research-launch-btn:not(:disabled):hover {
+  transform: translateY(-2px) scale(1.015);
+  box-shadow: 0 0 24px rgba(6, 182, 212, 0.5), 0 6px 18px rgba(139, 92, 246, 0.35) !important;
+  filter: brightness(1.08);
+}
+
+.research-launch-btn .launch-arrow {
+  transition: transform 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.research-launch-btn:not(:disabled):hover .launch-arrow {
+  transform: translateX(4px);
+}
+
+.research-drawer-backdrop {
+  animation: researchBackdropFade 0.24s ease-out both;
+}
+
+.research-drawer-panel {
+  animation: researchDrawerSlideIn 0.34s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+

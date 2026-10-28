@@ -15,6 +15,12 @@
  */
 
 import { lookupTTPName } from './mitreUtils';
+import {
+  classifyTtpOperationalRole,
+  clusterTTPsIntoCompoundEvents,
+  humanizeTechniqueActionName,
+  buildCompoundEventTitle
+} from './mitreStixCti';
 
 /**
  * Normalizes a raw outcome string (e.g. "Missed ➔ Prevented ✓" or synonyms like "Blocked" / "Bypassed")
@@ -391,6 +397,134 @@ export function formatHistoricalProceduresForAIPrompt(historyByTtp = []) {
 }
 
 /**
+ * Converts a raw Markdown heading or legacy event name into a clean, title-worthy
+ * operational event title suitable for Step 3 Event Cards and Executive Reports.
+ * - Strips redundant "Phase N:", "Step N:", "Event N:", or "TTP T1078:" prefixes
+ * - Strips trailing/inline TTP ID parentheticals like "(T1059.001, T1047, T1082)"
+ * - Replaces repetitive blueprint boilerplate ("Contextual Recon + Evasive Staging ➔ ...")
+ *   or bare sub-technique labels ("DLL") with specific, human-readable operational titles.
+ */
+export function formatCleanEventTitle(
+  rawTitle = '',
+  assignedTtps = [],
+  mitreData = {},
+  code = ''
+) {
+  let cleaned = String(rawTitle || '')
+    .replace(/^#+\s*/, '')
+    .replace(/\*\*/g, '')
+    .replace(/`/g, '')
+    .trim();
+
+  // 1. Strip leading "Phase 1:", "Step 2 -", "Event 3:", "Procedure 1:" prefixes
+  cleaned = cleaned.replace(
+    /^(?:phase|step|event|procedure|stage)\s*\d+\s*[:\-–—.]\s*/i,
+    ''
+  );
+
+  // 2. Strip trailing or parenthetical TTP ID lists, e.g. "(T1057, T1070.006, T1574.001)" or "[T1049, T1105]"
+  cleaned = cleaned
+    .replace(
+      /\s*[\(\[]\s*(?:ttps?\s*[:\-]?\s*)?T\d{4}(?:\.\d{3})?(?:\s*(?:[,;/|+&]|and)\s*T\d{4}(?:\.\d{3})?)*\s*[\)\]]\s*$/gi,
+      ''
+    )
+    .trim();
+
+  // 3. Strip leading "TTP T1078 - " or "T1059.001 + T1082 - " prefixes
+  cleaned = cleaned
+    .replace(
+      /^(?:ttps?|techniques?)?\s*T\d{4}(?:\.\d{3})?(?:\s*(?:[,+/&]|and)\s*T\d{4}(?:\.\d{3})?)*\s*[:\-–—]\s*/i,
+      ''
+    )
+    .trim();
+
+  // 4. Strip repetitive mechanical blueprint prefixes ("Contextual Recon + Evasive Staging ➔ ...")
+  const hadMechanicalPrefix =
+    /^(?:contextual\s+recon(?:\s*\+\s*evasive\s+staging)?|evasive\s+staging)\s*(?:➔|->|→|:|-)/i.test(
+      cleaned
+    );
+  cleaned = cleaned
+    .replace(
+      /^(?:contextual\s+recon(?:\s*\+\s*evasive\s+staging)?|evasive\s+staging)\s*(?:➔|->|→|:|-)\s*/i,
+      ''
+    )
+    .trim();
+
+  // 5. Check if the remaining title is generic, empty, a bare TTP ID list, or an ambiguous short sub-technique name ("DLL")
+  const isGenericOrBare =
+    !cleaned ||
+    hadMechanicalPrefix ||
+    /^(?:recommended|simulation|unified|procedure|execution|validation|chained\s+validation|step\s*\d+|phase\s*\d+|event\s*\d+|dll|lsass\s+memory|ntds|valid\s+accounts)$/i.test(
+      cleaned
+    ) ||
+    /^(?:ttps?\s*)?T\d{4}(?:\.\d{3})?(?:\s*[,+/&-]\s*T\d{4}(?:\.\d{3})?)*$/i.test(cleaned);
+
+  if (!isGenericOrBare) {
+    return cleaned;
+  }
+
+  // 6. Try extracting a descriptive operational title from the code block's header comment if present
+  if (code && typeof code === 'string') {
+    const firstLines = code.split('\n').slice(0, 4);
+    for (const line of firstLines) {
+      const commentMatch = line.match(/^\s*(?:#|\/\/|REM\s+)\s*(.+)$/i);
+      if (commentMatch) {
+        let commentTitle = commentMatch[1]
+          .replace(/^(?:phase|step|event)\s*\d+\s*[:\-–—.]\s*/i, '')
+          .replace(
+            /^(?:contextual\s+recon(?:\s*\+\s*evasive\s+staging)?|evasive\s+staging)\s*(?:➔|->|→|:|-)\s*/i,
+            ''
+          )
+          .replace(
+            /\s*[\(\[]\s*T\d{4}(?:\.\d{3})?(?:\s*[,;/|+&]\s*T\d{4}(?:\.\d{3})?)*\s*[\)\]]\s*$/gi,
+            ''
+          )
+          .trim();
+        if (
+          commentTitle &&
+          commentTitle.length >= 10 &&
+          commentTitle.length <= 75 &&
+          !/^(?:\d+\.|contextual\s+precursor|anchor\s+objective|execution\s+conduit|tradecraft\s+modifier|initiating)/i.test(
+            commentTitle
+          ) &&
+          !/^dll$/i.test(commentTitle)
+        ) {
+          return commentTitle;
+        }
+      }
+    }
+  }
+
+  // 7. Synthesize a crisp operational title from the assigned TTPs using our 4-component humanizer
+  const normalizedIds = (assignedTtps || [])
+    .map((id) => String(typeof id === 'object' ? id.id : id).trim().toUpperCase())
+    .filter(Boolean);
+
+  if (normalizedIds.length > 0) {
+    const bucket = { anchors: [], conduits: [], precursors: [], modifiers: [] };
+    normalizedIds.forEach((id) => {
+      const name = lookupTTPName(mitreData, id) || '';
+      const roleInfo = classifyTtpOperationalRole({ id, name });
+      const ttpObj = { id, name: humanizeTechniqueActionName({ id, name }) };
+      if (roleInfo.role === 'CONDUIT') bucket.conduits.push(ttpObj);
+      else if (roleInfo.role === 'PRECURSOR') bucket.precursors.push(ttpObj);
+      else if (roleInfo.role === 'MODIFIER') bucket.modifiers.push(ttpObj);
+      else bucket.anchors.push(ttpObj);
+    });
+
+    if (bucket.anchors.length > 0) {
+      return buildCompoundEventTitle(bucket);
+    }
+    return normalizedIds
+      .slice(0, 2)
+      .map((id) => humanizeTechniqueActionName(id, lookupTTPName(mitreData, id)))
+      .join(' & ');
+  }
+
+  return cleaned || 'Adversary Validation Procedure';
+}
+
+/**
  * Extracts code blocks and their contextual titles / TTP IDs from Step 2 Markdown design.
  */
 export function parseDesignCodeBlocks(simulationPayload = '', selectedTTPs = []) {
@@ -422,20 +556,32 @@ export function parseDesignCodeBlocks(simulationPayload = '', selectedTTPs = [])
       inFence = false;
       const code = fenceLines.join('\n').trim();
       if (code) {
-        const searchContext = `${currentHeading}\n${contextLinesBeforeFence.join('\n')}\n${code}`;
-        const ttpMatches = searchContext.match(/T\d{4}(?:\.\d{3})?/gi) || [];
+        const headingMatches = currentHeading.match(/T\d{4}(?:\.\d{3})?/gi) || [];
+        const fallbackContext = `${contextLinesBeforeFence.join('\n')}\n${code}`;
+        const ttpMatches =
+          headingMatches.length > 0
+            ? headingMatches
+            : fallbackContext.match(/T\d{4}(?:\.\d{3})?/gi) || [];
         const uniqueTtps = [...new Set(ttpMatches.map((m) => m.toUpperCase()))];
 
-        // Filter to selectedTTPs if matches exist, otherwise keep discovered TTPs
-        let mappedTtps = uniqueTtps.filter((id) => selectedIds.size === 0 || selectedIds.has(id));
-        if (mappedTtps.length === 0 && uniqueTtps.length > 0) {
-          mappedTtps = uniqueTtps;
-        }
+        // Strictly filter to selectedTTPs when selectedTTPs are provided
+        const mappedTtps =
+          selectedIds.size > 0
+            ? uniqueTtps.filter((id) => selectedIds.has(id))
+            : uniqueTtps;
 
         const cleanHeading = currentHeading
           .replace(/^#+\s*/, '')
           .replace(/\*\*/g, '')
           .trim();
+
+        const isTeardown = /(?:teardown|clean\s*up)/i.test(cleanHeading);
+
+        // If this block explicitly targeted TTPs that are no longer in selectedTTPs, skip it
+        if (selectedIds.size > 0 && uniqueTtps.length > 0 && mappedTtps.length === 0 && !isTeardown) {
+          contextLinesBeforeFence = [];
+          continue;
+        }
 
         blocks.push({
           title: cleanHeading,
@@ -455,8 +601,8 @@ export function parseDesignCodeBlocks(simulationPayload = '', selectedTTPs = [])
       const headingMatch = line.match(/^(?:#{1,4}\s+(.+)|\*\*(.+?)\*\*)\s*$/);
       if (headingMatch) {
         currentHeading = (headingMatch[1] || headingMatch[2] || '').trim();
-      }
-      if (line.trim()) {
+        contextLinesBeforeFence = [];
+      } else if (line.trim()) {
         contextLinesBeforeFence.push(line.trim());
       }
     }
@@ -478,15 +624,23 @@ export function scaffoldEventsFromDesignAndTTPs({
   simulationSummaries = {},
   events = {},
   mitreData = {},
+  executionMethodology = 'compound',
 }) {
+  const isAtomicMode = executionMethodology === 'atomic';
   const normalizedSelected = normalizeSelectedTTPsList(selectedTTPs);
+  if (normalizedSelected.length === 0) return [];
+
+  const selectedIds = new Set(normalizedSelected.map((t) => t.id.toUpperCase()));
   const parsedBlocks = parseDesignCodeBlocks(simulationPayload, normalizedSelected);
   const usedNames = new Set(
     (existingTestResults || []).map((p) => (p.name || '').trim().toLowerCase()).filter(Boolean)
   );
   const coveredTtpIds = new Set();
   (existingTestResults || []).forEach((p) => {
-    extractProcTtps(p).forEach((id) => coveredTtpIds.add(id));
+    extractProcTtps(p).forEach((id) => {
+      const upper = id.toUpperCase();
+      if (selectedIds.has(upper)) coveredTtpIds.add(upper);
+    });
   });
 
   const makeUniqueName = (baseName) => {
@@ -502,17 +656,80 @@ export function scaffoldEventsFromDesignAndTTPs({
 
   const newEvents = [];
 
-  // 1. Create events from Step 2 code blocks
-  parsedBlocks.forEach((block, idx) => {
-    // Teardown & cleanup phases restore the host and should not be scaffolded as EDR validation events
-    if (/(?:teardown|clean\s*up)/i.test(block.title)) {
-      return;
+  // Pre-filter teardown blocks and (when in Compound mode) fuse any standalone Precursor/Conduit/Modifier-only block
+  // into its companion Anchor block so Step 3 never gets fragmented enumeration-only cards.
+  const actionableBlocks = parsedBlocks.filter(
+    (block) => !/(?:teardown|clean\s*up)/i.test(block.title)
+  );
+  const blockHasAnchor = (blk) =>
+    (blk.ttps || []).some((id) => classifyTtpOperationalRole({ id }).role === 'ANCHOR');
+  const anyBlockHasAnchor = actionableBlocks.some(blockHasAnchor);
+
+  const mergedBlocks = [];
+  if (!isAtomicMode && anyBlockHasAnchor && actionableBlocks.length > 1) {
+    let pendingSupportBlocks = [];
+    actionableBlocks.forEach((blk) => {
+      if (blockHasAnchor(blk)) {
+        if (pendingSupportBlocks.length > 0) {
+          const combinedTtps = [
+            ...new Set([
+              ...pendingSupportBlocks.flatMap((b) => b.ttps || []),
+              ...(blk.ttps || [])
+            ])
+          ];
+          const combinedCode = [
+            ...pendingSupportBlocks.map((b) => b.code),
+            blk.code
+          ]
+            .filter(Boolean)
+            .join('\n\n');
+          mergedBlocks.push({
+            ...blk,
+            code: combinedCode,
+            ttps: combinedTtps,
+            mappedTTPs: combinedTtps
+          });
+          pendingSupportBlocks = [];
+        } else {
+          mergedBlocks.push({ ...blk });
+        }
+      } else {
+        pendingSupportBlocks.push(blk);
+      }
+    });
+    // If trailing support blocks remain after the last Anchor block, fuse them into the last Anchor block
+    if (pendingSupportBlocks.length > 0 && mergedBlocks.length > 0) {
+      const last = mergedBlocks[mergedBlocks.length - 1];
+      const combinedTtps = [
+        ...new Set([
+          ...(last.ttps || []),
+          ...pendingSupportBlocks.flatMap((b) => b.ttps || [])
+        ])
+      ];
+      last.code = [last.code, ...pendingSupportBlocks.map((b) => b.code)]
+        .filter(Boolean)
+        .join('\n\n');
+      last.ttps = combinedTtps;
+      last.mappedTTPs = combinedTtps;
+    }
+  } else {
+    mergedBlocks.push(...actionableBlocks);
+  }
+
+  // 1. Create events from merged Compound Operational Blocks (or 1:1 Atomic Blocks)
+  mergedBlocks.forEach((block, idx) => {
+    let assignedTtps = (block.ttps || [])
+      .map((id) => id.toUpperCase())
+      .filter((id) => selectedIds.has(id) && !coveredTtpIds.has(id));
+
+    if (isAtomicMode && assignedTtps.length > 1) {
+      assignedTtps = [assignedTtps[0]];
     }
 
-    let assignedTtps = block.ttps.length > 0 ? [...block.ttps] : [];
     if (assignedTtps.length === 0 && normalizedSelected.length > 0) {
       const uncovered = normalizedSelected.find((t) => !coveredTtpIds.has(t.id));
-      assignedTtps = [uncovered ? uncovered.id : normalizedSelected[idx % normalizedSelected.length].id];
+      if (!uncovered) return; // All selected TTPs are already covered; do not create extra duplicate cards
+      assignedTtps = [uncovered.id];
     }
 
     assignedTtps.forEach((id) => coveredTtpIds.add(id.toUpperCase()));
@@ -537,17 +754,12 @@ export function scaffoldEventsFromDesignAndTTPs({
       }
     });
 
-    const primaryTtp = assignedTtps[0];
-    const ttpName = primaryTtp ? lookupTTPName(mitreData, primaryTtp) : '';
-
-    const rawTitle =
-      block.title && !/^(recommended|simulation|unified|procedure|step\s*\d+|phase\s*\d+)$/i.test(block.title)
-        ? block.title
-        : primaryTtp
-        ? (assignedTtps.length > 1
-            ? `${assignedTtps.join(' + ')} - Chained Validation`
-            : `${primaryTtp} - ${ttpName || 'Validation'}`)
-        : `Phase ${idx + 1} Execution`;
+    const rawTitle = formatCleanEventTitle(
+      block.title,
+      assignedTtps,
+      mitreData,
+      block.code
+    );
 
     newEvents.push({
       id: Date.now() + Math.random() + idx,
@@ -570,701 +782,282 @@ export function scaffoldEventsFromDesignAndTTPs({
     });
   });
 
-  // 2. Ensure every selected TTP in Step 1 has at least one scaffolded EventCard
-  normalizedSelected.forEach((ttp, idx) => {
-    const upperId = ttp.id;
-    if (coveredTtpIds.has(upperId)) return;
+  // 2. Ensure every selected TTP in Step 1 is accounted for:
+  // - In Atomic 1:1 mode: every uncovered TTP gets its own isolated 1:1 Event Card.
+  // - In Compound mode: cluster uncovered TTPs into Compound Operational Events or fuse supporters into matching Anchor cards.
+  const uncoveredSelected = normalizedSelected.filter((t) => !coveredTtpIds.has(t.id));
 
-    const baseline = getHistoricalBaselineForTTP(upperId, simulationSummaries, events);
-    const ttpLabel = ttp.name || lookupTTPName(mitreData, upperId) || 'Technique Validation';
-    const defaultName = baseline?.name || `${upperId} - ${ttpLabel}`;
+  if (uncoveredSelected.length > 0) {
+    if (isAtomicMode) {
+      uncoveredSelected.forEach((ttp, idx) => {
+        const upperId = ttp.id.toUpperCase();
+        const baseline = getHistoricalBaselineForTTP(upperId, simulationSummaries, events);
+        const ttpLabel = humanizeTechniqueActionName(
+          upperId,
+          ttp.name || lookupTTPName(mitreData, upperId)
+        );
+        const defaultName = formatCleanEventTitle(
+          baseline?.name || ttpLabel,
+          [upperId],
+          mitreData,
+          baseline?.payloadCode || ''
+        );
 
-    newEvents.push({
-      id: Date.now() + Math.random() + 100 + idx,
-      name: makeUniqueName(defaultName),
-      ttps: [upperId],
-      mappedTTPs: [upperId],
-      eventType: baseline?.eventType || 'Payload',
-      payloadCode:
-        baseline?.payloadCode ||
-        `# Validate telemetry & prevention controls for ${upperId} (${ttpLabel})\n`,
-      procedureSteps: baseline?.procedureSteps || '',
-      expectedOutcome: baseline?.expectedOutcome || '',
-      outcome: '',
-      coverageRating: 'N/A',
-      severity: 'Auto-Calculate',
-      securityControls: baseline?.securityControls || [],
-      targetAsset: baseline?.targetAsset || '',
-      execNotes: '',
-      detNotes: '',
-      isBaselinePrefilled: Boolean(baseline),
-      baselineSource: baseline?.previousSimulationName || null,
-      timestamp: '',
-    });
+        newEvents.push({
+          id: Date.now() + Math.random() + 100 + idx,
+          name: makeUniqueName(defaultName),
+          ttps: [upperId],
+          mappedTTPs: [upperId],
+          eventType: baseline?.eventType || 'Payload',
+          payloadCode: baseline?.payloadCode || '',
+          procedureSteps: baseline?.procedureSteps || '',
+          expectedOutcome: baseline?.expectedOutcome || '',
+          outcome: '',
+          coverageRating: 'N/A',
+          severity: 'Auto-Calculate',
+          securityControls: baseline?.securityControls || [],
+          targetAsset: baseline?.targetAsset || '',
+          execNotes: '',
+          detNotes: '',
+          isBaselinePrefilled: Boolean(baseline),
+          baselineSource: baseline?.previousSimulationName || null,
+          timestamp: '',
+        });
+        coveredTtpIds.add(upperId);
+      });
+    } else if (newEvents.length === 0) {
+      // No Step 2 code blocks exist: cluster all uncovered TTPs into Compound Operational Events
+      const clustered = clusterTTPsIntoCompoundEvents(
+        uncoveredSelected.map((t) => ({
+          ...t,
+          name: t.name || lookupTTPName(mitreData, t.id) || t.id
+        }))
+      );
 
-    coveredTtpIds.add(upperId);
-  });
+      clustered.compoundEvents.forEach((compEv, idx) => {
+        const assignedIds = compEv.ttpIds;
+        assignedIds.forEach((id) => coveredTtpIds.add(id.toUpperCase()));
+
+        let baseline = null;
+        const aggregatedControls = new Set();
+        let expectedOutcome = '';
+        let baselineSource = null;
+        let targetAsset = '';
+
+        // Prefer Anchor TTP baseline first
+        const anchorFirstIds = [
+          ...compEv.anchors.map((a) => a.id),
+          ...assignedIds.filter((id) => !compEv.anchors.some((a) => a.id === id))
+        ];
+
+        anchorFirstIds.forEach((tid) => {
+          const b = getHistoricalBaselineForTTP(tid, simulationSummaries, events);
+          if (b) {
+            if (!baseline) {
+              baseline = b;
+              expectedOutcome = b.expectedOutcome || '';
+              baselineSource = b.previousSimulationName || null;
+              targetAsset = b.targetAsset || '';
+            }
+            (b.securityControls || []).forEach((c) => aggregatedControls.add(c));
+          }
+        });
+
+        const defaultName = formatCleanEventTitle(
+          assignedIds.length > 1
+            ? compEv.title
+            : baseline?.name || humanizeTechniqueActionName(assignedIds[0], lookupTTPName(mitreData, assignedIds[0])),
+          assignedIds,
+          mitreData,
+          baseline?.payloadCode || ''
+        );
+
+        newEvents.push({
+          id: Date.now() + Math.random() + 100 + idx,
+          name: makeUniqueName(defaultName),
+          ttps: assignedIds,
+          mappedTTPs: assignedIds,
+          eventType: baseline?.eventType || 'Payload',
+          payloadCode: baseline?.payloadCode || '',
+          procedureSteps: baseline?.procedureSteps || '',
+          expectedOutcome: expectedOutcome || baseline?.expectedOutcome || '',
+          outcome: '',
+          coverageRating: 'N/A',
+          severity: 'Auto-Calculate',
+          securityControls:
+            aggregatedControls.size > 0
+              ? Array.from(aggregatedControls)
+              : baseline?.securityControls || [],
+          targetAsset: targetAsset || baseline?.targetAsset || '',
+          execNotes: '',
+          detNotes: '',
+          isBaselinePrefilled: Boolean(baseline),
+          baselineSource,
+          timestamp: '',
+        });
+      });
+    } else {
+      // Step 2 code blocks already produced Event Cards:
+      // Any uncovered Precursor/Conduit/Modifier TTPs fuse into the best-matching existing Event Card,
+      // while uncovered Anchor TTPs either form a compound card or attach appropriately.
+      const uncoveredAnchors = [];
+      const uncoveredSupporters = [];
+
+      uncoveredSelected.forEach((ttp) => {
+        const roleInfo = classifyTtpOperationalRole(ttp);
+        if (roleInfo.role === 'ANCHOR') {
+          uncoveredAnchors.push({ ...ttp, operationalRole: roleInfo });
+        } else {
+          uncoveredSupporters.push({ ...ttp, operationalRole: roleInfo });
+        }
+      });
+
+      // Create cards for any uncovered Anchor TTPs first
+      uncoveredAnchors.forEach((ttp, idx) => {
+        const upperId = ttp.id;
+        const baseline = getHistoricalBaselineForTTP(upperId, simulationSummaries, events);
+        const ttpLabel = humanizeTechniqueActionName(upperId, ttp.name || lookupTTPName(mitreData, upperId));
+        const defaultName = formatCleanEventTitle(
+          baseline?.name || ttpLabel,
+          [upperId],
+          mitreData,
+          baseline?.payloadCode || ''
+        );
+
+        newEvents.push({
+          id: Date.now() + Math.random() + 100 + idx,
+          name: makeUniqueName(defaultName),
+          ttps: [upperId],
+          mappedTTPs: [upperId],
+          eventType: baseline?.eventType || 'Payload',
+          payloadCode: baseline?.payloadCode || '',
+          procedureSteps: baseline?.procedureSteps || '',
+          expectedOutcome: baseline?.expectedOutcome || '',
+          outcome: '',
+          coverageRating: 'N/A',
+          severity: 'Auto-Calculate',
+          securityControls: baseline?.securityControls || [],
+          targetAsset: baseline?.targetAsset || '',
+          execNotes: '',
+          detNotes: '',
+          isBaselinePrefilled: Boolean(baseline),
+          baselineSource: baseline?.previousSimulationName || null,
+          timestamp: '',
+        });
+        coveredTtpIds.add(upperId);
+      });
+
+      // Fuse any uncovered Supporter (Precursor/Conduit/Modifier) into the best-matching Event Card
+      uncoveredSupporters.forEach((sup, idx) => {
+        const supDomain = sup.operationalRole?.affinityDomain;
+        let targetCard =
+          newEvents.find((ev) =>
+            (ev.ttps || []).some(
+              (id) => classifyTtpOperationalRole({ id }).affinityDomain === supDomain
+            )
+          ) || newEvents[0];
+
+        if (targetCard && !targetCard.ttps.includes(sup.id)) {
+          targetCard.ttps = [...targetCard.ttps, sup.id];
+          targetCard.mappedTTPs = [...targetCard.ttps];
+          coveredTtpIds.add(sup.id);
+        } else if (!targetCard) {
+          const upperId = sup.id;
+          const baseline = getHistoricalBaselineForTTP(upperId, simulationSummaries, events);
+          const ttpLabel = humanizeTechniqueActionName(upperId, sup.name || lookupTTPName(mitreData, upperId));
+          const defaultName = formatCleanEventTitle(
+            baseline?.name || ttpLabel,
+            [upperId],
+            mitreData,
+            baseline?.payloadCode || ''
+          );
+          newEvents.push({
+            id: Date.now() + Math.random() + 200 + idx,
+            name: makeUniqueName(defaultName),
+            ttps: [upperId],
+            mappedTTPs: [upperId],
+            eventType: baseline?.eventType || 'Payload',
+            payloadCode: baseline?.payloadCode || '',
+            procedureSteps: baseline?.procedureSteps || '',
+            expectedOutcome: baseline?.expectedOutcome || '',
+            outcome: '',
+            coverageRating: 'N/A',
+            severity: 'Auto-Calculate',
+            securityControls: baseline?.securityControls || [],
+            targetAsset: baseline?.targetAsset || '',
+            execNotes: '',
+            detNotes: '',
+            isBaselinePrefilled: Boolean(baseline),
+            baselineSource: baseline?.previousSimulationName || null,
+            timestamp: '',
+          });
+          coveredTtpIds.add(upperId);
+        }
+      });
+    }
+  }
 
   return newEvents;
 }
 
 /**
- * Generates an agentless, self-logging PowerShell (.ps1) or Bash (.sh) validation harness
- * with:
- * - Isolated child-process execution per step (survives EDR process termination)
- * - 30-second per-step timeout protection
- * - Incremental crash-safe JSON persistence after every step
- * - Native Win32/HRESULT, AMSI, AppLocker, SELinux/AppArmor & SIGKILL block classification
- * - Local Windows Event Log / Linux auditd telemetry probing
- * - Explicit analyst warnings regarding endpoint vs. SIEM alert verification
- */
-export function generateSelfLoggingHarness({
-  simulationName = 'Control Drift Simulation',
-  simulationPayload = '',
-  selectedTTPs = [],
-  testResults = [],
-  format = 'ps1',
-  mitreData = {},
-}) {
-  const normalizedSelected = normalizeSelectedTTPsList(selectedTTPs);
-  let steps = [];
-
-  if (Array.isArray(testResults) && testResults.length > 0) {
-    steps = testResults
-      .filter((p) => (p.payloadCode && p.payloadCode.trim()) || extractProcTtps(p).length > 0)
-      .map((p, idx) => {
-        const procTtps = extractProcTtps(p);
-        return {
-          index: idx + 1,
-          name: p.name || `Event ${idx + 1}`,
-          ttps: procTtps.length > 0 ? procTtps : ['Unmapped'],
-          code: (p.payloadCode || `# Manual validation step for ${p.name || idx + 1}`).trim(),
-          expectedOutcome: normalizeOutcomeValue(p.expectedOutcome) || 'Alerted',
-        };
-      });
-  } else {
-    const parsed = parseDesignCodeBlocks(simulationPayload, normalizedSelected);
-    if (parsed.length > 0) {
-      steps = parsed.map((b, idx) => {
-        const assignedTtps =
-          b.ttps.length > 0
-            ? b.ttps
-            : normalizedSelected[idx % Math.max(1, normalizedSelected.length)]
-            ? [normalizedSelected[idx % normalizedSelected.length].id]
-            : [];
-        const primaryId = assignedTtps[0] || '';
-        const ttpName = primaryId ? lookupTTPName(mitreData, primaryId) : '';
-        return {
-          index: idx + 1,
-          name: b.title || (primaryId ? `${primaryId} - ${ttpName}` : `Phase ${idx + 1}`),
-          ttps: assignedTtps,
-          code: b.code,
-          expectedOutcome: 'Alerted',
-        };
-      });
-    } else {
-      steps = normalizedSelected.map((t, idx) => ({
-        index: idx + 1,
-        name: `${t.id} - ${t.name || lookupTTPName(mitreData, t.id)}`,
-        ttps: [t.id],
-        code: `Write-Output "Validating ${t.id} (${t.name || 'Technique'})"`,
-        expectedOutcome: 'Alerted',
-      }));
-    }
-  }
-
-  if (format === 'sh') {
-    const lines = [
-      '#!/usr/bin/env bash',
-      '# ============================================================================',
-      '# CONTROL DRIFT — SELF-LOGGING VALIDATION HARNESS (AGENTLESS BASH v2)',
-      `# Simulation: ${simulationName}`,
-      `# Generated:  ${new Date().toISOString()}`,
-      '#',
-      '# ACCURACY & TELEMETRY NOTICE:',
-      '#   - Host blocks (EACCES/126, SIGKILL/137, SELinux/AppArmor/fapolicyd) are',
-      '#     confirmed locally as "Prevented".',
-      '#   - Missing binaries (Exit 127) or timeouts (Exit 124) are flagged as errors,',
-      '#     NOT false-positive security blocks.',
-      '#   - Commands that execute cleanly (Exit 0) are marked "Logged" with',
-      '#     confidence="Verify-SIEM" because an endpoint script cannot see whether',
-      '#     your cloud SIEM/EDR console generated a SOC alert.',
-      '# ============================================================================',
-      '',
-      'RESULTS_FILE="./control_drift_results.json"',
-      'HOST_NAME=$(hostname 2>/dev/null || echo "linux-host")',
-      'USER_NAME=$(whoami 2>/dev/null || echo "user")',
-      'RESULTS_JSON="["',
-      'FIRST_ENTRY=1',
-      '',
-      'flush_results() {',
-      '  local current_json="${RESULTS_JSON}]"',
-      '  cat <<EOF > "$RESULTS_FILE"',
-      '{"version":2,"simulation":"' +
-        simulationName.replace(/"/g, '\\"') +
-        '","host":"$HOST_NAME","user":"$USER_NAME","results":$current_json}',
-      'EOF',
-      '}',
-      '',
-    ];
-
-    steps.forEach((step) => {
-      const safeName = step.name.replace(/"/g, '\\"');
-      const ttpCsv = step.ttps.join(',');
-      const b64Cmd =
-        typeof btoa === 'function'
-          ? btoa(unescape(encodeURIComponent(step.code)))
-          : Buffer.from(step.code, 'utf-8').toString('base64');
-
-      lines.push(`echo "----------------------------------------------------------------"`);
-      lines.push(`echo "[${step.index}/${steps.length}] Testing: ${safeName} (${ttpCsv})"`);
-      lines.push(`TS_NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")`);
-      lines.push(`CMD_B64="${b64Cmd}"`);
-      lines.push(
-        `CMD_DECODED=$(echo "$CMD_B64" | base64 -d 2>/dev/null || echo "$CMD_B64" | base64 -D 2>/dev/null)`
-      );
-      lines.push(`if command -v timeout >/dev/null 2>&1; then`);
-      lines.push(`  OUT_RAW=$(timeout 30s bash -c "$CMD_DECODED" 2>&1)`);
-      lines.push(`  EXIT_CODE=$?`);
-      lines.push(`else`);
-      lines.push(`  OUT_RAW=$( ( eval "$CMD_DECODED" ) 2>&1 )`);
-      lines.push(`  EXIT_CODE=$?`);
-      lines.push(`fi`);
-      lines.push(`BLOCKED="false"`);
-      lines.push(`CONFIDENCE="Verify-SIEM"`);
-      lines.push(`if [ $EXIT_CODE -eq 127 ]; then`);
-      lines.push(`  INFERRED="N/A"`);
-      lines.push(`  CONFIDENCE="Prerequisite-Missing"`);
-      lines.push(`elif [ $EXIT_CODE -eq 124 ]; then`);
-      lines.push(`  INFERRED="N/A"`);
-      lines.push(`  CONFIDENCE="Timed-Out"`);
-      lines.push(
-        `elif [ $EXIT_CODE -eq 126 ] || [ $EXIT_CODE -eq 137 ] || echo "$OUT_RAW" | grep -Eqi "Operation not permitted|Permission denied|Killed|SELinux|AppArmor|fapolicyd"; then`
-      );
-      lines.push(`  INFERRED="Prevented"`);
-      lines.push(`  BLOCKED="true"`);
-      lines.push(`  CONFIDENCE="Host-Confirmed"`);
-      lines.push(`elif [ $EXIT_CODE -ne 0 ]; then`);
-      lines.push(`  INFERRED="Logged"`);
-      lines.push(`  CONFIDENCE="NonZero-Exit-Verify"`);
-      lines.push(`else`);
-      lines.push(`  INFERRED="Logged"`);
-      lines.push(`  CONFIDENCE="Verify-SIEM"`);
-      lines.push(`fi`);
-      lines.push(`OUT_CLEAN=$(echo "$OUT_RAW" | head -c 380 | tr '\\n\\r"\\\\' '    ')`);
-      lines.push(`if [ $FIRST_ENTRY -eq 0 ]; then RESULTS_JSON="$RESULTS_JSON,"; fi`);
-      lines.push(`FIRST_ENTRY=0`);
-      lines.push(
-        `RESULTS_JSON="$RESULTS_JSON{\\"stepIndex\\":${step.index},\\"name\\":\\"${safeName}\\",\\"ttps\\":[${step.ttps
-          .map((t) => `\\"${t}\\"`)
-          .join(
-            ','
-          )}],\\"exitCode\\":$EXIT_CODE,\\"blocked\\":$BLOCKED,\\"inferredOutcome\\":\\"$INFERRED\\",\\"confidence\\":\\"$CONFIDENCE\\",\\"timestamp\\":\\"$TS_NOW\\",\\"output\\":\\"$OUT_CLEAN\\"}"`
-      );
-      lines.push(`flush_results`);
-      lines.push('');
-    });
-
-    lines.push('RESULTS_JSON="$RESULTS_JSON]"');
-    lines.push('echo ""');
-    lines.push('echo "=== CONTROL_DRIFT_RESULTS_START ==="');
-    lines.push('cat "$RESULTS_FILE"');
-    lines.push('echo ""');
-    lines.push('echo "=== CONTROL_DRIFT_RESULTS_END ==="');
-    return lines.join('\n');
-  }
-
-  // Default: PowerShell (.ps1) Self-Logging Harness v2 (Isolated Child Process + Local Telemetry Probe + Incremental Save)
-  const psLines = [
-    '# ============================================================================',
-    '# CONTROL DRIFT — SELF-LOGGING VALIDATION HARNESS (AGENTLESS POWERSHELL v2)',
-    `# Simulation: ${simulationName}`,
-    `# Generated:  ${new Date().toISOString()}`,
-    '#',
-    '# ACCURACY & TELEMETRY NOTICE:',
-    '#   1. Each TTP runs in an isolated child process with a 30s timeout so if EDR',
-    '#      kills a single step, the harness survives and logs the block.',
-    '#   2. Results are flushed to .\\control_drift_results.json after EVERY step.',
-    '#   3. Host blocks (AMSI, Defender 0x800700E1, AppLocker 0x800704EC, EDR kill)',
-    '#      and local Windows Event Logs (Defender/AppLocker/Sysmon/4104) are',
-    '#      probed automatically.',
-    '#   4. IMPORTANT: Unblocked commands (Exit 0) cannot see cloud SIEM/EDR alerts.',
-    '#      Always verify unblocked steps in your SIEM/EDR console after import!',
-    '# ============================================================================',
-    '',
-    '$ErrorActionPreference = "Continue"',
-    '$ControlDriftResults = @()',
-    '$ResultsFilePath = Join-Path (Get-Location) "control_drift_results.json"',
-    '',
-    'function Save-ControlDriftProgress {',
-    '    $Payload = [PSCustomObject]@{',
-    '        version = 2',
-    `        simulation = '${simulationName.replace(/'/g, "''")}'`,
-    '        host = $env:COMPUTERNAME',
-    '        user = "$env:USERDOMAIN\\$env:USERNAME"',
-    '        executedAt = (Get-Date).ToUniversalTime().ToString("o")',
-    '        results = $script:ControlDriftResults',
-    '    }',
-    '    $Json = $Payload | ConvertTo-Json -Depth 6 -Compress',
-    '    $Json | Out-File -FilePath $ResultsFilePath -Encoding utf8 -Force',
-    '    return $Json',
-    '}',
-    '',
-    'function Invoke-IsolatedValidationStep {',
-    '    param(',
-    '        [int]$StepIndex,',
-    '        [string]$Name,',
-    '        [string[]]$TTPs,',
-    '        [string]$Code,',
-    '        [string]$ExpectedOutcome,',
-    '        [int]$TimeoutMs = 30000',
-    '    )',
-    '    $StepStartUtc = (Get-Date).ToUniversalTime()',
-    '    $StepStartIso = $StepStartUtc.ToString("o")',
-    '    $StepOutput = ""',
-    '    $StepError = ""',
-    '    $StepBlocked = $false',
-    '    $StepTimedOut = $false',
-    '    $StepPrereqError = $false',
-    '    $StepExitCode = 0',
-    '    $Confidence = "Verify-SIEM"',
-    '    $TelemetryHits = @()',
-    '',
-    '    # Run in isolated child powershell.exe so EDR process termination does not kill the parent harness',
-    '    $WrappedScript = @"',
-    '\\$ErrorActionPreference = "Stop"',
-    'try {',
-    '    $Code',
-    '} catch {',
-    '    [Console]::Error.WriteLine(\\$_.Exception.Message)',
-    '    if (\\$_.Exception.HResult) { exit \\$_.Exception.HResult } else { exit 1 }',
-    '}',
-    '"@',
-    '    $Bytes = [System.Text.Encoding]::Unicode.GetBytes($WrappedScript)',
-    '    $Encoded = [Convert]::ToBase64String($Bytes)',
-    '',
-    '    try {',
-    '        $Psi = New-Object System.Diagnostics.ProcessStartInfo',
-    '        $Psi.FileName = "powershell.exe"',
-    '        $Psi.Arguments = "-NoProfile -NonInteractive -WindowStyle Hidden -ExecutionPolicy Bypass -EncodedCommand $Encoded"',
-    '        $Psi.RedirectStandardOutput = $true',
-    '        $Psi.RedirectStandardError = $true',
-    '        $Psi.UseShellExecute = $false',
-    '        $Psi.CreateNoWindow = $true',
-    '',
-    '        $Proc = [System.Diagnostics.Process]::Start($Psi)',
-    '        $Completed = $Proc.WaitForExit($TimeoutMs)',
-    '        if (-not $Completed) {',
-    '            try { $Proc.Kill() } catch {}',
-    '            $StepTimedOut = $true',
-    '            $StepExitCode = 124',
-    '            $StepError = "Execution timed out after $($TimeoutMs / 1000)s"',
-    '        } else {',
-    '            $StepOutput = $Proc.StandardOutput.ReadToEnd().Trim()',
-    '            $StepError = $Proc.StandardError.ReadToEnd().Trim()',
-    '            $StepExitCode = $Proc.ExitCode',
-    '        }',
-    '    } catch {',
-    '        $StepError = $_.Exception.Message',
-    '        $StepExitCode = -1',
-    '        $StepBlocked = $true',
-    '    }',
-    '',
-    '    $CombinedText = "$StepOutput $StepError"',
-    '    # Detect native Win32/HRESULT & AMSI/EDR block signatures',
-    '    $BlockExitCodes = @(225, 1260, -2147024671, -2147023636, -1073741790, -1073741502)',
-    '    if ($BlockExitCodes -contains $StepExitCode -or $CombinedText -match "virus|unwanted software|AMSI|blocked by your administrator|blocked by group policy|AppLocker|Windows Defender|Access is denied|Operation did not complete|UnauthorizedAccess|0x800700E1|0x800704EC") {',
-    '        $StepBlocked = $true',
-    '    }',
-    '    if (-not $StepBlocked -and $CombinedText -match "is not recognized as the name of a cmdlet|command not found|The term .* is not recognized") {',
-    '        $StepPrereqError = $true',
-    '    }',
-    '',
-    '    # Probe local Windows Event Logs for immediate host telemetry (Defender / AppLocker / Sysmon / PowerShell 4104)',
-    '    try {',
-    '        $SearchSince = $StepStartUtc.AddSeconds(-2)',
-    '        $DefEvents = Get-WinEvent -FilterHashtable @{LogName="Microsoft-Windows-Windows Defender/Operational"; Id=1116,1117,1121,5007; StartTime=$SearchSince} -MaxEvents 3 -ErrorAction SilentlyContinue',
-    '        if ($DefEvents) {',
-    '            $StepBlocked = $true',
-    '            $TelemetryHits += "Defender Event ID $(($DefEvents | Select-Object -ExpandProperty Id | Select-Object -Unique) -join \',\')"',
-    '        }',
-    '        $AppLockerEvents = Get-WinEvent -FilterHashtable @{LogName="Microsoft-Windows-AppLocker/EXE and DLL"; Id=8003,8004; StartTime=$SearchSince} -MaxEvents 3 -ErrorAction SilentlyContinue',
-    '        if ($AppLockerEvents) {',
-    '            if ($AppLockerEvents.Id -contains 8004) { $StepBlocked = $true }',
-    '            $TelemetryHits += "AppLocker Event ID $(($AppLockerEvents | Select-Object -ExpandProperty Id | Select-Object -Unique) -join \',\')"',
-    '        }',
-    '        $SysmonEvents = Get-WinEvent -FilterHashtable @{LogName="Microsoft-Windows-Sysmon/Operational"; Id=1,3,10,11; StartTime=$SearchSince} -MaxEvents 5 -ErrorAction SilentlyContinue',
-    '        if ($SysmonEvents) {',
-    '            $TelemetryHits += "Sysmon Event ID $(($SysmonEvents | Select-Object -ExpandProperty Id | Select-Object -Unique) -join \',\')"',
-    '        }',
-    '    } catch {}',
-    '',
-    '    if ($StepBlocked) {',
-    '        $InferredOutcome = if ($TelemetryHits.Count -gt 0 -and $ExpectedOutcome -eq "Prevented & Alerted") { "Prevented & Alerted" } else { "Prevented" }',
-    '        $Confidence = "Host-Confirmed"',
-    '    } elseif ($StepTimedOut) {',
-    '        $InferredOutcome = "N/A"',
-    '        $Confidence = "Timed-Out"',
-    '    } elseif ($StepPrereqError) {',
-    '        $InferredOutcome = "N/A"',
-    '        $Confidence = "Prerequisite-Missing"',
-    '    } elseif ($TelemetryHits.Count -gt 0) {',
-    '        $InferredOutcome = "Logged"',
-    '        $Confidence = "Local-Telemetry-Logged (Verify SIEM Alert)"',
-    '    } else {',
-    '        # Command ran unblocked on host; do NOT blindly claim Alerted without SIEM confirmation',
-    '        $InferredOutcome = "Logged"',
-    '        $Confidence = "Verify-SIEM"',
-    '    }',
-    '',
-    '    $NotesParts = @("Host: $env:COMPUTERNAME", "User: $env:USERNAME", "Exit: $StepExitCode", "Confidence: $Confidence")',
-    '    if ($TelemetryHits.Count -gt 0) { $NotesParts += "Local Telemetry: $($TelemetryHits -join \'; \')" }',
-    '    if ($StepError) { $NotesParts += "Error: " + ($StepError -replace "[\\r\\n]+", " ").Substring(0, [Math]::Min(180, $StepError.Length)) }',
-    '    elseif ($StepOutput) { $NotesParts += "Output: " + ($StepOutput -replace "[\\r\\n]+", " ").Substring(0, [Math]::Min(180, $StepOutput.Length)) }',
-    '',
-    '    return [PSCustomObject]@{',
-    '        stepIndex = $StepIndex',
-    '        name = $Name',
-    '        ttps = $TTPs',
-    '        mappedTTPs = $TTPs',
-    '        command = $Code',
-    '        payloadCode = $Code',
-    '        expectedOutcome = $ExpectedOutcome',
-    '        inferredOutcome = $InferredOutcome',
-    '        outcome = $InferredOutcome',
-    '        confidence = $Confidence',
-    '        blocked = $StepBlocked',
-    '        timedOut = $StepTimedOut',
-    '        prereqError = $StepPrereqError',
-    '        exitCode = $StepExitCode',
-    '        localTelemetry = ($TelemetryHits -join "; ")',
-    '        output = if ($StepError) { $StepError } else { $StepOutput }',
-    '        timestamp = $StepStartIso',
-    '        execNotes = ($NotesParts -join " | ")',
-    '    }',
-    '}',
-    '',
-  ];
-
-  steps.forEach((step) => {
-    const safeName = step.name.replace(/'/g, "''");
-    const ttpArrayLiteral = step.ttps.map((t) => `'${t.replace(/'/g, "''")}'`).join(', ');
-    const safeExpected = (step.expectedOutcome || 'Alerted').replace(/'/g, "''");
-
-    psLines.push(`Write-Host "----------------------------------------------------------------" -ForegroundColor DarkCyan`);
-    psLines.push(
-      `Write-Host "[${step.index}/${steps.length}] Validating: ${safeName} (${step.ttps.join(', ')})" -ForegroundColor Cyan`
-    );
-    psLines.push(`$StepCode_${step.index} = @'`);
-    psLines.push(step.code);
-    psLines.push(`'@`);
-    psLines.push(
-      `$StepResult_${step.index} = Invoke-IsolatedValidationStep -StepIndex ${step.index} -Name '${safeName}' -TTPs @(${ttpArrayLiteral}) -Code $StepCode_${step.index} -ExpectedOutcome '${safeExpected}'`
-    );
-    psLines.push(`$ControlDriftResults += $StepResult_${step.index}`);
-    psLines.push(`$LatestJson = Save-ControlDriftProgress`);
-    psLines.push(
-      `Write-Host "  -> Inferred: $($StepResult_${step.index}.inferredOutcome) | Confidence: $($StepResult_${step.index}.confidence)" -ForegroundColor Yellow`
-    );
-    psLines.push('');
-  });
-
-  psLines.push('$FinalJson = Save-ControlDriftProgress');
-  psLines.push('Write-Host ""');
-  psLines.push('Write-Host "=== CONTROL_DRIFT_RESULTS_START ===" -ForegroundColor Magenta');
-  psLines.push('Write-Output $FinalJson');
-  psLines.push('Write-Host "=== CONTROL_DRIFT_RESULTS_END ===" -ForegroundColor Magenta');
-  psLines.push(
-    'Write-Host "Saved crash-safe results to .\\control_drift_results.json — Paste the block above into Control Drift Step 3!" -ForegroundColor Green'
-  );
-
-  return psLines.join('\n');
-}
-
-/**
- * Parses pasted terminal output (either containing === CONTROL_DRIFT_RESULTS_START ===,
- * raw JSON from control_drift_results.json, or freeform terminal output) into Step 3 EventCard objects.
+ * Pure helper that aggregates finalized event procedure outcomes and coverage ratings
+ * for a given MITRE ATT&CK TTP ID.
  *
- * Returns an array of updated EventCard objects that also attaches a non-enumerable `updatedEvents`
- * property and `summary` metadata so callers expecting either `array` or `{ updatedEvents, summary }` work seamlessly.
+ * @param {string} ttpId
+ * @param {Array} finalizedTestResults
+ * @param {{ outcome: string, coverageRating: string }} [emptyFallback]
+ * @returns {{ outcome: string, coverageRating: string }}
  */
-export function parseHarnessOutput(
-  rawInput = '',
-  existingTestResults = [],
-  selectedTTPs = [],
-  simulationSummaries = {},
-  events = {}
+export function computeFinalTtpAggregation(
+  ttpId,
+  finalizedTestResults = [],
+  emptyFallback = { outcome: 'N/A', coverageRating: 'N/A' }
 ) {
-  if (!rawInput || typeof rawInput !== 'string' || !rawInput.trim()) {
-    throw new Error('Please paste terminal output or JSON results to import.');
-  }
+  const procs = (finalizedTestResults || []).filter(p => (p.ttps || []).includes(ttpId));
+  if (procs.length === 0) return emptyFallback;
 
-  const normalizedSelected = normalizeSelectedTTPsList(selectedTTPs);
-  let jsonText = rawInput.trim();
-  const markerMatch = rawInput.match(
-    /===\s*CONTROL_DRIFT_RESULTS_START\s*===\s*([\s\S]*?)\s*===\s*CONTROL_DRIFT_RESULTS_END\s*===/i
-  );
-  if (markerMatch && markerMatch[1]) {
-    jsonText = markerMatch[1].trim();
-  } else {
-    const objMatch = rawInput.match(/\{[\s\S]*"results"\s*:\s*\[[\s\S]*\][\s\S]*\}/);
-    if (objMatch) {
-      jsonText = objMatch[0];
-    }
-  }
+  let explicitScoreTotal = 0;
+  let explicitScoreCount = 0;
+  let b = 0, a = 0, l = 0, m = 0;
 
-  let parsedPayload = null;
-  try {
-    parsedPayload = JSON.parse(jsonText);
-  } catch {
-    parsedPayload = null;
-  }
+  procs.forEach(p => {
+    const out = p.outcome || '';
+    if (out.includes('Prevented')) b++;
+    else if (out.includes('Alerted')) a++;
+    else if (out.includes('Logged')) l++;
+    else if (out.includes('Missed')) m++;
 
-  const resultsArray = Array.isArray(parsedPayload)
-    ? parsedPayload
-    : Array.isArray(parsedPayload?.results)
-    ? parsedPayload.results
-    : null;
-
-  const attachCompatMetadata = (arr, meta = {}) => {
-    Object.defineProperty(arr, 'updatedEvents', {
-      value: arr,
-      enumerable: false,
-      configurable: true,
-    });
-    Object.defineProperty(arr, 'summary', {
-      value: meta,
-      enumerable: false,
-      configurable: true,
-    });
-    return arr;
-  };
-
-  if (!resultsArray || resultsArray.length === 0) {
-    // Fallback: treat rawInput as freeform terminal output for a single or existing event
-    const isBlocked =
-      /virus|unwanted software|AMSI|blocked|Access is denied|Operation did not complete|Permission denied|Operation not permitted/i.test(
-        rawInput
-      );
-    const isPrereqError =
-      /is not recognized as the name of a cmdlet|command not found|No such file or directory/i.test(
-        rawInput
-      );
-    const discoveredTtps = [
-      ...new Set((rawInput.match(/T\d{4}(?:\.\d{3})?/gi) || []).map((t) => t.toUpperCase())),
-    ];
-    const targetTtps =
-      discoveredTtps.length > 0
-        ? discoveredTtps
-        : normalizedSelected.length > 0
-        ? [normalizedSelected[0].id]
-        : [];
-    const primaryTtp = targetTtps[0];
-    const baseline = primaryTtp
-      ? getHistoricalBaselineForTTP(primaryTtp, simulationSummaries, events)
-      : null;
-
-    const outcome = isPrereqError ? 'N/A' : isBlocked ? 'Prevented' : 'Logged';
-    const cascaded = getOutcomeCascadedFields(outcome);
-    const harnessConfidence = isPrereqError
-      ? 'Prerequisite-Missing'
-      : isBlocked
-      ? 'Host-Confirmed'
-      : 'Verify-SIEM';
-
-    const fallbackList = [
-      ...existingTestResults,
-      {
-        id: Date.now() + Math.random(),
-        name: primaryTtp
-          ? `${primaryTtp} Terminal Import`
-          : `Imported Terminal Event (${existingTestResults.length + 1})`,
-        ttps: targetTtps,
-        mappedTTPs: targetTtps,
-        eventType: 'Payload',
-        payloadCode: '',
-        expectedOutcome: baseline?.expectedOutcome || '',
-        outcome,
-        status: cascaded.status,
-        coverageRating: cascaded.coverageRating,
-        severity: cascaded.severity,
-        securityControls: baseline?.securityControls || [],
-        isHarnessImported: true,
-        harnessConfidence,
-        isBaselineVerified: Boolean(
-          baseline?.expectedOutcome &&
-            normalizeOutcomeValue(outcome) === normalizeOutcomeValue(baseline.expectedOutcome)
-        ),
-        execNotes: rawInput.trim().replace(/\s+/g, ' ').slice(0, 350),
-        detNotes: isPrereqError
-          ? 'Prerequisite or command syntax error detected in terminal output. Re-run after fixing command.'
-          : isBlocked
-          ? 'Host block confirmed from terminal output (OS/EDR/AMSI).'
-          : 'Unblocked execution on host — Inferred as "Logged". Please verify in your SIEM/EDR console whether an alert fired.',
-      },
-    ];
-
-    return attachCompatMetadata(fallbackList, {
-      totalImported: 1,
-      hostConfirmedCount: isBlocked ? 1 : 0,
-      verifySiemCount: !isBlocked && !isPrereqError ? 1 : 0,
-      errorCount: isPrereqError ? 1 : 0,
-    });
-  }
-
-  // Merge or append structured harness results
-  const updated = [...existingTestResults];
-  const hostName = parsedPayload?.host || '';
-  const hostLabel = hostName ? `Host: ${hostName}` : '';
-  let hostConfirmedCount = 0;
-  let verifySiemCount = 0;
-  let errorCount = 0;
-
-  resultsArray.forEach((item, idx) => {
-    const rawTtps = item.ttps || item.mappedTTPs || [];
-    const itemTtps = Array.isArray(rawTtps)
-      ? rawTtps.map((t) => String(t).toUpperCase())
-      : rawTtps
-      ? [String(rawTtps).toUpperCase()]
-      : [];
-    const primaryTtp = itemTtps[0];
-    const baseline = primaryTtp
-      ? getHistoricalBaselineForTTP(primaryTtp, simulationSummaries, events)
-      : null;
-
-    const rawOutputText = String(item.output || item.execNotes || '');
-    const isExplicitBlock =
-      Boolean(item.blocked) ||
-      /virus|unwanted software|AMSI|blocked|Access is denied|Operation did not complete|Permission denied|Operation not permitted/i.test(
-        rawOutputText
-      );
-    const isPrereqOrTimeout =
-      Boolean(item.timedOut) ||
-      Boolean(item.prereqError) ||
-      item.exitCode === 127 ||
-      item.exitCode === 124 ||
-      /Prerequisite-Missing|Timed-Out/i.test(String(item.confidence || ''));
-
-    // Preserve explicit outcome if provided in JSON (e.g. "Blocked", "Prevented", "Logged")
-    const explicitRawOutcome = item.outcome || item.inferredOutcome || '';
-    let outcome = '';
-    if (isPrereqOrTimeout) {
-      outcome = 'N/A';
-    } else if (explicitRawOutcome) {
-      // Keep "Blocked" if caller explicitly passed "Blocked", otherwise normalize
-      outcome =
-        explicitRawOutcome === 'Blocked'
-          ? 'Blocked'
-          : normalizeOutcomeValue(explicitRawOutcome) || 'Logged';
-    } else if (isExplicitBlock) {
-      outcome = 'Prevented';
-    } else {
-      outcome = 'Logged';
-    }
-
-    const cascaded = getOutcomeCascadedFields(outcome);
-    const harnessConfidence =
-      item.confidence ||
-      (isPrereqOrTimeout
-        ? 'Prerequisite-Missing'
-        : isExplicitBlock || normalizeOutcomeValue(outcome) === 'Prevented'
-        ? 'Host-Confirmed'
-        : 'Verify-SIEM');
-
-    if (harnessConfidence === 'Host-Confirmed') hostConfirmedCount++;
-    else if (isPrereqOrTimeout) errorCount++;
-    else verifySiemCount++;
-
-    const execNoteParts = [
-      item.execNotes || '',
-      !item.execNotes && hostLabel ? hostLabel : '',
-      !item.execNotes && item.exitCode != null ? `Exit: ${item.exitCode}` : '',
-      !item.execNotes && item.output ? `Output: ${String(item.output).slice(0, 220)}` : '',
-    ].filter(Boolean);
-
-    // Check if an existing event card matches by name or TTP
-    const existingIdx = updated.findIndex((e) => {
-      const eTtps = extractProcTtps(e);
-      const nameMatches =
-        item.name && e.name && e.name.toLowerCase() === String(item.name).toLowerCase();
-      const ttpMatches = primaryTtp && eTtps.includes(primaryTtp);
-      return (!e.outcome || e.outcome === 'N/A' || e.outcome === '') && (nameMatches || ttpMatches);
-    });
-
-    const expectedVal =
-      item.expectedOutcome ||
-      (existingIdx >= 0 && updated[existingIdx].expectedOutcome) ||
-      baseline?.expectedOutcome ||
-      'Alerted';
-
-    const isBaselineVerified = Boolean(
-      expectedVal &&
-        outcome &&
-        outcome !== 'N/A' &&
-        normalizeOutcomeValue(outcome) === normalizeOutcomeValue(expectedVal)
-    );
-
-    let detNotesText = '';
-    if (isPrereqOrTimeout) {
-      detNotesText = `Execution error or timeout (Exit ${item.exitCode ?? 'N/A'}). Not counted as a security block—verify command prerequisites.`;
-    } else if (harnessConfidence === 'Host-Confirmed' || isExplicitBlock) {
-      detNotesText = `Host-level prevention confirmed during harness execution${
-        item.localTelemetry ? ` (${item.localTelemetry})` : ' (OS/EDR/AMSI block)'
-      }.`;
-    } else if (item.localTelemetry) {
-      detNotesText = `Local endpoint telemetry recorded (${item.localTelemetry}), but cloud SIEM/EDR alert status cannot be verified by a host script. Please confirm if an alert fired.`;
-    } else {
-      detNotesText = `Payload executed unblocked on host (Exit Code: ${
-        item.exitCode ?? 0
-      }). Inferred as "Logged" — verify in your SIEM/EDR console whether this triggered an Alert or was Missed.`;
-    }
-
-    const mergedCard = {
-      ...(existingIdx >= 0 ? updated[existingIdx] : {}),
-      id: existingIdx >= 0 ? updated[existingIdx].id : Date.now() + Math.random() + idx,
-      name:
-        item.name ||
-        (existingIdx >= 0
-          ? updated[existingIdx].name
-          : `${primaryTtp || 'Event'} Validation (${idx + 1})`),
-      ttps: itemTtps.length > 0 ? itemTtps : existingIdx >= 0 ? extractProcTtps(updated[existingIdx]) : [],
-      mappedTTPs:
-        itemTtps.length > 0 ? itemTtps : existingIdx >= 0 ? extractProcTtps(updated[existingIdx]) : [],
-      eventType: 'Payload',
-      payloadCode:
-        item.payloadCode ||
-        item.command ||
-        (existingIdx >= 0 ? updated[existingIdx].payloadCode : ''),
-      expectedOutcome: expectedVal,
-      outcome,
-      status: cascaded.status,
-      coverageRating: cascaded.coverageRating,
-      severity: cascaded.severity,
-      targetAsset:
-        hostName || (existingIdx >= 0 ? updated[existingIdx].targetAsset || '' : ''),
-      securityControls:
-        (existingIdx >= 0 && updated[existingIdx].securityControls?.length > 0
-          ? updated[existingIdx].securityControls
-          : baseline?.securityControls) || [],
-      isHarnessImported: true,
-      harnessConfidence,
-      isBaselineVerified,
-      execNotes:
-        execNoteParts.join(' | ') || `Executed at ${item.timestamp || new Date().toISOString()}`,
-      detNotes: detNotesText,
-    };
-
-    if (existingIdx >= 0) {
-      updated[existingIdx] = mergedCard;
-    } else {
-      updated.push(mergedCard);
+    if (p.coverageRating && p.coverageRating !== 'Auto-Calculate' && p.coverageRating !== 'N/A') {
+      const cr = String(p.coverageRating).toLowerCase();
+      if (cr.includes('optimal')) explicitScoreTotal += 100;
+      else if (cr.includes('partial') || cr.includes('medium')) explicitScoreTotal += 50;
+      else if (cr.includes('minimal')) explicitScoreTotal += 25;
+      else if (cr.includes('none') || cr.includes('no coverage')) explicitScoreTotal += 0;
+      explicitScoreCount++;
     }
   });
 
-  return attachCompatMetadata(updated, {
-    totalImported: resultsArray.length,
-    hostConfirmedCount,
-    verifySiemCount,
-    errorCount,
-  });
+  const total = b + a + l + m;
+  if (total === 0) return { outcome: 'Missed', coverageRating: 'None' };
+
+  const overallOutcome = b > 0 ? 'Prevented' : a > 0 ? 'Alerted' : l > 0 ? 'Logged' : 'Missed';
+
+  if (explicitScoreCount > 0) {
+    const avgExplicit = explicitScoreTotal / explicitScoreCount;
+    let explicitCov = 'None';
+    if (avgExplicit === 100) explicitCov = 'Optimal';
+    else if (avgExplicit >= 50) explicitCov = 'Partial';
+    else if (avgExplicit > 0) explicitCov = 'Minimal';
+    return { outcome: overallOutcome, coverageRating: explicitCov };
+  }
+
+  const totalScore = (b * 100) + (a * 100) + (l * 50) + (m * 0);
+  const avg = totalScore / total;
+  if (avg === 100) return { outcome: b > 0 ? 'Prevented' : 'Alerted', coverageRating: 'Optimal' };
+  if (avg >= 50) return { outcome: l > 0 ? 'Logged' : (b > 0 ? 'Prevented' : 'Alerted'), coverageRating: 'Partial' };
+  if (avg > 0) return { outcome: m > 0 ? 'Missed' : 'Logged', coverageRating: 'Minimal' };
+  return { outcome: 'Missed', coverageRating: 'None' };
 }
+
+

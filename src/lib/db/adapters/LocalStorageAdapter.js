@@ -23,6 +23,7 @@ export default class LocalStorageAdapter {
         this.STORAGE_KEY_GAPS = 'gaps';
         this.STORAGE_KEY_MITRE = 'mitre_coverage';
         this.STORAGE_KEY_SIMULATIONS = 'simulations_table';
+        this.STORAGE_KEY_DRAFTS = 'wizard_drafts';
     }
     async checkAuth() { return true; }
     async login(credentials) { return true; }
@@ -188,10 +189,84 @@ export default class LocalStorageAdapter {
         }
     }
 
+    // --- In-Progress Simulation Drafts Methods ---
+    async fetchDrafts() {
+        const idbDrafts = await idbGet(this.STORAGE_KEY_DRAFTS);
+        let localDrafts = [];
+        try {
+            const rawLocal = localStorage.getItem(this.STORAGE_KEY_DRAFTS);
+            if (rawLocal) localDrafts = JSON.parse(rawLocal);
+        } catch (e) {
+            // ignore
+        }
+
+        const mergedMap = new Map();
+        (Array.isArray(localDrafts) ? localDrafts : []).forEach(d => {
+            if (d && d.id) mergedMap.set(String(d.id), { ...d, storageSource: d.storageSource || 'local' });
+        });
+        (Array.isArray(idbDrafts) ? idbDrafts : []).forEach(d => {
+            if (d && d.id) {
+                const existing = mergedMap.get(String(d.id));
+                if (!existing || new Date(d.timestamp || 0) >= new Date(existing.timestamp || 0)) {
+                    mergedMap.set(String(d.id), { ...d, storageSource: d.storageSource || 'local' });
+                }
+            }
+        });
+
+        const sorted = Array.from(mergedMap.values()).sort(
+            (a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0)
+        );
+        return sorted;
+    }
+
+    async saveDraft(draft) {
+        const current = await this.fetchDrafts();
+        const cleanId = String(draft.id || Date.now());
+        const record = {
+            id: cleanId,
+            name: draft.name || draft.data?.simulationDetails?.name || 'Unnamed Simulation',
+            step: Number(draft.step || draft.data?.step || 1),
+            timestamp: draft.timestamp || new Date().toISOString(),
+            data: draft.data || {},
+            storageSource: 'local'
+        };
+
+        const updated = current.some(d => String(d.id) === cleanId)
+            ? current.map(d => (String(d.id) === cleanId ? record : d))
+            : [record, ...current];
+
+        await idbSet(this.STORAGE_KEY_DRAFTS, updated);
+        try {
+            localStorage.setItem(this.STORAGE_KEY_DRAFTS, JSON.stringify(updated));
+        } catch (e) {
+            // Ignore localStorage quota if large evidence/payloads are in IndexedDB
+        }
+        return record;
+    }
+
+    async deleteDraft(id) {
+        const current = await this.fetchDrafts();
+        const cleanId = String(id);
+        const updated = current.filter(d => String(d.id) !== cleanId);
+        await idbSet(this.STORAGE_KEY_DRAFTS, updated);
+        try {
+            localStorage.setItem(this.STORAGE_KEY_DRAFTS, JSON.stringify(updated));
+        } catch (e) {
+            // Ignore
+        }
+        return { success: true };
+    }
+
     async bulkImport(backupData) {
         try {
             if (backupData.gaps) await idbSet(this.STORAGE_KEY_GAPS, backupData.gaps, { notifySync: false });
             if (backupData.events) await idbSet(this.STORAGE_KEY_EVENTS, backupData.events, { notifySync: false });
+            if (Array.isArray(backupData.simulationDrafts)) {
+                await idbSet(this.STORAGE_KEY_DRAFTS, backupData.simulationDrafts, { notifySync: false });
+                try {
+                    localStorage.setItem(this.STORAGE_KEY_DRAFTS, JSON.stringify(backupData.simulationDrafts));
+                } catch (e) {}
+            }
             
             const simulationRows = [];
             const summaries = backupData.simulationSummaries || {};

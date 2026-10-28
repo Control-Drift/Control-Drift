@@ -1397,6 +1397,12 @@ export default function MitreHeatmap() {
                      sub.totalCount = subTot;
                      sub.preventedPercentage = subTot > 0 ? Math.round((subPrev / subTot) * 100) : 0;
                      sub.hasTests = subTot > 0;
+                     if (activeEnvironmentFilter !== 'All' && sub.environments?.[activeEnvironmentFilter]) {
+                         sub.status = sub.environments[activeEnvironmentFilter];
+                     } else if (sub.environments && Object.keys(sub.environments).length > 0) {
+                         const activeSubStatuses = Object.values(sub.environments).filter(s => s !== 'unknown' && s !== 'na');
+                         if (activeSubStatuses.length > 0) sub.status = calculateAverageStatus(activeSubStatuses);
+                     }
                      enrichConfidenceAndDecay(sub, false);
                  });
              }
@@ -1628,6 +1634,7 @@ export default function MitreHeatmap() {
            mitreCoveragePercentage={mitreCoveragePercentage}
            dashboardTotalValidated={dashboardTotalValidated}
            driftingCount={driftingCount}
+           resolvedMitreData={resolvedMitreData}
          />
 
       {/* Tactics Quick-Nav Sidebar */}

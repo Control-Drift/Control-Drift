@@ -185,17 +185,7 @@ const renderTechnicalDetails = (remediationStr, gap, proc, campSumm, allEvents) 
                  {remediationStr.split('\n').map((line, i) => {
                      const trimmedLine = line.trim();
                      if (trimmedLine.startsWith('Timestamp:')) {
-                        const timeVal = line.substring(line.indexOf('Timestamp:') + 10).trim();
-                        return (
-                            <div key={i} style={{ marginBottom: '10px', display: 'flex', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px', alignItems: 'center' }}>
-                                <strong style={{ color: '#38bdf8', width: '170px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                    <Clock size={14} /> Event Timestamp:
-                                </strong>
-                                <span style={{ color: '#38bdf8', fontFamily: 'monospace', fontWeight: 'bold', fontSize: '0.85rem' }}>
-                                    {timeVal}
-                                </span>
-                            </div>
-                        );
+                        return null;
                     } else if (trimmedLine.startsWith('Execution:')) {
                          return <div key={i} style={{  marginBottom: '10px', display: 'flex', gap: '12px', background: 'rgba(0,0,0,0.2)', padding: '12px', borderRadius: '8px'  }}><strong style={{  color: 'var(--danger)', width: '170px', flexShrink: 0, display: 'flex', alignItems: 'center', gap: '6px'  }}><Crosshair size={14} /> Red Team Notes:</strong> <span style={{ flex: 1, color: 'var(--text-primary)', lineHeight: '1.5' }}>{line.substring(line.indexOf('Execution:') + 10).trim()}</span></div>;
                      } else if (trimmedLine.startsWith('Detection:')) {

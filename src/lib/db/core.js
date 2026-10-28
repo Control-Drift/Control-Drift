@@ -47,6 +47,11 @@ export class DatabaseAdapter {
     async fetchSimulationsData() { throw new Error('Not implemented'); }
     async upsertSimulation(simulationData) { throw new Error('Not implemented'); }
     async bulkImport(data) { throw new Error('Not implemented'); }
+
+    // In-Progress Simulation Drafts methods
+    async fetchDrafts() { return []; }
+    async saveDraft(draft) { throw new Error('Not implemented'); }
+    async deleteDraft(id) { throw new Error('Not implemented'); }
 }
 
 export const dbManager = {

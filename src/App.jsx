@@ -16,7 +16,7 @@
 
 import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Crosshair, Shield, FileText, Settings as SettingsIcon, Activity, ListTodo, ChevronLeft, ChevronRight, Command, Menu, X, Globe } from 'lucide-react';
+import { LayoutDashboard, Crosshair, Shield, FileText, Settings as SettingsIcon, Activity, ListTodo, ChevronLeft, ChevronRight, Command, Menu, X, Globe, Compass } from 'lucide-react';
 import CustomLogo from './components/ui/CustomLogo';
 
 import AIAssistant from './components/features/AIAssistant';
@@ -44,6 +44,7 @@ const lazyWithRetry = (componentImport) =>
 
 const Dashboard = lazyWithRetry(() => import('./components/pages/Dashboard'));
 const SimulationWizard = lazyWithRetry(() => import('./components/pages/SimulationWizard'));
+const Research = lazyWithRetry(() => import('./components/pages/Research'));
 const GapTracker = lazyWithRetry(() => import('./components/pages/GapTracker'));
 const GapDetails = lazyWithRetry(() => import('./components/features/GapDetails'));
 const Reports = lazyWithRetry(() => import('./components/pages/Reports'));
@@ -127,6 +128,9 @@ function AppContent() {
                        <NavLink to="/simulation" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={handleNavClick}>
                          <Crosshair size={20} /><span className="nav-label">Simulation Launcher</span>
                        </NavLink>
+                       <NavLink to="/research" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={handleNavClick}>
+                         <Compass size={20} /><span className="nav-label">Threat Catalog</span>
+                       </NavLink>
                        <NavLink to="/posture" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={handleNavClick}>
                          <Globe size={20} /><span className="nav-label">Heat Globe</span>
                        </NavLink>
@@ -174,6 +178,7 @@ function AppContent() {
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/simulation" element={<SimulationWizard />} />
+                      <Route path="/research" element={<Research />} />
                       <Route path="/posture" element={<MitreHeatmap />} />
                       <Route path="/gaps" element={<GapTracker />} />
                       <Route path="/gaps/:id" element={<GapDetails />} />

@@ -316,23 +316,26 @@ export default function ExecutiveReportPDF({
           </View>
           {(radarData || []).map((phase, idx) => {
             const tested = phase.tested || 0;
+            const testedTechniques = phase.testedTechniques || tested;
             const risk = phase.risk || 0;
             const status =
               tested === 0
                 ? 'Untested'
-                : risk >= 70
+                : risk >= 75
                 ? 'Critical Risk'
-                : risk >= 50
+                : risk > 50
                 ? 'High Risk'
                 : risk >= 30
                 ? 'Moderate Risk'
-                : risk > 0
+                : risk >= 10
                 ? 'Low Risk'
+                : risk > 0
+                ? 'Minimal Risk'
                 : 'Secured';
             const statusColor =
               tested === 0
                 ? '#64748b'
-                : risk >= 50
+                : risk > 50
                 ? '#dc2626'
                 : risk >= 30
                 ? '#d97706'
@@ -342,7 +345,7 @@ export default function ExecutiveReportPDF({
                 <Text style={[styles.td, { width: '38%', fontWeight: 'bold' }]}>
                   {sanitizeText(phase.subject)}
                 </Text>
-                <Text style={[styles.td, { width: '20%' }]}>{tested}</Text>
+                <Text style={[styles.td, { width: '20%' }]}>{testedTechniques}</Text>
                 <Text style={[styles.td, { width: '22%', fontWeight: 'bold', color: statusColor }]}>
                   {tested > 0 ? `${risk}%` : 'N/A'}
                 </Text>

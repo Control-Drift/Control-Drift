@@ -156,59 +156,6 @@ export default function EventCard({
                             </span>
                         )}
 
-                        {proc.isHarnessImported && proc.harnessConfidence && (
-                            (() => {
-                                const isConfirmed = proc.harnessConfidence === 'Host-Confirmed';
-                                const isErr = proc.harnessConfidence === 'Prerequisite-Missing' || proc.harnessConfidence === 'Timed-Out';
-                                const badgeBg = isConfirmed
-                                    ? 'rgba(6, 182, 212, 0.14)'
-                                    : isErr
-                                    ? 'rgba(239, 68, 68, 0.14)'
-                                    : 'rgba(245, 158, 11, 0.16)';
-                                const badgeBorder = isConfirmed
-                                    ? 'rgba(6, 182, 212, 0.4)'
-                                    : isErr
-                                    ? 'rgba(239, 68, 68, 0.4)'
-                                    : 'rgba(245, 158, 11, 0.45)';
-                                const badgeColor = isConfirmed
-                                    ? '#22d3ee'
-                                    : isErr
-                                    ? '#f87171'
-                                    : '#fbbf24';
-                                const badgeLabel = isConfirmed
-                                    ? 'Host Block Confirmed ✓'
-                                    : isErr
-                                    ? `Exec Error (${proc.harnessConfidence})`
-                                    : 'Inferred • Verify SIEM ⚠';
-                                const badgeTitle = isConfirmed
-                                    ? 'The self-logging harness confirmed this payload was actively blocked on the endpoint (OS/EDR/AMSI).'
-                                    : isErr
-                                    ? 'This step failed due to a missing binary, syntax error, or timeout—not a security control block.'
-                                    : 'This command ran unblocked on the endpoint (Exit Code 0). Because a local script cannot see cloud SIEM/EDR alerts, please verify whether your SOC console alerted or missed it.';
-                                return (
-                                    <span
-                                        title={badgeTitle}
-                                        style={{
-                                            display: 'inline-flex',
-                                            alignItems: 'center',
-                                            gap: '4px',
-                                            fontSize: '0.68rem',
-                                            fontWeight: 700,
-                                            padding: '3px 8px',
-                                            borderRadius: '10px',
-                                            background: badgeBg,
-                                            border: `1px solid ${badgeBorder}`,
-                                            color: badgeColor,
-                                            whiteSpace: 'nowrap',
-                                            cursor: 'help'
-                                        }}
-                                    >
-                                        {badgeLabel}
-                                    </span>
-                                );
-                            })()
-                        )}
-
                         {isCollapsed && (
                             <div style={{  display: 'flex', gap: '6px', flexWrap: 'wrap', alignItems: 'center'  }}>
                                 {proc.outcome && proc.outcome !== 'N/A' && proc.outcome !== '' && (

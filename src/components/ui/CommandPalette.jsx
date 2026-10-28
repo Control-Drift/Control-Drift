@@ -17,7 +17,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../../AppContext';
-import { Search, Command, LayoutDashboard, Crosshair, Shield, ListTodo, FileText, Settings, Hash, AlertCircle, ChevronRight } from 'lucide-react';
+import { Search, Command, LayoutDashboard, Crosshair, Shield, ListTodo, FileText, Settings, Hash, AlertCircle, ChevronRight, Compass } from 'lucide-react';
 
 export default function CommandPalette() {
   const [isOpen, setIsOpen] = useState(false);
@@ -56,6 +56,7 @@ export default function CommandPalette() {
   const navs = [
     { name: 'Dashboard', icon: <LayoutDashboard size={16} />, path: '/' },
     { name: 'Simulation Launcher', icon: <Crosshair size={16} />, path: '/simulation' },
+    { name: 'Threat Catalog', icon: <Compass size={16} />, path: '/research' },
     { name: 'Security Posture', icon: <Shield size={16} />, path: '/posture' },
     { name: 'Gap Tracker', icon: <ListTodo size={16} />, path: '/gaps' },
     { name: 'Attack Path', icon: <Command size={16} />, path: '/attack-path' },

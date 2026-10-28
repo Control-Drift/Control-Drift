@@ -19,8 +19,8 @@ import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css';
 import TurndownService from 'turndown';
 import { marked } from 'marked';
-
 import DOMPurify from 'dompurify';
+import MarkdownRenderer, { normalizeStructuredMarkdown } from './MarkdownRenderer';
 
 const turndownService = new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' });
 // Disable escaping to prevent mangling of code payloads (e.g., PowerShell brackets and asterisks)
@@ -36,7 +36,7 @@ const getSafeMarkdown = (val) => {
 };
 
 const convertMarkdownToQuillHtml = (markdown) => {
-    let processed = getSafeMarkdown(markdown);
+    let processed = normalizeStructuredMarkdown(getSafeMarkdown(markdown));
     
     // Auto-repair badly formatted Markdown lists (e.g. from AI) where unindented bullets break ordered lists.
     let lines = processed.split('\n');
@@ -61,6 +61,18 @@ const convertMarkdownToQuillHtml = (markdown) => {
         .replace(/<\/code><\/pre>/gi, '</pre>')
         .replace(/<ol[^>]*>\s*<li>\s*(<br\s*\/?>)?\s*<\/li>\s*<\/ol>/gi, '');
 };
+
+const QUILL_FORMATS = [
+    'header',
+    'bold',
+    'italic',
+    'strike',
+    'code',
+    'list',
+    'bullet',
+    'blockquote',
+    'code-block'
+];
 
 export default function RichMarkdownEditor({ value, onChange, placeholder, minHeight = '100px', readOnly = false, style = {} }) {
   const [internalHtml, setInternalHtml] = useState(() => {
@@ -90,9 +102,11 @@ export default function RichMarkdownEditor({ value, onChange, placeholder, minHe
 
   const handleChange = (content, delta, source, editor) => {
     setInternalHtml(content);
-    if (!readOnly && onChange) {
-       // Turndown requires <pre><code> for fenced code blocks, but Quill outputs flat <pre>.
-       const turndownFriendlyContent = content.replace(/<pre[^>]*>([\s\S]*?)<\/pre>/gi, '<pre><code>$1</code></pre>');
+    // Only emit onChange when the user actively edits in Quill, never on programmatic mount/normalization
+    if (!readOnly && onChange && source === 'user') {
+       // Merge consecutive <pre class="ql-syntax"> lines that Quill splits, then wrap in <pre><code> for Turndown
+       const mergedPreContent = content.replace(/<\/pre>\s*<pre[^>]*>/gi, '\n');
+       const turndownFriendlyContent = mergedPreContent.replace(/<pre[^>]*>([\s\S]*?)<\/pre>/gi, '<pre><code>$1</code></pre>');
        const markdown = turndownService.turndown(turndownFriendlyContent);
        
        if (markdown !== lastSentMarkdown.current) {
@@ -104,7 +118,8 @@ export default function RichMarkdownEditor({ value, onChange, placeholder, minHe
 
   const modules = React.useMemo(() => ({
     toolbar: readOnly ? false : [
-      ['bold', 'italic', 'strike'],
+      [{ 'header': [1, 2, 3, false] }],
+      ['bold', 'italic', 'strike', 'code'],
       [{ 'list': 'ordered'}, { 'list': 'bullet' }],
       ['blockquote', 'code-block'],
       ['clean']
@@ -114,7 +129,7 @@ export default function RichMarkdownEditor({ value, onChange, placeholder, minHe
   if (readOnly) {
       return (
           <div className="rich-markdown-editor read-only" style={{ ...style }}>
-              <div className="markdown-preview" style={{ minHeight, color: 'var(--text-primary)', padding: '12px 15px' }} dangerouslySetInnerHTML={{ __html: internalHtml }} />
+              <MarkdownRenderer content={value} style={{ minHeight, padding: '8px 4px' }} />
           </div>
       );
   }
@@ -128,6 +143,7 @@ export default function RichMarkdownEditor({ value, onChange, placeholder, minHe
         onChange={handleChange}
         readOnly={false}
         modules={modules}
+        formats={QUILL_FORMATS}
         placeholder={placeholder}
         style={{ minHeight, color: 'var(--text-primary)' }}
       />

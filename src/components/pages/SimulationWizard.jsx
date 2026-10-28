@@ -15,156 +15,31 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { unstable_batchedUpdates } from 'react-dom';
-import { ReactFlow, Background, Controls, applyNodeChanges, applyEdgeChanges, addEdge, MarkerType } from '@xyflow/react';
-import '@xyflow/react/dist/style.css';
 import { useAppContext } from '../../AppContext';
 import { useToast } from '../ui/Toast';
-import { CheckSquare, Square, Sparkles, Search, ChevronDown, ChevronLeft, ChevronRight, Edit3, FileText, Upload, Eye, Wrench, Key, Terminal, Anchor, ChevronsUp, Ghost, Unlock, Network, Package, Zap, Trash2, X, Users, Target, Info, Flag, ArrowRight, Plus, Database, Loader2, Save, Shield, Crosshair, AlertTriangle, Activity, PlaneTakeoff, ExternalLink, Send, Tag, Swords } from 'lucide-react';
-import { SatelliteStationIcon, StealthBomberIcon, HeavyTransportIcon, BomberIcon, DistortionIcon, TACTIC_ICONS } from '../ui/CustomIcons';
+import { CheckSquare, Trash2, X, Users, Database, Loader2, Save, Activity } from 'lucide-react';
+import { TACTIC_ICONS } from '../ui/CustomIcons';
 import { KILL_CHAIN_ORDER, lookupTTPName } from '../../lib/mitreUtils';
+import { classifyTtpOperationalRole, clusterTTPsIntoCompoundEvents } from '../../lib/mitreStixCti';
 import {
     getHistoricalBaselineForTTP,
     getHistoricalProceduresForTTPs,
     formatHistoricalProceduresForAIPrompt,
     scaffoldEventsFromDesignAndTTPs,
-    getOutcomeCascadedFields,
-    normalizeOutcomeValue
+    formatCleanEventTitle,
+    computeFinalTtpAggregation
 } from '../../lib/simulationAutomation';
-import { PDFDownloadLink } from '@react-pdf/renderer';
 import { useNavigate, useLocation } from 'react-router-dom';
-import RichMarkdownEditor from '../ui/RichMarkdownEditor';
-import BattleGlobe from '../features/BattleGlobe';
-import ReportPDF from '../features/ReportPDF';
-import MarkdownRenderer from '../ui/MarkdownRenderer';
-import InlineEnvironmentDropdown from '../dropdowns/InlineEnvironmentDropdown';
-import InlineTagDropdown from '../dropdowns/InlineTagDropdown';
-import EventTypeDropdown from '../dropdowns/EventTypeDropdown';
-import OutcomeDropdown from '../dropdowns/OutcomeDropdown';
-import CoverageRatingDropdown from '../dropdowns/CoverageRatingDropdown';
-import SeverityDropdown from '../dropdowns/SeverityDropdown';
-import EventTTPDropdown from '../dropdowns/EventTTPDropdown';
-import SecurityControlsDropdown from '../dropdowns/SecurityControlsDropdown';
-import EventCard from '../ui/EventCard';
 
 import Step1BasicDetails from './SimulationWizard/Step1BasicDetails';
 import Step2Design from './SimulationWizard/Step2Design';
 import Step3Execute from './SimulationWizard/Step3Execute';
 import Step4Report from './SimulationWizard/Step4Report';
-import TTPSelector from '../features/TTPSelector';
-
-const getOutcomeStyle = (outcome) => {
-    if (outcome === 'Prevented & Alerted' || outcome === 'Prevented') return { color: 'var(--success)', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)' };
-    if (outcome === 'Alerted') return { color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(59, 130, 246, 0.3)' };
-    if (outcome === 'Logged') return { color: 'var(--warning)', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)' };
-    if (outcome === 'Missed') return { color: 'var(--danger)', bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.3)' };
-    return { color: 'var(--text-secondary)', bg: 'rgba(255, 255, 255, 0.05)', border: 'rgba(255, 255, 255, 0.1)' };
-};
-
-
-
-const AttackChainVisualizer = ({ selectedTTPs, mitreData }) => {
-    const chain = {};
-    if (mitreData && selectedTTPs) {
-       selectedTTPs.forEach(ttp => {
-           let foundTactic = "Unknown";
-           for (const [tacticName, tacticData] of Object.entries(mitreData)) {
-               if (tacticData.techniques.some(t => t.id === ttp.id || ttp.id.startsWith(t.id + '.'))) {
-                   foundTactic = tacticName;
-                   break;
-               }
-           }
-           if (!chain[foundTactic]) chain[foundTactic] = [];
-           chain[foundTactic].push(ttp);
-       });
-    }
-    
-    const sortedTactics = Object.keys(chain).sort((a, b) => {
-        const idxA = KILL_CHAIN_ORDER.indexOf(a);
-        const idxB = KILL_CHAIN_ORDER.indexOf(b);
-        if (idxA === -1 && idxB === -1) return a.localeCompare(b);
-        if (idxA === -1) return 1;
-        if (idxB === -1) return -1;
-        return idxA - idxB;
-    });
-
-    if (sortedTactics.length === 0) return null;
-
-    return (
-        <div className="animate-fade-in" style={{  position: 'relative', display: 'flex', alignItems: 'flex-start', padding: '20px 0', marginBottom: '20px', overflowX: 'auto', scrollbarWidth: 'none', background: 'linear-gradient(90deg, rgba(10,10,12,0) 0%, rgba(10,10,12,0.8) 5%, rgba(10,10,12,0.8) 95%, rgba(10,10,12,0) 100%)'  }}>
-            {/* Horizontal Connection Line */}
-            <div style={{  position: 'absolute', top: '40px', left: '50px', right: '50px', height: '2px', background: 'rgba(255,255,255,0.05)', zIndex: 0  }}>
-                <div style={{  width: '100%', height: '100%', background: 'linear-gradient(90deg, transparent, #00E5FF, transparent)', animation: 'htmlLaserPulse 2s linear infinite', opacity: 0.5  }} />
-            </div>
-
-            <div style={{  display: 'flex', alignItems: 'flex-start', gap: '30px', padding: '0 20px', margin: '0 auto', position: 'relative', zIndex: 1  }}>
-
-                {sortedTactics.map((tactic, i) => {
-                    const Icon = TACTIC_ICONS[tactic] || Terminal;
-                    return (
-                        <div key={tactic} style={{  display: 'flex', alignItems: 'flex-start', flexShrink: 0, position: 'relative'  }}>
-                            <div className="hover-lift" style={{  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px', width: '120px', cursor: 'default'  }}>
-                                
-                                {/* Phase Icon Node */}
-                                <div style={{  
-                                    width: '44px', height: '44px', borderRadius: '10px', 
-                                    background: 'linear-gradient(135deg, rgba(10,11,16,1), rgba(20,22,30,1))', 
-                                    border: '1px solid var(--accent-primary)', 
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', 
-                                    boxShadow: '0 0 15px rgba(0, 229, 255, 0.2), inset 0 0 10px rgba(0, 229, 255, 0.1)',
-                                    zIndex: 2,
-                                    position: 'relative'
-                                 }}>
-                                    <Icon size={22} color="#00E5FF" />
-                                </div>
-
-                                {/* Tactic Label */}
-                                <span style={{  fontSize: '0.7rem', fontWeight: 'bold', color: 'var(--text-primary)', textAlign: 'center', lineHeight: '1.2', letterSpacing: '0.5px', textTransform: 'uppercase'  }}>
-                                    {tactic}
-                                </span>
-
-                                {/* Selected TTPs */}
-                                <div style={{  display: 'flex', flexDirection: 'column', gap: '6px', alignItems: 'center', width: '100%', marginTop: '5px'  }}>
-                                    {chain[tactic].map(ttp => (
-                                        <div 
-                                            key={ttp.id} 
-                                            style={{  
-                                                fontSize: '0.65rem', 
-                                                background: 'rgba(255,255,255,0.03)', 
-                                                padding: '4px 8px', 
-                                                borderRadius: '4px', 
-                                                border: '1px solid rgba(255,255,255,0.1)', 
-                                                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', 
-                                                width: '100%', boxSizing: 'border-box', textAlign: 'center',
-                                                fontFamily: 'monospace',
-                                                color: 'var(--text-muted)'
-                                             }} 
-                                            title={ttp.name}
-                                        >
-                                            {ttp.id}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                            
-                            {/* Connector Arrow */}
-                            {i < sortedTactics.length - 1 && (
-                                <div style={{  position: 'absolute', right: '-20px', top: '15px', color: '#00E5FF', opacity: 0.5  }}>
-                                    <ChevronRight size={14} />
-                                </div>
-                            )}
-                        </div>
-                    )
-                })}
-            </div>
-        </div>
-    );
-};
 
 /**
  * SimulationWizard Component
  * 
- * A massive multi-step form used to build and execute a "Simulation" (Campaign).
+ * A multi-step orchestrator used to scope, design, execute, and report a "Simulation" (Campaign).
  * 
  * CORE WORKFLOW:
  * 1. User selects target TTPs from the MITRE matrix.
@@ -180,25 +55,10 @@ const AttackChainVisualizer = ({ selectedTTPs, mitreData }) => {
  * @param {Object} props
  */
 export default function SimulationWizard() {
-  const [nodes, setNodes] = useState([]);
-  const [edges, setEdges] = useState([]);
-
-  const onNodesChange = useCallback(
-    (changes) => setNodes((nds) => applyNodeChanges(changes, nds)),
-    [setNodes]
-  );
-  const onEdgesChange = useCallback(
-    (changes) => setEdges((eds) => applyEdgeChanges(changes, eds)),
-    [setEdges]
-  );
-  const onConnect = useCallback(
-    (connection) => setEdges((eds) => addEdge(connection, eds)),
-    [setEdges]
-  );
   const navigate = useNavigate();
   const location = useLocation();
   const [expandedImage, setExpandedImage] = useState(null);
-  const { completeExercise, events, mitreData, isMitreLoading, generateAIContent, generateAIContentStream, saveSimulationSummary, addSimulationEvidence, removeSimulationEvidence, simulationEvidence, compressImage, aiSettings, setActiveAiContext, gaps, setGaps, createGap, confirmAction, simulationSummaries, isAiActive, addSecurityControl } = useAppContext();
+  const { completeExercise, events, mitreData, isMitreLoading, generateAIContent, generateAIContentStream, saveSimulationSummary, addSimulationEvidence, removeSimulationEvidence, simulationEvidence, compressImage, aiSettings, setActiveAiContext, gaps, setGaps, createGap, confirmAction, simulationSummaries, isAiActive, addSecurityControl, dbAdapter } = useAppContext();
   const { addToast } = useToast();
   const [step, setStep] = useState(() => { const s = sessionStorage.getItem('wizard_step'); return s ? parseInt(s, 10) : 1; });
   
@@ -211,22 +71,83 @@ export default function SimulationWizard() {
   }, []);
 
   const [savedDrafts, setSavedDrafts] = useState(() => {
-     const saved = localStorage.getItem('wizard_drafts');
-     return saved ? JSON.parse(saved) : [];
+     try {
+         const saved = localStorage.getItem('wizard_drafts');
+         return saved ? JSON.parse(saved) : [];
+     } catch (e) {
+         return [];
+     }
   });
   const [isDraftModalOpen, setIsDraftModalOpen] = useState(false);
+  const [isLoadingDrafts, setIsLoadingDrafts] = useState(false);
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [openDropdownId, setOpenDropdownId] = useState(null);
   const [currentDraftId, setCurrentDraftId] = useState(() => sessionStorage.getItem('wizard_draft_id') || null);
+
+  const refreshDrafts = useCallback(async (silent = true) => {
+      if (!dbAdapter || typeof dbAdapter.fetchDrafts !== 'function') return;
+      if (!silent) setIsLoadingDrafts(true);
+      try {
+          const remoteDrafts = await dbAdapter.fetchDrafts();
+          if (!isMounted.current) return;
+          if (Array.isArray(remoteDrafts)) {
+              let localDrafts = [];
+              try {
+                  const raw = localStorage.getItem('wizard_drafts');
+                  if (raw) localDrafts = JSON.parse(raw);
+              } catch (e) {
+                  localDrafts = [];
+              }
+
+              // Merge remote drafts with any newer/unsynced local drafts
+              const mergedMap = new Map();
+              if (dbAdapter.type !== 'supabase') {
+                  localDrafts.forEach(d => { if (d && d.id) mergedMap.set(d.id, d); });
+              }
+              remoteDrafts.forEach(d => {
+                  if (!d || !d.id) return;
+                  const existing = mergedMap.get(d.id);
+                  if (!existing || new Date(d.timestamp || 0) >= new Date(existing.timestamp || 0)) {
+                      mergedMap.set(d.id, d);
+                  }
+              });
+              // If connected to Supabase and there are local-only drafts that haven't been synced yet, keep them visible
+              if (dbAdapter.type === 'supabase' && Array.isArray(localDrafts)) {
+                  localDrafts.forEach(d => {
+                      if (d && d.id && !mergedMap.has(d.id)) {
+                          mergedMap.set(d.id, { ...d, isLocalOnly: true });
+                      }
+                  });
+              }
+
+              const sorted = Array.from(mergedMap.values()).sort(
+                  (a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0)
+              );
+              setSavedDrafts(sorted);
+              try {
+                  localStorage.setItem('wizard_drafts', JSON.stringify(sorted));
+              } catch (e) {
+                  // Ignore quota errors
+              }
+          }
+      } catch (err) {
+          console.warn('Failed to refresh simulation drafts:', err);
+      } finally {
+          if (isMounted.current && !silent) setIsLoadingDrafts(false);
+      }
+  }, [dbAdapter]);
+
+  useEffect(() => {
+      refreshDrafts(true);
+  }, [refreshDrafts]);
 
   const [simulationDetails, setSimulationDetails] = useState(() => {
      const saved = sessionStorage.getItem('wizard_details');
      return saved ? JSON.parse(saved) : { name: '', environmentCategory: [], environment: '', goals: '', participants: [{ id: 1, name: '', role: 'Purple Team' }] };
   });
   const [searchTerm, setSearchTerm] = useState('');
-  const [expandedTactics, setExpandedTactics] = useState({});
   const [activeMapTactic, setActiveMapTactic] = useState(null);
   const [activeMapTechnique, setActiveMapTechnique] = useState(null);
-  const [isMapTtpExpanded, setIsMapTtpExpanded] = useState(false);
   const [nameConflict, setNameConflict] = useState(false);
   const [showNameErrors, setShowNameErrors] = useState(false);
   const [collapsedCards, setCollapsedCards] = useState({});
@@ -240,18 +161,34 @@ export default function SimulationWizard() {
   
   const [simulationPayload, setSimulationPayload] = useState(() => sessionStorage.getItem('wizard_payload') || '');
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isEditingSimulationPayload, setIsEditingSimulationPayload] = useState(false);
-  
-  const aiName = aiSettings?.provider === 'OpenAI' ? 'ChatGPT' : aiSettings?.provider === 'Anthropic' ? 'Claude' : aiSettings?.provider === 'Gemini' ? 'Gemini' : 'AI';
   
   const [coPilotInput, setCoPilotInput] = useState('');
-  const [isCoPilotGenerating, setIsCoPilotGenerating] = useState(false);
-  const [coPilotResponse, setCoPilotResponse] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   
   const [testResults, setTestResults] = useState(() => {
      const saved = sessionStorage.getItem('wizard_results');
-     return saved ? JSON.parse(saved) : [];
+     if (!saved) return [];
+     try {
+         const parsed = JSON.parse(saved);
+         if (!Array.isArray(parsed)) return [];
+         return parsed.map(p => {
+             const currentName = p.name || '';
+             if (
+                 /^(?:phase|step|event|procedure)\s*\d+/i.test(currentName) ||
+                 /\(T\d{4}/i.test(currentName) ||
+                 /contextual\s+recon/i.test(currentName) ||
+                 /^dll$/i.test(currentName.trim())
+             ) {
+                 return {
+                     ...p,
+                     name: formatCleanEventTitle(currentName, p.ttps, null, p.payloadCode)
+                 };
+             }
+             return p;
+         });
+     } catch (e) {
+         return [];
+     }
   });
   
   const hasUnsavedChanges = testResults.length > 0 || selectedTTPs.length > 0 || simulationDetails.name.trim() !== '';
@@ -362,8 +299,104 @@ export default function SimulationWizard() {
               'success'
           );
           navigate(location.pathname, { replace: true, state: {} });
+      } else if (location.state?.emulationPlan) {
+          const plan = location.state.emulationPlan;
+          const rawTtps = Array.isArray(plan.ttps)
+              ? plan.ttps
+              : Array.isArray(plan.selectedTTPs)
+              ? plan.selectedTTPs
+              : [];
+          const ttpObjs = rawTtps.map(item => {
+              const id = typeof item === 'string' ? item : item.id;
+              return {
+                  id,
+                  name: (typeof item === 'object' && item.name) || lookupTTPName(mitreData, id)
+              };
+          });
+
+          const envCats =
+              Array.isArray(plan.environmentCategory) && plan.environmentCategory.length > 0
+                  ? plan.environmentCategory
+                  : ['Production'];
+          const uniqueName = buildUniqueSimName(plan.name || `Adversary Emulation (${ttpObjs.length} TTPs)`);
+
+          setSelectedTTPs(ttpObjs);
+          setSimulationDetails({
+              name: uniqueName,
+              environmentCategory: envCats,
+              environment: envCats.join(', '),
+              tags: Array.isArray(plan.tags) ? plan.tags : [],
+              goals:
+                  plan.goals ||
+                  `Execute adversary emulation campaign across ${ttpObjs.length} scoped techniques (${ttpObjs
+                      .map(t => t.id)
+                      .join(', ')}) to validate detection and prevention posture.`,
+              participants: [{ id: 1, name: '', role: 'Purple Team' }],
+              operationalBlueprint: {
+                  tooling: Array.isArray(plan.suggestedTooling) ? plan.suggestedTooling : [],
+                  threatInfra: plan.threatInfra || '',
+                  targetAssets: plan.targetAssets || '',
+                  testAccounts: plan.testAccounts || '',
+                  stagingAndDeconfliction: plan.stagingAndDeconfliction || ''
+              }
+          });
+
+          setTestResults([]);
+          setSimulationPayload('');
+          setStep(1);
+          addToast(
+              `Scoped "${uniqueName}" with ${ttpObjs.length} TTPs in Step 1!`,
+              'success'
+          );
+          navigate(location.pathname, { replace: true, state: {} });
       }
   }, [location, mitreData, simulationSummaries, events, buildUniqueSimName, addToast, navigate]);
+
+  // Dynamically keep testResults synchronized with selectedTTPs whenever TTPs are added/removed in Step 1
+  useEffect(() => {
+     const selectedIds = new Set(
+         (selectedTTPs || [])
+             .map(t => (typeof t === 'string' ? t : t?.id || '').trim().toUpperCase())
+             .filter(Boolean)
+     );
+     setTestResults(prev => {
+         if (!Array.isArray(prev) || prev.length === 0) return prev;
+         let changed = false;
+         const next = [];
+         for (const p of prev) {
+             const origTtps = Array.isArray(p.ttps) ? p.ttps : [];
+             const filteredTtps = origTtps
+                 .map(id => String(id).trim().toUpperCase())
+                 .filter(id => selectedIds.has(id));
+
+             if (origTtps.length > 0 && filteredTtps.length === 0) {
+                 // All TTPs mapped to this card were deselected -> drop the card
+                 changed = true;
+                 continue;
+             }
+
+             if (filteredTtps.length !== origTtps.length) {
+                 changed = true;
+                 const hasUserExecution = Boolean(
+                     (p.outcome && p.outcome !== 'N/A') ||
+                     p.execNotes?.trim() ||
+                     p.detNotes?.trim()
+                 );
+                 next.push({
+                     ...p,
+                     ttps: filteredTtps,
+                     mappedTTPs: filteredTtps,
+                     name: !hasUserExecution
+                         ? formatCleanEventTitle('', filteredTtps, mitreData, p.payloadCode)
+                         : p.name
+                 });
+             } else {
+                 next.push(p);
+             }
+         }
+         return changed ? next : prev;
+     });
+  }, [selectedTTPs, mitreData]);
 
   useEffect(() => {
      sessionStorage.setItem('wizard_step', step);
@@ -376,6 +409,7 @@ export default function SimulationWizard() {
   }, [step, simulationDetails, selectedTTPs, testResults, simulationPayload, currentDraftId]);
 
   useEffect(() => {
+     const clusteredScope = clusterTTPsIntoCompoundEvents(selectedTTPs || [], simulationDetails?.name || 'Adversary');
      setActiveAiContext({
          source: 'SimulationWizard',
          currentPhase: step === 1 ? 'Step 1: Scope' : step === 2 ? 'Step 2: Design' : step === 3 ? 'Step 3: Execute' : 'Step 4: Report',
@@ -383,9 +417,22 @@ export default function SimulationWizard() {
              name: simulationDetails?.name || '',
              environment: simulationDetails?.environment || '',
              objectives: simulationDetails?.goals || '',
-             participants: (simulationDetails?.participants || []).map(p => p?.name)?.filter(Boolean)
+             participants: (simulationDetails?.participants || []).map(p => p?.name)?.filter(Boolean),
+             operationalBlueprint: simulationDetails?.operationalBlueprint || null
          },
-         selectedTTPs: (selectedTTPs || []).map(t => `${t?.id} - ${t?.name}`),
+         selectedTTPs: (selectedTTPs || []).map(t => {
+             const role = classifyTtpOperationalRole(t);
+             return `[${role.label}] ${t?.id} - ${t?.name}`;
+         }),
+         compoundEventBlueprint: clusteredScope.compoundEvents.map(ev => ({
+             phase: ev.eventNumber,
+             title: ev.title,
+             ttps: ev.ttpIds,
+             conduits: ev.conduits.map(t => `${t.id} (${t.name})`),
+             precursors: ev.precursors.map(t => `${t.id} (${t.name})`),
+             modifiers: ev.modifiers.map(t => `${t.id} (${t.name})`),
+             anchors: ev.anchors.map(t => `${t.id} (${t.name})`)
+         })),
          executionLogs: testResults || [],
          existingCoverageGaps: (gaps || []).map(g => ({ ttp: g?.ttp, status: g?.status, severity: g?.severity })),
          historicalSimulations: Object.values(simulationSummaries || {}).map(s => ({ name: s.name, date: s.date, ttpCount: s.ttps?.length }))
@@ -477,6 +524,7 @@ export default function SimulationWizard() {
              outcome: '',
              coverageRating: 'N/A',
              securityControls: baseline?.securityControls || [],
+             targetAsset: baseline?.targetAsset || simulationDetails?.operationalBlueprint?.targetAssets?.trim() || '',
              execNotes: '',
              detNotes: '',
              severity: 'Auto-Calculate',
@@ -518,9 +566,6 @@ export default function SimulationWizard() {
                  }
              }
              if (field === 'outcome') {
-                 if (p.isHarnessImported && p.harnessConfidence && p.harnessConfidence !== 'Host-Confirmed') {
-                     updates.harnessConfidence = null;
-                 }
                  if (value === 'Missed' && p.severity !== 'Critical') {
                      updates.severity = 'High';
                  } else if (value === 'Logged' && p.severity !== 'Critical') {
@@ -545,44 +590,6 @@ export default function SimulationWizard() {
   const [activeSections, setActiveSections] = useState({ executiveSummary: true, keyFindings: false, businessImpact: false, recommendations: true });
   const [isGeneratingReport, setIsGeneratingReport] = useState(false);
   const [isAssessing, setIsAssessing] = useState({});
-  
-  const toggleTTP = (techId, techName) => {
-    setSelectedTTPs(prev => {
-        if (prev.find(t => t.id === techId)) {
-            return prev.filter(t => t.id !== techId);
-        } else {
-            return [...prev, { id: techId, name: techName }];
-        }
-    });
-  };
-
-  const downloadScript = () => {
-      if (!simulationPayload) {
-          addToast("No payload generated yet.", 'warning');
-          return;
-      }
-      const codeBlockRegex = /```[^\n]*\n([\s\S]*?)```/gi;
-      let scripts = [];
-      let match;
-      while ((match = codeBlockRegex.exec(simulationPayload)) !== null) {
-          scripts.push(match[1].trim());
-      }
-      if (scripts.length === 0) {
-          addToast("No executable script blocks (bash, powershell) were found in the generated attack chain.", 'warning');
-          return;
-      }
-      
-      const content = scripts.join('\n\n# --- Next Phase ---\n\n');
-      const blob = new Blob([content], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${simulationDetails.name ? simulationDetails.name.replace(/\s+/g, '_') : 'simulation'}_script.txt`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-  };
 
   const handleNext = () => {
     if (step === 1) {
@@ -605,23 +612,62 @@ export default function SimulationWizard() {
       }
     }
     if (step === 2) {
-      if (testResults.length === 0 && (simulationPayload || selectedTTPs.length > 0)) {
+      const defaultTargetAsset = simulationDetails?.operationalBlueprint?.targetAssets?.trim() || '';
+      const executionMethodology = simulationDetails?.executionMethodology || 'compound';
+      const selectedIds = new Set(
+        (selectedTTPs || [])
+          .map(t => (typeof t === 'string' ? t : t?.id || '').trim().toUpperCase())
+          .filter(Boolean)
+      );
+
+      // Preserve only cards where the user has already recorded execution results AND whose TTPs are still in selectedTTPs
+      const preservedUserCards = (testResults || [])
+        .map(p => {
+          const filteredTtps = (p.ttps || [])
+            .map(id => String(id).trim().toUpperCase())
+            .filter(id => selectedIds.has(id));
+          return {
+            ...p,
+            ttps: filteredTtps,
+            mappedTTPs: filteredTtps,
+            targetAsset: p.targetAsset || defaultTargetAsset
+          };
+        })
+        .filter(p => {
+          const hasUserExecution = Boolean(
+            (p.outcome && p.outcome !== 'N/A') ||
+            p.execNotes?.trim() ||
+            p.detNotes?.trim()
+          );
+          return hasUserExecution && p.ttps.length > 0;
+        });
+
+      if (selectedTTPs.length > 0) {
         const scaffolded = scaffoldEventsFromDesignAndTTPs({
           simulationPayload,
           selectedTTPs,
-          existingTestResults: testResults,
+          existingTestResults: preservedUserCards,
           simulationSummaries,
           events,
-          mitreData
-        });
-        if (scaffolded.length > 0) {
-          setTestResults(scaffolded);
+          mitreData,
+          executionMethodology
+        }).map(ev => ({
+          ...ev,
+          targetAsset: ev.targetAsset || defaultTargetAsset
+        }));
+
+        const nextResults = [...preservedUserCards, ...scaffolded];
+        setTestResults(nextResults);
+
+        if (scaffolded.length > 0 && preservedUserCards.length === 0) {
           const prefilledCount = scaffolded.filter(e => e.isBaselinePrefilled).length;
           addToast(
-            `Auto-generated ${scaffolded.length} event card(s) from your design${prefilledCount > 0 ? ` (${prefilledCount} pre-filled from historical baseline)` : ''}!`,
+            `Auto-generated ${scaffolded.length} ${executionMethodology === 'atomic' ? 'atomic 1:1' : 'compound'} event card(s) for ${selectedTTPs.length} selected TTP(s)${prefilledCount > 0 ? ` (${prefilledCount} pre-filled from historical baseline)` : ''}!`,
             'success'
           );
         }
+      } else {
+        setTestResults([]);
       }
     }
     if (step === 3) {
@@ -677,7 +723,28 @@ export default function SimulationWizard() {
             return;
         }
 
-        const systemInstruction = `You are an elite Defensive Security Engineer and Purple Team Lead. The user wants to design realistic adversary simulation procedures for validating EDR/SIEM telemetry and detection engineering coverage.
+        const isAtomicMode = simulationDetails?.executionMethodology === 'atomic';
+
+        const systemInstruction = isAtomicMode
+            ? `You are an elite Defensive Security Engineer and Detection Validation Lead. The user is running an **Atomic 1:1 Control Validation** batch to unit-test individual EDR/SIEM detection rules one technique at a time.
+
+CRITICAL PARADIGM — ATOMIC 1:1 CONTROL VALIDATION (STRICT ISOLATION):
+- The operator has selected **Atomic 1:1 Mode**: You MUST generate **1 dedicated, standalone validation phase per selected MITRE ATT&CK technique** (\`1 TTP = 1 Phase = 1 Code Block\`).
+- **DO NOT bundle or fuse multiple TTPs into the same phase**. Each selected TTP must be tested in its own isolated phase so the Blue Team can attribute alerts, logs, and prevention outcomes strictly to that single technique's detection rule.
+- Even though each phase tests a single technique in isolation, NEVER generate naive, nerfed, or sterile synthetic one-liners (like popping \`calc.exe\` or echoing dummy strings). Every atomic validation script must still execute realistic operational tradecraft (pre-flight check, realistic interpreter/LOLBin flags, realistic staging path, observable telemetry generation, and safety containment) so it genuinely tests the target detection logic.
+
+STRUCTURED RESPONSE REQUIREMENTS:
+1. First, provide a concise \`## Simulation Overview\` section explaining the atomic control validation batch and the telemetry sources being unit-tested (use inline backticks for command names here—do NOT use fenced triple-backtick code blocks in the overview).
+2. Second, under a \`## Recommended Validation Procedures\` heading, create **one standalone phase for each selected TTP** in exact order:
+   - **Phase Heading Format**:
+     \`### Phase N: <Unique Atomic Validation Title> (<Single_TTP_ID>)\`
+     (e.g., \`### Phase 1: PowerShell Encoded IEX Cradle Validation (T1059.001)\`, \`### Phase 2: Native WMI Process Enumeration Telemetry Check (T1057)\`)
+   - Immediately below each Phase heading, provide a brief 1-2 sentence explanation of the exact telemetry signal (Event ID, Sysmon/EDR sensor hook, command-line/API pattern) this atomic test validates, followed by **exactly one** fenced code block (\`\`\`powershell or \`\`\`bash) containing the self-contained script for that single technique.
+3. Third, provide a dedicated final teardown section using the exact heading:
+   \`### Phase N: Simulation Teardown & Cleanup\`
+   followed by **exactly one** fenced code block (\`\`\`powershell or \`\`\`bash) that cleans up all test artifacts created across the atomic phases.
+NEVER write destructive exploits. IMPORTANT: Do NOT use markdown tables under any circumstances. DO NOT introduce yourself. Begin immediately with \`## Simulation Overview\`.`
+            : `You are an elite Defensive Security Engineer and Purple Team Lead. The user wants to design realistic adversary simulation procedures for validating EDR/SIEM telemetry and detection engineering coverage.
 
 CRITICAL PARADIGM — RED TEAM EVENTS VS. ATOMIC PAYLOADS IN A VACUUM:
 - In Control Drift, each simulation phase represents an authentic **Red Team Event**—a meaningful operational activity with realistic tradecraft, execution context, and behavioral consequence.
@@ -694,31 +761,95 @@ STRICT ANTI-NERFING DIRECTIVE (NO ARTIFICIAL DEFENSIVE CONCESSIONS):
 - Emulate genuine adversary tradecraft: prioritize Living-Off-The-Land Binaries (LOLBins / LOLBas), non-standard interpreter arguments, realistic path staging, and genuine behavioral execution (e.g. dynamic process resolution, token privilege checks, API abstraction).
 - Payloads must remain non-destructive and safely contained (e.g. no destructive wiping, no real credential theft, no external exfiltration of sensitive data), but the execution tradecraft itself must be authentic and evasively realistic so that Blue Teams test real behavioral heuristics and correlation engines.
 
-OPERATIONAL STRUCTURING & PHASE DECOMPOSITION:
-- Break the simulation down into distinct, realistic operational phases based on sequential tactical milestones.
-- **Do NOT collapse the entire scenario into a single monolithic phase**: An adversary operation naturally progresses through distinct operational activities (e.g., initial execution/foothold setup, host situational awareness, credential access, local staging, or persistence). Grouping completely distinct operational activities into one giant script obscures detection boundaries and prevents accurate detection validation.
-- **Do NOT artificially fragment single activities**: If an operational event naturally leverages multiple techniques simultaneously (e.g., in-memory process injection executed via PowerShell, or scheduled task persistence executing an encoded script), chain those associated TTPs together within that specific event.
-- **Associate TTPs with their Real Activity**: Map TTPs to the phase where that specific technique is actually executed. Each Phase must represent a coherent red team event with its genuinely associated TTPs.
-- Ensure every selected technique is covered in its relevant operational phase.
+OPERATIONAL STRUCTURING & 4-COMPONENT COMPOUND EVENT ARCHITECTURE:
+- Control Drift classifies every MITRE ATT&CK technique into one of 4 endpoint behavioral components:
+  1. **Execution Conduit (\`CONDUIT\`)**: Command interpreters and invocation mechanisms (e.g. \`T1059.*\` PowerShell/CMD, \`T1047\` WMI, \`T1106\` Native API, \`T1204\` User Execution) that execute the phase.
+  2. **Contextual Precursor (\`PRECURSOR\`)**: Host, process, file, or domain discovery techniques (e.g. \`T1082\`, \`T1083\`, \`T1057\`, \`T1049\`, \`T1087\`, \`T1016\`, \`T1033\`) that gather situational awareness and resolve dynamic targets at the start of the script.
+  3. **Tradecraft Modifier (\`MODIFIER\`)**: Obfuscation, decoding, masquerading, or LOLBin proxy execution modifiers (e.g. \`T1027\`, \`T1140\`, \`T1036\`, \`T1218.*\`, \`T1564.*\`) applied to the payload or execution flow.
+  4. **Anchor Objective (\`ANCHOR\`)**: The culminating operational action (e.g. Persistence \`T1053\`/\`T1547\`/\`T1543\`, Process Injection \`T1055\`, Credential Access \`T1003\`/\`T1558\`, Lateral Movement \`T1021\`, Archive & Exfiltration \`T1560\`/\`T1041\`).
+- **NEVER isolate Precursors, Conduits, or Modifiers into standalone phases** when Anchor Objectives are present. Separating them breaks parent-child process lineage on the endpoint and fragments a single compound adversary procedure across disconnected scripts.
+- **ALWAYS fuse Conduits, Precursors, and Modifiers into the Anchor Objective Phase they support**: Each Phase must execute as **one continuous script / process tree** where the \`Conduit\` runs the \`Precursor\` discovery commands, captures their output into variables or staging artifacts, applies the \`Modifier\` tradecraft, and immediately executes the \`Anchor Objective\` within the same execution context.
+- **Follow the Compound Event Blueprint**: Group the selected TTPs according to the Compound Event Blueprint provided in the prompt, listing all constituent TTP IDs (Conduit + Precursor + Modifier + Anchor) in that Phase's heading.
 
 STRUCTURED RESPONSE REQUIREMENTS:
 You must provide a highly structured Markdown response optimized for Control Drift's automated event scaffolding:
-1. First, provide a concise **Simulation Overview** explaining the operational scenario, adversary objective/narrative, and telemetry validation goals (use inline backticks for command names here—do NOT use fenced triple-backtick code blocks in the overview).
-2. Second, under **Recommended Validation Procedures**, structure the simulation into distinct operational phases:
-   - **Phase Heading Format**: Every phase heading MUST use this format, listing all applicable MITRE ATT&CK technique/sub-technique IDs:
-     \`### Phase N: <Descriptive Operational Event Name> (<TTP_ID_1>, <TTP_ID_2>, ...)\`
-     (e.g., \`### Phase 1: PowerShell Execution & Host Discovery (T1059.001, T1082)\` or \`### Phase 2: Domain Network & User Enumeration (T1049, T1087.001)\` or \`### Phase 3: Automated Collection & Local Staging (T1119)\`)
-   - Immediately below each Phase heading, provide a brief 1-2 sentence explanation of the operational procedure, why it represents a distinct tactical milestone, and the specific telemetry correlation signals expected (process ancestry, API calls, event IDs), followed by **exactly one** fenced code block (\`\`\`powershell or \`\`\`bash) containing the complete, ready-to-run script implementing that realistic event.
-3. Third, under **Simulation Teardown & Cleanup**, provide a dedicated final section using the exact heading:
+1. First, provide a concise \`## Simulation Overview\` section explaining the operational scenario, adversary objective/narrative, and how the 4-component compound behavioral chains (Conduit + Precursor + Modifier + Anchor) validate EDR/SIEM correlation (use inline backticks for command names here—do NOT use fenced triple-backtick code blocks in the overview).
+2. Second, under a \`## Recommended Validation Procedures\` heading, structure the simulation into distinct Compound Operational Phases:
+   - **Phase Heading Format & Title Quality**:
+     Every phase heading MUST use this format:
+     \`### Phase N: <Unique Operational Event Name> (<TTP_ID_1>, <TTP_ID_2>, ...)\`
+     (e.g., \`### Phase 1: WMI-Brokered Certutil Decode & Security Event Log Tampering (T1059.001, T1047, T1082, T1027.013, T1140, T1078, T1070.001)\` or \`### Phase 2: Timestomped Binary Drop & DLL Search Order Hijack (T1057, T1070.006, T1574.001)\` or \`### Phase 3: Active Socket Recon & Maintenance Dir Tool Staging (T1049, T1105)\`)
+   - **CRITICAL NAMING DIRECTIVE — UNIQUE, TITLE-WORTHY EVENT NAMES**:
+     * Invent a unique, evocative, title-worthy Red Team operational event name (3 to 7 words) that describes the concrete adversary tradecraft, tooling, and objective for that phase.
+     * STRICTLY FORBIDDEN: NEVER use repetitive mechanical boilerplate like "Contextual Recon + Evasive Staging ➔ ...", "Phase N: TTP T1078...", or bare sub-technique strings like "DLL" or "LSASS Memory". Every event title must read like a polished executive report finding!
+     * Append the parenthetical list of bundled TTP IDs \`(<TTP_1>, <TTP_2>, ...)\` at the very end of the heading line so the parser can map them.
+   - Immediately below each Phase heading, provide a brief 1-2 sentence explanation of how the Execution Conduit, Contextual Precursor, and Tradecraft Modifier chain into the Anchor Objective within the same process tree, and the specific telemetry correlation signals expected (process ancestry, API calls, event IDs), followed by **exactly one** fenced code block (\`\`\`powershell or \`\`\`bash) containing the complete, ready-to-run script implementing that compound event.
+3. Third, provide a dedicated final teardown section using the exact heading:
    \`### Phase N: Simulation Teardown & Cleanup\`
    Provide a brief 1-2 sentence explanation of the artifacts being cleaned up, followed by **exactly one** fenced code block (\`\`\`powershell or \`\`\`bash) containing the complete, ready-to-run cleanup and reversal commands (e.g. deleting created test files, removing test scheduled tasks, deleting test registry keys, stopping test services, or terminating test processes) to safely restore the host to its pristine baseline.
-NEVER write destructive exploits; only benign commands that safely generate the forensic/EDR footprint. IMPORTANT: Do NOT use markdown tables under any circumstances. DO NOT introduce yourself. Begin immediately with the **Simulation Overview** section.`;
+NEVER write destructive exploits; only benign commands that safely generate the forensic/EDR footprint. IMPORTANT: Do NOT use markdown tables under any circumstances. DO NOT introduce yourself. Begin immediately with \`## Simulation Overview\`.`;
         
-        const ttpList = selectedTTPs.map(t => `${t.id} - ${t.name}`).join(', ');
+        const ttpList = selectedTTPs.map(t => {
+            const role = classifyTtpOperationalRole(t);
+            return isAtomicMode ? `${t.id} - ${t.name}` : `[${role.label}] ${t.id} - ${t.name}`;
+        }).join(', ');
+        const clustered = clusterTTPsIntoCompoundEvents(selectedTTPs, simulationDetails.name || 'Adversary');
+        const formatComponentBreakdown = (ev) => {
+            const parts = [];
+            if (ev.conduits.length > 0) parts.push(`Conduit: ${ev.conduits.map(t => `${t.id} (${t.name})`).join(', ')}`);
+            if (ev.precursors.length > 0) parts.push(`Precursor: ${ev.precursors.map(t => `${t.id} (${t.name})`).join(', ')}`);
+            if (ev.modifiers.length > 0) parts.push(`Modifier: ${ev.modifiers.map(t => `${t.id} (${t.name})`).join(', ')}`);
+            if (ev.anchors.length > 0) parts.push(`Anchor Objective: ${ev.anchors.map(t => `${t.id} (${t.name})`).join(', ')}`);
+            return parts.join(' | ');
+        };
+        const blueprintBlock = isAtomicMode
+            ? `\n\n=== ATOMIC 1:1 CONTROL VALIDATION BLUEPRINT (STRICT 1-TTP-PER-PHASE ISOLATION) ===\nGenerate exactly ${selectedTTPs.length} standalone validation phases (1 phase per technique—do NOT combine techniques across phases):\n` +
+              selectedTTPs.map((t, i) => `- Phase ${i + 1}: Isolated Atomic Validation for ${t.id} (${t.name}) -> Heading MUST end with (${t.id})`).join('\n')
+            : clustered.compoundEvents.length > 0
+            ? `\n\n=== COMPOUND OPERATIONAL EVENT BLUEPRINT (4-COMPONENT PHASE BUNDLING) ===\nStructure your Recommended Validation Procedures into these exact Compound Phases. For each phase, invent a unique, title-worthy operational event name reflecting the tradecraft and objective, and include all bundled TTP IDs in parentheses:\n` +
+              clustered.compoundEvents.map(ev => `- Phase ${ev.eventNumber} [${ev.title}]: Bundle (${ev.ttpIds.join(', ')})\n  Components -> ${formatComponentBreakdown(ev)}`).join('\n')
+            : '';
+
         const historyByTtp = getHistoricalProceduresForTTPs(selectedTTPs, simulationSummaries, events, mitreData);
         const historyPromptBlock = formatHistoricalProceduresForAIPrompt(historyByTtp);
+
+        const opBp = simulationDetails?.operationalBlueprint || {};
+        const opLines = [];
+        if (Array.isArray(opBp.tooling) && opBp.tooling.length > 0) {
+            opLines.push(`- Designated Offensive Tooling / Binaries / Frameworks: ${opBp.tooling.join(', ')}`);
+        }
+        if (opBp.threatInfra?.trim()) {
+            opLines.push(`- Simulated Threat Infrastructure (Attacker C2 / Redirector / Source IPs): ${opBp.threatInfra.trim()}`);
+        }
+        if (opBp.targetAssets?.trim()) {
+            opLines.push(`- Target Host(s) / Endpoint(s): ${opBp.targetAssets.trim()}`);
+        }
+        if (opBp.testAccounts?.trim()) {
+            opLines.push(`- Compromised / Test Identity & Privilege Context: ${opBp.testAccounts.trim()}`);
+        }
+        if (opBp.stagingAndDeconfliction?.trim()) {
+            opLines.push(`- Staging Paths & Deconfliction Guardrails: ${opBp.stagingAndDeconfliction.trim()}`);
+        }
+        if (opBp.hostTtpAssignments && typeof opBp.hostTtpAssignments === 'object') {
+            const hostEntries = Object.entries(opBp.hostTtpAssignments).filter(
+                ([host, ids]) => host && Array.isArray(ids) && ids.length > 0
+            );
+            if (hostEntries.length > 0) {
+                opLines.push(
+                    `- Per-Endpoint TTP Assignments: ${hostEntries
+                        .map(([host, ids]) => `${host} -> [${ids.join(', ')}]`)
+                        .join(' ; ')}`
+                );
+            }
+        }
+        const operationalBlueprintPromptBlock =
+            opLines.length > 0
+                ? `\n\n=== OPERATIONAL INFRASTRUCTURE, TOOLING & DECONFLICTION BLUEPRINT ===\nThe operator has explicitly defined the following operational infrastructure and tooling for this simulation:\n${opLines.join('\n')}\nCRITICAL: Directly weave these exact tools, C2 IPs/domains, target hostnames, per-endpoint TTP assignments, test accounts, and staging paths/headers into your Simulation Overview and the generated phase scripts (and cleanup phase) instead of generic placeholder strings.`
+                : '';
         
-        let prompt = `Target Environment: ${simulationDetails.environment || 'Unknown/Generic'}.\nSimulation Scenario / Goals: ${simulationDetails.goals || 'Defensive Telemetry & Detection Validation'}\nSelected Technique(s): ${ttpList}.${historyPromptBlock}\n\nTask: Break this simulation into realistic operational phases representing authentic Red Team events. Decompose distinct tactical activities into separate sequential phases with their associated TTPs (avoiding monolithic single-script lumps while avoiding artificial single-line fragmentation). Ensure each event uses realistic context and tradecraft that trips EDR/SIEM behavioral correlation mechanisms.`;
+        let prompt = isAtomicMode
+            ? `Target Environment: ${simulationDetails.environment || 'Unknown/Generic'}.\nSimulation Scenario / Goals: ${simulationDetails.goals || 'Atomic 1:1 Control & Rule Validation'}\nSelected Technique(s) for Isolated 1:1 Testing: ${ttpList}.${blueprintBlock}${operationalBlueprintPromptBlock}${historyPromptBlock}\n\nTask: Implement each Phase in the Atomic 1:1 Blueprint above as a standalone, self-contained validation script for that single technique.`
+            : `Target Environment: ${simulationDetails.environment || 'Unknown/Generic'}.\nSimulation Scenario / Goals: ${simulationDetails.goals || 'Defensive Telemetry & Detection Validation'}\nSelected Technique(s) by Operational Component: ${ttpList}.${blueprintBlock}${operationalBlueprintPromptBlock}${historyPromptBlock}\n\nTask: Implement each Compound Operational Phase from the blueprint above as a cohesive, realistic Red Team script where the Execution Conduit, Contextual Precursor discovery, and Tradecraft Modifier feed directly into the Anchor Objective within the same execution flow.`;
         
         if (coPilotInput.trim()) {
             prompt += `\n\nAdditionally, incorporate this specific request from the user: "${coPilotInput}"`;
@@ -740,27 +871,6 @@ NEVER write destructive exploits; only benign commands that safely generate the 
       addToast('Error generating payload: ' + err.message, 'error');
     }
     if (isMounted.current) setIsGenerating(false);
-  };
-
-  const generateCoPilotResponse = async () => {
-    if (!coPilotInput.trim()) return;
-    const currentInput = coPilotInput;
-    setCoPilotInput('');
-    setIsCoPilotGenerating(true);
-    setCoPilotResponse('');
-    try {
-      const sysPrompt = "You are an elite Defensive Security Engineer and Purple Team Lead. You are helping the user write realistic adversary simulation procedures and attack payloads. This is for an AUTHORIZED, simulated environment to test defensive telemetry. You are NOT attacking a real target. Structure simulations into realistic operational phases representing authentic Red Team Events with genuine tradecraft, context, and behavioral telemetry signals that trip EDR/SIEM correlation mechanisms. STRICT ANTI-NERFING: Do NOT design payloads with deliberate defensive concessions or naive static signatures meant to be easily caught—emulate real Living-Off-The-Land (LOLBins) and behavioral tradecraft so detections reflect genuine adversary defense. Keep payloads strictly non-destructive. Do NOT collapse distinct tactical activities into a single monolithic script, and NEVER write sterile atomic one-liners in a vacuum. Associate each event with its realistic TTPs (e.g. ### Phase N: Action Name (Txxxx, Tyyyy)). Include the operational tradecraft and expected telemetry signals alongside the script. Return only the raw markdown text to be appended to their document. Do not wrap in a giant markdown block unless it's a specific code snippet. Always include a dedicated Simulation Teardown & Cleanup section with commands to remove any temporary test artifacts.";
-      const prompt = `Context: The user is building a simulation named "${simulationDetails.name}" for environment "${simulationDetails.environment}". Selected TTPs: ${selectedTTPs.map(t => t.id).join(', ')}.\nUser Request: ${currentInput}`;
-      await generateAIContentStream(prompt, sysPrompt, (chunk) => {
-          if (!isMounted.current) return;
-          setCoPilotResponse(chunk);
-      });
-    } catch(err) {
-      if (!isMounted.current) return;
-      console.error(err);
-      addToast('Error generating co-pilot response: ' + err.message, 'error');
-    }
-    if (isMounted.current) setIsCoPilotGenerating(false);
   };
 
   const mapObjectivesToTTPs = async () => {
@@ -792,15 +902,22 @@ NEVER write destructive exploits; only benign commands that safely generate the 
           });
           const dictionaryString = dictionaryLines.join('\n');
 
-          const sysPrompt = `You are a top-tier Red Teamer. You are given a scenario and a complete MITRE ATT&CK dictionary.
-Your goal is to map the scenario to the exact T-codes.
+          const sysPrompt = `You are a top-tier Red Teamer and Adversary Emulation Architect. You are given a custom simulation scenario and a complete MITRE ATT&CK dictionary.
+Your goal is to map the scenario into a realistic, correlated Compound Operational Chain of T-codes rather than isolated single techniques.
+
+COMPOUND OPERATIONAL CHAIN METHODOLOGY:
+Real adversary activity executes within a continuous process lineage composed of up to 4 behavioral roles:
+1. Execution Conduit (CONDUIT): The command interpreter or API invoking the chain (e.g., T1059.001 PowerShell, T1059.003 Windows Command Shell, T1047 WMI, T1106 Native API).
+2. Contextual Precursor (PRECURSOR): Host, process, or network discovery that gathers immediate situational awareness to feed the objective (e.g., T1057 Process Discovery, T1082 System Information Discovery, T1083 File and Directory Discovery, T1018 Remote System Discovery, T1087 Account Discovery).
+3. Tradecraft Modifier (MODIFIER): Evasion, obfuscation, masquerading, token manipulation, or LOLBin proxy execution applied to the payload (e.g., T1027 Obfuscated Files/Info, T1140 Deobfuscate/Decode, T1036 Masquerading, T1218.011 Rundll32, T1134 Access Token Manipulation).
+4. Anchor Objective (ANCHOR): The culminating high-signal adversarial objective(s) described in the scenario (e.g., T1003.001 LSASS Memory, T1053.005 Scheduled Task, T1055 Process Injection, T1021.002 SMB/Windows Admin Shares, T1560.001 Archive via Utility, T1041 Exfiltration).
 
 CRITICAL INSTRUCTIONS:
-1. FIRST, write a deep, step-by-step analysis of the attacker's actions to gain a full grasp of the scenario.
-2. SECOND, ONLY after your analysis is complete, extract the exact Txxxx or Txxxx.xxx IDs that apply. Prioritize using the provided dictionary.
+1. FIRST, write a brief analysis breaking down the scenario into its Anchor Objective(s) and the natural Conduit, Precursor, and Modifier techniques that complete the realistic process tree on the target environment.
+2. SECOND, select the exact Txxxx or Txxxx.xxx IDs from the provided dictionary so the user gets a cohesive Compound Operational Event chain.
 3. Finally, at the very end of your response, you MUST output a single line starting with "MAPPED_IDS:" followed by a comma-separated list of the exact IDs you selected.`;
           
-          const prompt = `Target Environment: ${simulationDetails.environment || 'None provided'}\nSimulation Scenario: ${simulationDetails.goals || 'None provided'}\n\nMITRE ATT&CK Framework Dictionary:\n${dictionaryString}\n\nTask: Analyze deeply first, then list the MAPPED_IDS at the end.`;
+          const prompt = `Target Environment: ${simulationDetails.environmentCategory || simulationDetails.environment || 'None provided'}\nSimulation Scenario: ${simulationDetails.goals || 'None provided'}\n\nMITRE ATT&CK Framework Dictionary:\n${dictionaryString}\n\nTask: Map the scenario into a coherent Compound Operational Chain (Conduit + Precursor + Modifier + Anchor Objective), then list the MAPPED_IDS at the end.`;
 
           let currentFoundIds = new Set();
           let totalFound = 0;
@@ -905,7 +1022,15 @@ CRITICAL INSTRUCTIONS:
                  (proc.finding ? `Analyst Notes: ${proc.finding}\n` : '');
       }).join('\n');
 
-      const prompt = `Simulation: ${simulationDetails.name || 'Unnamed Simulation'}\nEnvironment: ${simulationDetails.environmentCategory || 'Unknown'}\nResults Summary: ${blocked} Optimal (${detected} included Alerts), ${partial} Partial, ${minimal} Minimal, ${missed} No Coverage (Exposed).\n\nDetailed Execution Logs:\n${detailedLogs}\n\nPlease write the requested report sections analyzing these results.`;
+      const opBp = simulationDetails?.operationalBlueprint || {};
+      const bpSummaryParts = [];
+      if (Array.isArray(opBp.tooling) && opBp.tooling.length > 0) bpSummaryParts.push(`Tooling: ${opBp.tooling.join(', ')}`);
+      if (opBp.threatInfra?.trim()) bpSummaryParts.push(`Simulated Threat Infra: ${opBp.threatInfra.trim()}`);
+      if (opBp.targetAssets?.trim()) bpSummaryParts.push(`Target Hosts: ${opBp.targetAssets.trim()}`);
+      if (opBp.testAccounts?.trim()) bpSummaryParts.push(`Test Accounts: ${opBp.testAccounts.trim()}`);
+      const bpReportLine = bpSummaryParts.length > 0 ? `Operational Blueprint: ${bpSummaryParts.join(' | ')}\n` : '';
+
+      const prompt = `Simulation: ${simulationDetails.name || 'Unnamed Simulation'}\nEnvironment: ${simulationDetails.environmentCategory || 'Unknown'}\n${bpReportLine}Results Summary: ${blocked} Optimal (${detected} included Alerts), ${partial} Partial, ${minimal} Minimal, ${missed} No Coverage (Exposed).\n\nDetailed Execution Logs:\n${detailedLogs}\n\nPlease write the requested report sections analyzing these results.`;
       
       const rawResult = await generateAIContent(prompt, systemInstruction);
       const withoutThink = rawResult.replace(/<think>[\s\S]*?<\/think>/gi, '');
@@ -1105,42 +1230,6 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
             return { ...p, severity: calcSeverity, coverageRating: finalCoverage };
       });
 
-     const getFinalAggScore = (ttpId) => {
-         const procs = finalizedTestResults.filter(p => (p.ttps || []).includes(ttpId));
-         if (procs.length === 0) return { outcome: 'N/A', coverageRating: 'N/A' };
-         let explicitScoreTotal = 0; let explicitScoreCount = 0;
-         let b = 0, a = 0, l = 0, m = 0;
-         procs.forEach(p => {
-              let out = p.outcome || '';
-              if (out.includes('Prevented')) b++; else if (out.includes('Alerted')) a++; else if (out.includes('Logged')) l++; else if (out.includes('Missed')) m++;
-             if (p.coverageRating && p.coverageRating !== 'Auto-Calculate' && p.coverageRating !== 'N/A') {
-                 const cr = String(p.coverageRating).toLowerCase();
-                 if (cr.includes('optimal')) explicitScoreTotal += 100;
-                 else if (cr.includes('partial') || cr.includes('medium')) explicitScoreTotal += 50;
-                 else if (cr.includes('minimal')) explicitScoreTotal += 25;
-                 else if (cr.includes('none') || cr.includes('no coverage')) explicitScoreTotal += 0;
-                 explicitScoreCount++;
-             }
-          });
-         const total = b + a + l + m;
-         if (total === 0) return { outcome: 'Missed', coverageRating: 'None' };
-         const overallOutcome = b > 0 ? 'Prevented' : a > 0 ? 'Alerted' : l > 0 ? 'Logged' : 'Missed';
-         if (explicitScoreCount > 0) {
-             const avgExplicit = explicitScoreTotal / explicitScoreCount;
-             let explicitCov = 'None';
-             if (avgExplicit === 100) explicitCov = 'Optimal';
-             else if (avgExplicit >= 50) explicitCov = 'Partial';
-             else if (avgExplicit > 0) explicitCov = 'Minimal';
-             return { outcome: overallOutcome, coverageRating: explicitCov };
-         }
-         const totalScore = (b * 100) + (a * 100) + (l * 50) + (m * 0);
-         const avg = totalScore / total;
-         if (avg === 100) return { outcome: b > 0 ? 'Prevented' : 'Alerted', coverageRating: 'Optimal' };
-         if (avg >= 50) return { outcome: l > 0 ? 'Logged' : (b > 0 ? 'Prevented' : 'Alerted'), coverageRating: 'Partial' };
-         if (avg > 0) return { outcome: m > 0 ? 'Missed' : 'Logged', coverageRating: 'Minimal' };
-         return { outcome: 'Missed', coverageRating: 'None' };
-     };
-
      const simulationTimestamp = new Date().toISOString();
 
      for (const [ttpId, ttp] of allMappedTTPs.entries()) {
@@ -1150,7 +1239,7 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
              continue; // Do not record a phantom event if the technique was never actually tested
          }
 
-         const agg = getFinalAggScore(ttp.id);
+         const agg = computeFinalTtpAggregation(ttp.id, finalizedTestResults);
          let outcomeStatus = 'low'; 
          if (agg.coverageRating === 'Optimal') outcomeStatus = 'high';
          else if (agg.coverageRating === 'Partial') outcomeStatus = 'medium';
@@ -1240,6 +1329,13 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
       await saveSimulationSummary(finalSimulationName, simulationPayloadData);
       
       if (currentDraftId) {
+          if (dbAdapter && typeof dbAdapter.deleteDraft === 'function') {
+              try {
+                  await dbAdapter.deleteDraft(currentDraftId);
+              } catch (e) {
+                  console.warn('Failed to delete completed draft from DB:', e);
+              }
+          }
           const updatedDrafts = savedDrafts.filter(d => d.id !== currentDraftId);
           setSavedDrafts(updatedDrafts);
           localStorage.setItem('wizard_drafts', JSON.stringify(updatedDrafts));
@@ -1264,34 +1360,76 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
      }
   };
 
-   const saveDraft = () => {
-      const draftData = { step, simulationDetails, selectedTTPs, simulationPayload, testResults, reportData };
-      
-      const executeSave = (id) => {
+   const saveDraft = (forceNew = false) => {
+      const draftData = {
+          step,
+          simulationDetails,
+          selectedTTPs,
+          simulationPayload,
+          testResults,
+          reportData,
+          activeSections
+      };
+      const cleanName = (simulationDetails.name || '').trim() || 'Unnamed Simulation';
+
+      const executeSave = async (id) => {
+          setIsSavingDraft(true);
           const finalDraft = {
-              id: id,
-              name: simulationDetails.name || 'Unnamed Simulation',
+              id: String(id),
+              name: cleanName,
+              step,
               timestamp: new Date().toISOString(),
               data: draftData
           };
-          
+
           let updatedDrafts;
-          if (savedDrafts.find(d => d.id === id)) {
-              updatedDrafts = savedDrafts.map(d => d.id === id ? finalDraft : d);
+          if (savedDrafts.find(d => d.id === finalDraft.id)) {
+              updatedDrafts = savedDrafts.map(d => d.id === finalDraft.id ? finalDraft : d);
           } else {
               updatedDrafts = [finalDraft, ...savedDrafts];
           }
-          
+          updatedDrafts.sort((a, b) => new Date(b.timestamp || 0) - new Date(a.timestamp || 0));
+
           setSavedDrafts(updatedDrafts);
-          localStorage.setItem('wizard_drafts', JSON.stringify(updatedDrafts));
-          setCurrentDraftId(id);
-          addToast('Draft saved successfully!', 'success');
+          try {
+              localStorage.setItem('wizard_drafts', JSON.stringify(updatedDrafts));
+          } catch (e) {
+              // Ignore localStorage quota warnings
+          }
+          setCurrentDraftId(finalDraft.id);
+
+          try {
+              if (dbAdapter && typeof dbAdapter.saveDraft === 'function') {
+                  await dbAdapter.saveDraft(finalDraft);
+              }
+              const targetLabel = dbAdapter?.type === 'supabase' ? 'shared Supabase database' : 'local workspace';
+              addToast(`Draft "${finalDraft.name}" saved to ${targetLabel}!`, 'success');
+          } catch (err) {
+              console.error('Failed to sync draft to database:', err);
+              addToast(`Draft "${finalDraft.name}" saved locally (database sync warning: ${err.message || 'offline'}).`, 'warning');
+          } finally {
+              if (isMounted.current) setIsSavingDraft(false);
+          }
       };
 
-      if (currentDraftId) {
-          confirmAction(`Do you want to overwrite the existing draft "${simulationDetails.name || 'Unnamed Simulation'}"?`, () => {
+      if (!forceNew && currentDraftId && savedDrafts.some(d => d.id === currentDraftId)) {
+          confirmAction(`Do you want to update the active draft "${cleanName}"?`, () => {
               executeSave(currentDraftId);
           });
+      } else if (
+          !forceNew &&
+          cleanName !== 'Unnamed Simulation' &&
+          savedDrafts.some(d => (d.name || '').trim().toLowerCase() === cleanName.toLowerCase())
+      ) {
+          const matchingDraft = savedDrafts.find(
+              d => (d.name || '').trim().toLowerCase() === cleanName.toLowerCase()
+          );
+          confirmAction(
+              `A draft named "${matchingDraft.name}" already exists in the workspace. Do you want to update that shared draft?`,
+              () => {
+                  executeSave(matchingDraft.id);
+              }
+          );
       } else {
           executeSave(Date.now().toString());
       }
@@ -1299,17 +1437,21 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
 
    const loadDraft = () => {
       setIsDraftModalOpen(true);
+      refreshDrafts(false);
    };
 
    const restoreDraft = (draft) => {
-       const parsed = draft.data;
-       if (parsed.step) setStep(parsed.step);
-       if (parsed.simulationDetails) setSimulationDetails(parsed.simulationDetails);
-       if (parsed.selectedTTPs) setSelectedTTPs(parsed.selectedTTPs);
-       if (parsed.simulationPayload) setSimulationPayload(parsed.simulationPayload);
+       const parsed = draft.data || {};
+       setStep(parsed.step || draft.step || 1);
+       if (parsed.simulationDetails) {
+           setSimulationDetails(parsed.simulationDetails);
+       }
+       setSelectedTTPs(Array.isArray(parsed.selectedTTPs) ? parsed.selectedTTPs : []);
+       setSimulationPayload(parsed.simulationPayload ?? '');
        if (parsed.testResults) {
+           let loadedResults = [];
            if (Array.isArray(parsed.testResults)) {
-               setTestResults(parsed.testResults);
+               loadedResults = parsed.testResults;
            } else {
                const migrated = [];
                Object.entries(parsed.testResults).forEach(([ttpId, data]) => {
@@ -1322,22 +1464,58 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
                        }
                    });
                });
-               setTestResults(migrated);
+               loadedResults = migrated;
            }
+           const cleanedResults = loadedResults.map(p => {
+               const currentName = p.name || '';
+               if (
+                   /^(?:phase|step|event|procedure)\s*\d+/i.test(currentName) ||
+                   /\(T\d{4}/i.test(currentName) ||
+                   /contextual\s+recon/i.test(currentName) ||
+                   /^dll$/i.test(currentName.trim())
+               ) {
+                   return {
+                       ...p,
+                       name: formatCleanEventTitle(currentName, p.ttps, mitreData, p.payloadCode)
+                   };
+               }
+               return p;
+           });
+           setTestResults(cleanedResults);
+       } else {
+           setTestResults([]);
        }
-       if (parsed.reportData) setReportData(parsed.reportData);
+       if (parsed.reportData) {
+           setReportData(parsed.reportData);
+       }
+       if (parsed.activeSections) {
+           setActiveSections(parsed.activeSections);
+       }
        setCurrentDraftId(draft.id);
        setIsDraftModalOpen(false);
-       addToast(`Draft "${draft.name}" loaded successfully!`, 'success');
+       addToast(`Draft "${draft.name}" loaded at Step ${parsed.step || draft.step || 1}!`, 'success');
    };
 
    const deleteDraft = (id) => {
-       confirmAction("Are you sure you want to delete this draft?", () => {
-           const updated = savedDrafts?.filter(d => d.id !== id);
+       const target = savedDrafts?.find(d => d.id === id);
+       confirmAction(`Are you sure you want to delete the draft "${target?.name || 'Unnamed Simulation'}"?`, async () => {
+           const updated = (savedDrafts || []).filter(d => d.id !== id);
            setSavedDrafts(updated);
-           localStorage.setItem('wizard_drafts', JSON.stringify(updated));
+           try {
+               localStorage.setItem('wizard_drafts', JSON.stringify(updated));
+           } catch (e) {
+               // Ignore
+           }
            if (currentDraftId === id) setCurrentDraftId(null);
-           addToast("Draft deleted.", "success");
+           try {
+               if (dbAdapter && typeof dbAdapter.deleteDraft === 'function') {
+                   await dbAdapter.deleteDraft(id);
+               }
+               addToast("Draft deleted.", "success");
+           } catch (err) {
+               console.error('Failed to delete draft from DB:', err);
+               addToast("Draft removed locally, but failed to delete from remote database.", "warning");
+           }
        });
    };
 
@@ -1447,59 +1625,8 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
              return { ...p, severity: calcSeverity };
        });
 
-       const getAggScoreLocal = (ttpId) => {
-           const procs = finalizedTestResults.filter(p => (p.ttps || []).includes(ttpId));
-           if (procs.length === 0) return { outcome: 'Missed', coverageRating: 'None' };
-           
-           // If the procedures have explicit coverage ratings, prefer those over outcome-based inference
-           let explicitScoreTotal = 0;
-           let explicitScoreCount = 0;
-           let b = 0, a = 0, l = 0, m = 0;
-           
-           procs.forEach(p => {
-                // Calculate outcome counts for both paths
-                let out = p.outcome || '';
-                if (out.includes('Prevented')) b++;
-                else if (out.includes('Alerted')) a++;
-                else if (out.includes('Logged')) l++;
-                else if (out.includes('Missed')) m++;
-                
-                // Track explicit coverage rating
-                if (p.coverageRating && p.coverageRating !== 'Auto-Calculate' && p.coverageRating !== 'N/A') {
-                    if (p.coverageRating === 'Optimal') explicitScoreTotal += 100;
-                    else if (p.coverageRating === 'Partial') explicitScoreTotal += 50;
-                    else if (p.coverageRating === 'Minimal') explicitScoreTotal += 25;
-                    else if (p.coverageRating === 'None') explicitScoreTotal += 0;
-                    explicitScoreCount++;
-                }
-            });
-            
-           const total = b + a + l + m;
-           if (total === 0) return { outcome: 'Missed', coverageRating: 'None' };
-           
-           const overallOutcome = b > 0 ? 'Prevented' : a > 0 ? 'Alerted' : l > 0 ? 'Logged' : 'Missed';
-           
-           if (explicitScoreCount > 0) {
-               const avgExplicit = explicitScoreTotal / explicitScoreCount;
-               let explicitCov = 'None';
-               if (avgExplicit === 100) explicitCov = 'Optimal';
-               else if (avgExplicit >= 50) explicitCov = 'Partial';
-               else if (avgExplicit > 0) explicitCov = 'Minimal';
-               
-               return { outcome: overallOutcome, coverageRating: explicitCov };
-           }
-            
-           const totalScore = (b * 100) + (a * 100) + (l * 50) + (m * 0);
-           const avg = totalScore / total;
-            
-           if (avg === 100) return { outcome: b > 0 ? 'Prevented' : 'Alerted', coverageRating: 'Optimal' };
-           if (avg >= 50) return { outcome: l > 0 ? 'Logged' : (b > 0 ? 'Prevented' : 'Alerted'), coverageRating: 'Partial' };
-           if (avg > 0) return { outcome: m > 0 ? 'Missed' : 'Logged', coverageRating: 'Minimal' };
-           return { outcome: 'Missed', coverageRating: 'None' };
-        };
-
        for (const ttp of Array.from(allMappedTTPs.values())) {
-           const agg = getAggScoreLocal(ttp.id);
+           const agg = computeFinalTtpAggregation(ttp.id, finalizedTestResults, { outcome: 'Missed', coverageRating: 'None' });
            let outcomeStatus = 'low'; 
            if (agg.coverageRating === 'Optimal') outcomeStatus = 'high';
            else if (agg.coverageRating === 'Partial') outcomeStatus = 'medium';
@@ -1548,9 +1675,74 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
               </h1>
               <p style={{  color: 'var(--text-secondary)', margin: 0, marginBottom: '15px'  }}>Launch a comprehensive Purple Team simulation.</p>
           </div>
-          <div style={{  display: 'flex', gap: '10px'  }}>
-              <button type="button" className="btn hover-lift" onClick={loadDraft} style={{  background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)'  }}>Load Draft</button>
-              <button type="button" className="btn hover-lift" onClick={saveDraft} style={{  background: 'rgba(156, 39, 176, 0.2)', border: '1px solid var(--accent-primary)', color: 'var(--accent-primary)'  }}>Save Draft</button>
+          <div style={{  display: 'flex', gap: '10px', alignItems: 'center'  }}>
+              {currentDraftId && (
+                  <div
+                      title="Currently editing an in-progress draft. Saving will update this shared draft."
+                      style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          padding: '5px 10px',
+                          borderRadius: '6px',
+                          background: 'rgba(59, 130, 246, 0.12)',
+                          border: '1px solid rgba(59, 130, 246, 0.35)',
+                          color: '#60a5fa',
+                          fontSize: '0.76rem',
+                          fontWeight: 600
+                      }}
+                  >
+                      <Database size={12} />
+                      <span>Active Draft</span>
+                  </div>
+              )}
+              <button
+                  type="button"
+                  className="btn hover-lift"
+                  onClick={loadDraft}
+                  style={{
+                      background: 'rgba(255,255,255,0.05)',
+                      border: '1px solid rgba(255,255,255,0.1)',
+                      color: 'var(--text-secondary)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '7px'
+                  }}
+              >
+                  <span>Load Draft</span>
+                  {savedDrafts.length > 0 && (
+                      <span
+                          style={{
+                              padding: '1px 6px',
+                              borderRadius: '999px',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              background: 'rgba(156, 39, 176, 0.25)',
+                              border: '1px solid rgba(156, 39, 176, 0.45)',
+                              color: '#e9d5ff'
+                          }}
+                      >
+                          {savedDrafts.length}
+                      </span>
+                  )}
+              </button>
+              <button
+                  type="button"
+                  className="btn hover-lift"
+                  onClick={() => saveDraft(false)}
+                  disabled={isSavingDraft}
+                  style={{
+                      background: 'rgba(156, 39, 176, 0.2)',
+                      border: '1px solid var(--accent-primary)',
+                      color: 'var(--accent-primary)',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px'
+                  }}
+              >
+                  {isSavingDraft ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
+                  <span>{isSavingDraft ? 'Saving...' : 'Save Draft'}</span>
+              </button>
           </div>
       </div>
       
@@ -1608,6 +1800,7 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
             isContextCollapsed={isContextCollapsed}
             setIsContextCollapsed={setIsContextCollapsed}
             simulationDetails={simulationDetails}
+            setSimulationDetails={setSimulationDetails}
             selectedTTPs={selectedTTPs}
             setSelectedTTPs={setSelectedTTPs}
             addToast={addToast}
@@ -1686,30 +1879,178 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
         )}
 
         {isDraftModalOpen && (
-            <div className="animate-fade-in" style={{  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(5, 5, 10, 0.85)', backdropFilter: 'blur(12px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center'  }}>
-                <div className="glass-panel responsive-modal" style={{ display: 'flex', flexDirection: 'column', background: 'rgba(11, 12, 16, 0.95)', border: '1px solid var(--accent-primary)', borderRadius: '12px', boxShadow: '0 0 30px rgba(126, 34, 206, 0.3)' }}>
-                    <div style={{  padding: '20px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'  }}>
-                        <h3 style={{  margin: 0, color: 'var(--text-primary)', fontSize: '1.2rem', display: 'flex', alignItems: 'center', gap: '10px'  }}>
-                            <Save size={20} color="var(--accent-primary)" /> Saved Drafts
-                        </h3>
-                        <button className="close-btn" onClick={() => setIsDraftModalOpen(false)}><X size={20} /></button>
+            <div className="animate-fade-in" style={{  position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(5, 5, 10, 0.85)', backdropFilter: 'blur(12px)', zIndex: 99999, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px'  }}>
+                <div className="glass-panel responsive-modal" style={{ width: '100%', maxWidth: '680px', maxHeight: '82vh', display: 'flex', flexDirection: 'column', background: 'rgba(11, 12, 16, 0.96)', border: '1px solid var(--accent-primary)', borderRadius: '12px', boxShadow: '0 0 30px rgba(126, 34, 206, 0.3)' }}>
+                    <div style={{  padding: '18px 20px', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px'  }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                            <h3 style={{  margin: 0, color: 'var(--text-primary)', fontSize: '1.15rem', display: 'flex', alignItems: 'center', gap: '10px'  }}>
+                                <Save size={20} color="var(--accent-primary)" /> In-Progress Simulation Drafts
+                            </h3>
+                            <span
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '5px',
+                                    padding: '3px 9px',
+                                    borderRadius: '999px',
+                                    fontSize: '0.72rem',
+                                    fontWeight: 700,
+                                    background: dbAdapter?.type === 'supabase' ? 'rgba(16, 185, 129, 0.14)' : 'rgba(255, 255, 255, 0.06)',
+                                    border: dbAdapter?.type === 'supabase' ? '1px solid rgba(16, 185, 129, 0.4)' : '1px solid rgba(255, 255, 255, 0.15)',
+                                    color: dbAdapter?.type === 'supabase' ? '#34d399' : 'var(--text-secondary)'
+                                }}
+                            >
+                                <Database size={11} />
+                                {dbAdapter?.type === 'supabase' ? 'Supabase Shared Workspace' : 'Local Browser Storage'}
+                            </span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <button
+                                type="button"
+                                className="btn hover-lift"
+                                onClick={() => refreshDrafts(false)}
+                                disabled={isLoadingDrafts}
+                                style={{
+                                    background: 'rgba(255,255,255,0.05)',
+                                    border: '1px solid rgba(255,255,255,0.12)',
+                                    color: 'var(--text-secondary)',
+                                    padding: '5px 10px',
+                                    fontSize: '0.78rem',
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '5px'
+                                }}
+                            >
+                                {isLoadingDrafts ? <Loader2 size={13} className="animate-spin" /> : <Activity size={13} />}
+                                <span>Refresh</span>
+                            </button>
+                            <button className="close-btn" onClick={() => setIsDraftModalOpen(false)}><X size={20} /></button>
+                        </div>
                     </div>
-                    <div style={{  padding: '20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '15px'  }}>
-                        {savedDrafts.length === 0 ? (
-                            <div style={{  textAlign: 'center', color: 'var(--text-muted)', padding: '30px 0'  }}>No saved drafts found.</div>
+
+                    <div style={{ padding: '12px 20px', background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+                            {dbAdapter?.type === 'supabase'
+                                ? 'Drafts are isolated in their own Supabase section so team members can collaborate on C2 setup, custom tooling, and execution without polluting finished reports.'
+                                : 'Drafts are stored locally in this browser. Connect Supabase in Settings to share in-progress drafts across your team.'}
+                        </span>
+                        {currentDraftId && (
+                            <button
+                                type="button"
+                                className="btn hover-lift"
+                                onClick={() => {
+                                    setIsDraftModalOpen(false);
+                                    saveDraft(true);
+                                }}
+                                style={{
+                                    background: 'rgba(156, 39, 176, 0.16)',
+                                    border: '1px solid rgba(156, 39, 176, 0.4)',
+                                    color: '#e9d5ff',
+                                    padding: '5px 10px',
+                                    fontSize: '0.76rem',
+                                    whiteSpace: 'nowrap'
+                                }}
+                            >
+                                + Save Current as New Draft
+                            </button>
+                        )}
+                    </div>
+
+                    <div style={{  padding: '18px 20px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '12px'  }}>
+                        {isLoadingDrafts && savedDrafts.length === 0 ? (
+                            <div style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '35px 0', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
+                                <Loader2 size={18} className="animate-spin" color="var(--accent-primary)" />
+                                <span>Syncing in-progress drafts from workspace...</span>
+                            </div>
+                        ) : savedDrafts.length === 0 ? (
+                            <div style={{  textAlign: 'center', color: 'var(--text-muted)', padding: '35px 0'  }}>
+                                No saved in-progress drafts found. Click <strong>Save Draft</strong> at any step to store a work-in-progress simulation.
+                            </div>
                         ) : (
-                            savedDrafts.map(draft => (
-                                <div key={draft.id} style={{  display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)', padding: '15px', borderRadius: '8px'  }}>
-                                    <div>
-                                        <div style={{  fontWeight: 'bold', color: 'var(--text-primary)', fontSize: '1.05rem', marginBottom: '4px'  }}>{draft.name}</div>
-                                        <div style={{  color: 'var(--text-muted)', fontSize: '0.85rem'  }}>{new Date(draft.timestamp).toLocaleString()}</div>
+                            savedDrafts.map(draft => {
+                                const dData = draft.data || {};
+                                const dStep = Number(dData.step || draft.step || 1);
+                                const stepNames = { 1: 'Step 1: Scope', 2: 'Step 2: Design', 3: 'Step 3: Execute', 4: 'Step 4: Report' };
+                                const stepLabel = stepNames[dStep] || `Step ${dStep}`;
+                                const ttpCount = Array.isArray(dData.selectedTTPs) ? dData.selectedTTPs.length : 0;
+                                const eventsList = Array.isArray(dData.testResults) ? dData.testResults : [];
+                                const eventCount = eventsList.length;
+                                const executedCount = eventsList.filter(e => e?.outcome && e.outcome !== 'N/A').length;
+                                const hasDesign = Boolean(dData.simulationPayload && String(dData.simulationPayload).trim().length > 0);
+                                const envList = Array.isArray(dData.simulationDetails?.environmentCategory)
+                                    ? dData.simulationDetails.environmentCategory.filter(Boolean)
+                                    : [];
+                                const participantsList = Array.isArray(dData.simulationDetails?.participants)
+                                    ? dData.simulationDetails.participants.map(p => p?.name?.trim()).filter(Boolean)
+                                    : [];
+                                const isActiveDraft = currentDraftId === draft.id;
+
+                                return (
+                                    <div
+                                        key={draft.id}
+                                        style={{
+                                            display: 'flex',
+                                            justifyContent: 'space-between',
+                                            alignItems: 'center',
+                                            gap: '14px',
+                                            background: isActiveDraft ? 'rgba(126, 34, 206, 0.12)' : 'rgba(0,0,0,0.35)',
+                                            border: isActiveDraft ? '1px solid rgba(168, 85, 247, 0.5)' : '1px solid var(--glass-border)',
+                                            padding: '14px 16px',
+                                            borderRadius: '10px'
+                                        }}
+                                    >
+                                        <div style={{ minWidth: 0, flex: 1 }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                                                <span style={{  fontWeight: 'bold', color: 'var(--text-primary)', fontSize: '1.02rem'  }}>
+                                                    {draft.name || 'Unnamed Simulation'}
+                                                </span>
+                                                {isActiveDraft && (
+                                                    <span style={{ padding: '2px 7px', borderRadius: '999px', fontSize: '0.68rem', fontWeight: 700, background: 'rgba(168, 85, 247, 0.22)', border: '1px solid rgba(168, 85, 247, 0.5)', color: '#e9d5ff' }}>
+                                                        ACTIVE
+                                                    </span>
+                                                )}
+                                                <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '0.72rem', fontWeight: 600, background: 'rgba(59, 130, 246, 0.15)', border: '1px solid rgba(59, 130, 246, 0.35)', color: '#93c5fd' }}>
+                                                    {stepLabel}
+                                                </span>
+                                                {envList.length > 0 && (
+                                                    <span style={{ padding: '2px 8px', borderRadius: '6px', fontSize: '0.72rem', background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', color: 'var(--text-secondary)' }}>
+                                                        {envList.join(', ')}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '6px' }}>
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'rgba(255,255,255,0.04)', padding: '2px 7px', borderRadius: '4px' }}>
+                                                    {ttpCount} TTP{ttpCount === 1 ? '' : 's'}
+                                                </span>
+                                                {hasDesign && (
+                                                    <span style={{ fontSize: '0.75rem', color: '#34d399', background: 'rgba(16, 185, 129, 0.1)', padding: '2px 7px', borderRadius: '4px' }}>
+                                                        Design Plan Saved
+                                                    </span>
+                                                )}
+                                                {eventCount > 0 && (
+                                                    <span style={{ fontSize: '0.75rem', color: '#fbbf24', background: 'rgba(245, 158, 11, 0.1)', padding: '2px 7px', borderRadius: '4px' }}>
+                                                        {eventCount} Event{eventCount === 1 ? '' : 's'} ({executedCount}/{eventCount} Executed)
+                                                    </span>
+                                                )}
+                                                {participantsList.length > 0 && (
+                                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                                                        <Users size={11} /> {participantsList.join(', ')}
+                                                    </span>
+                                                )}
+                                            </div>
+
+                                            <div style={{  color: 'var(--text-muted)', fontSize: '0.78rem'  }}>
+                                                Last updated: {draft.timestamp ? new Date(draft.timestamp).toLocaleString() : 'Unknown'}
+                                            </div>
+                                        </div>
+                                        <div style={{  display: 'flex', gap: '8px', flexShrink: 0  }}>
+                                            <button className="btn hover-lift" onClick={() => restoreDraft(draft)} style={{  background: 'var(--accent-primary)', padding: '6px 14px', fontSize: '0.84rem'  }}>Load</button>
+                                            <button className="btn hover-lift" onClick={() => deleteDraft(draft.id)} style={{  background: 'transparent', border: '1px solid var(--danger)', color: 'var(--danger)', padding: '6px 10px', fontSize: '0.84rem'  }} title="Delete Draft"><Trash2 size={14} /></button>
+                                        </div>
                                     </div>
-                                    <div style={{  display: 'flex', gap: '10px'  }}>
-                                        <button className="btn hover-lift" onClick={() => restoreDraft(draft)} style={{  background: 'var(--accent-primary)', padding: '6px 12px', fontSize: '0.85rem'  }}>Load</button>
-                                        <button className="btn hover-lift" onClick={() => deleteDraft(draft.id)} style={{  background: 'transparent', border: '1px solid var(--danger)', color: 'var(--danger)', padding: '6px 12px', fontSize: '0.85rem'  }}><Trash2 size={14} /></button>
-                                    </div>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
                 </div>
