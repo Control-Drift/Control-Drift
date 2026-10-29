@@ -109,11 +109,8 @@ export default function Reports() {
   const [activeManualProcedureId, setActiveManualProcedureId] = useState(1);
   const [collapsedCards, setCollapsedCards] = useState({});
 
-  // Paginated events list for the selected simulation
+  // Events list for the selected simulation
   const [simulationExercises, setSimulationExercises] = useState([]);
-  const [simulationPage, setSimulationPage] = useState(1);
-  const [simulationLimit] = useState(10);
-  const [simulationTotal, setSimulationTotal] = useState(0);
 
   // Simulation counts
   const [simulationCounts, setSimulationCounts] = useState({ blocked: 0, medium: 0, minimal: 0, missed: 0, total: 0 });
@@ -233,38 +230,27 @@ export default function Reports() {
       }
   }, [isAuthenticated, loadSimulations]);
 
-  const loadSimulationExercises = useCallback(async (simulationName, page) => {
+  const loadSimulationExercises = useCallback(async (simulationName) => {
       try {
           if (dbAdapter && typeof dbAdapter.fetchEvents === 'function') {
-              const res = await dbAdapter.fetchEvents(page, simulationLimit, simulationName);
+              const res = await dbAdapter.fetchEvents(1, 1000, simulationName);
               setSimulationExercises(res.data || []);
-              setSimulationTotal(res.total || 0);
-              setSimulationPage(res.page || page);
           } else {
               // Legacy fallback
               const filtered = events.filter(ex => ex.simulation === simulationName);
               filtered.sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
-              
-              const startIndex = (page - 1) * simulationLimit;
-              const paginated = filtered.slice(startIndex, startIndex + simulationLimit);
-              setSimulationExercises(paginated);
-              setSimulationTotal(filtered.length);
-              setSimulationPage(page);
+              setSimulationExercises(filtered);
           }
       } catch (err) {
           console.error("loadSimulationExercises error:", err);
       }
-  }, [dbAdapter, simulationLimit, events]);
+  }, [dbAdapter, events]);
 
   useEffect(() => {
       if (selectedSimulation) {
-          loadSimulationExercises(selectedSimulation, 1);
+          loadSimulationExercises(selectedSimulation);
       }
   }, [selectedSimulation, loadSimulationExercises]);
-
-  const handleSimulationPageChange = (newPage) => {
-      loadSimulationExercises(selectedSimulation, newPage);
-  };
 
   useEffect(() => {
       if (!selectedSimulation) return;
@@ -1659,31 +1645,6 @@ export default function Reports() {
                   </tbody>
                  </table>
                  </div>
-                 
-                 {/* Page Navigation Buttons */}
-                 {simulationTotal > simulationLimit && (
-                     <div style={{  display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '20px', padding: '10px 0'  }}>
-                         <button 
-                             className="btn" 
-                             style={{  background: 'transparent', border: '1px solid var(--glass-border)', color: simulationPage === 1 ? 'var(--text-muted)' : 'var(--text-primary)'  }}
-                             disabled={simulationPage === 1}
-                             onClick={() => handleSimulationPageChange(simulationPage - 1)}
-                         >
-                             Previous
-                         </button>
-                         <span style={{  color: 'var(--text-secondary)', fontSize: '0.9rem'  }}>
-                             Page {simulationPage} of {Math.ceil(simulationTotal / simulationLimit) || 1}
-                         </span>
-                         <button 
-                             className="btn" 
-                             style={{  background: 'transparent', border: '1px solid var(--glass-border)', color: simulationPage >= Math.ceil(simulationTotal / simulationLimit) ? 'var(--text-muted)' : 'var(--text-primary)'  }}
-                             disabled={simulationPage >= Math.ceil(simulationTotal / simulationLimit)}
-                             onClick={() => handleSimulationPageChange(simulationPage + 1)}
-                         >
-                             Next
-                         </button>
-                     </div>
-                 )}
               </div>
 
               {(simulationEvidence[selectedSimulation] || []).length > 0 && (
