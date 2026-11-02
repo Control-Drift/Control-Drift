@@ -22,7 +22,7 @@ import CoverageRatingDropdown from '../dropdowns/CoverageRatingDropdown';
 import SeverityDropdown from '../dropdowns/SeverityDropdown';
 import EventTTPDropdown from '../dropdowns/EventTTPDropdown';
 import SecurityControlsDropdown from '../dropdowns/SecurityControlsDropdown';
-import { getOutcomeCascadedFields } from '../../lib/simulationAutomation';
+import { getOutcomeCascadedFields, GAP_ROOT_CAUSES, inferGapRootCause } from '../../lib/simulationAutomation';
 
 const getOutcomeStyle = (outcome) => {
     if (outcome === 'Prevented & Alerted') return { color: 'var(--success)', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)' };
@@ -71,11 +71,12 @@ export default function EventCard({
     const handleBaselineHeld = (e) => {
         e.stopPropagation();
         const targetOutcome = proc.expectedOutcome || 'Alerted';
-        const cascaded = getOutcomeCascadedFields(targetOutcome, proc.severity);
+        const cascaded = getOutcomeCascadedFields(targetOutcome, proc.severity, proc);
         updateProcedure(proc.id, 'outcome', targetOutcome);
         if (!proc.timestamp) updateProcedure(proc.id, 'timestamp', new Date().toISOString());
         updateProcedure(proc.id, 'coverageRating', cascaded.coverageRating);
         updateProcedure(proc.id, 'severity', cascaded.severity);
+        updateProcedure(proc.id, 'rootCause', '');
         if (!proc.detNotes || !proc.detNotes.trim()) {
             updateProcedure(
                 proc.id,
@@ -484,9 +485,7 @@ export default function EventCard({
                                     if (val === 'Prevented & Alerted' || val === 'Prevented' || val === 'Alerted') {
                                         updateProcedure(proc.id, 'coverageRating', 'Optimal');
                                         updateProcedure(proc.id, 'severity', 'N/A');
-                                    } else if (val === 'Prevented') {
-                                        updateProcedure(proc.id, 'coverageRating', 'Partial');
-                                        if (proc.severity === 'N/A' || proc.severity === 'Auto-Calculate') updateProcedure(proc.id, 'severity', 'Low');
+                                        updateProcedure(proc.id, 'rootCause', '');
                                     } else if (val === 'Logged') {
                                         updateProcedure(proc.id, 'coverageRating', 'Partial');
                                         if (proc.severity === 'N/A' || proc.severity === 'Auto-Calculate' || proc.severity === 'Low') updateProcedure(proc.id, 'severity', 'Medium');
@@ -496,6 +495,7 @@ export default function EventCard({
                                     } else if (val === 'N/A' || val === 'Error') {
                                         updateProcedure(proc.id, 'coverageRating', 'N/A');
                                         updateProcedure(proc.id, 'severity', 'N/A');
+                                        updateProcedure(proc.id, 'rootCause', '');
                                     }
                                 }} 
                             />
@@ -517,6 +517,7 @@ export default function EventCard({
                                         if (proc.severity !== 'N/A') {
                                             updateProcedure(proc.id, 'severity', 'N/A');
                                         }
+                                        updateProcedure(proc.id, 'rootCause', '');
                                     } else {
                                         if (proc.severity === 'N/A' || proc.severity === 'Auto-Calculate') {
                                             if (proc.outcome && (proc.outcome.startsWith('Prevented') || proc.outcome.startsWith('Alerted'))) {
@@ -539,6 +540,61 @@ export default function EventCard({
                                 onAutoAssess={() => autoAssessSeverity && autoAssessSeverity(proc)}
                             />
                         </div>
+
+                        {(proc.outcome === 'Logged' || proc.outcome === 'Missed' || proc.coverageRating === 'Partial' || proc.coverageRating === 'Minimal' || proc.coverageRating === 'None') && proc.coverageRating !== 'Optimal' && (
+                            <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', gap: '8px', paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '6px' }}>
+                                    <label style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        Gap Root Cause
+                                        <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 500 }}>
+                                            (Optional — click to select or clear)
+                                        </span>
+                                    </label>
+                                </div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                    {GAP_ROOT_CAUSES.map((rc) => {
+                                        const effectiveRc = inferGapRootCause(proc);
+                                        const isSelected = effectiveRc === rc.id;
+                                        return (
+                                            <button
+                                                key={rc.id}
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    updateProcedure(proc.id, 'rootCause', isSelected ? '' : rc.id);
+                                                }}
+                                                title={rc.description}
+                                                style={{
+                                                    padding: '5px 11px',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.74rem',
+                                                    fontWeight: isSelected ? 700 : 500,
+                                                    cursor: 'pointer',
+                                                    background: isSelected ? rc.bg : 'rgba(255, 255, 255, 0.03)',
+                                                    border: `1px solid ${isSelected ? rc.border : 'rgba(255, 255, 255, 0.08)'}`,
+                                                    color: isSelected ? rc.color : 'var(--text-secondary)',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    transition: 'all 0.15s ease',
+                                                    boxShadow: isSelected ? `0 0 10px ${rc.bg}` : 'none'
+                                                }}
+                                            >
+                                                <span
+                                                    style={{
+                                                        width: '7px',
+                                                        height: '7px',
+                                                        borderRadius: '50%',
+                                                        background: isSelected ? rc.color : 'var(--text-muted)'
+                                                    }}
+                                                />
+                                                {rc.label}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
                     </div>
 
                     {/* Notes Row */}

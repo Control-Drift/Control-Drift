@@ -23,6 +23,7 @@ import ValidationOutcomeDropdown from '../dropdowns/ValidationOutcomeDropdown';
 import { useToast } from '../ui/Toast';
 import CodeStudio from '../pages/CodeStudio';
 import RichMarkdownEditor from '../ui/RichMarkdownEditor';
+import { GAP_ROOT_CAUSES, inferGapRootCause, getGapRootCauseMeta } from '../../lib/simulationAutomation';
 
 const FormattedOutcome = ({ outcome, strikeThrough = false }) => {
     if (!outcome) return <span className="status-unknown" style={{ padding: '4px 10px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold' }}>Unknown</span>;
@@ -802,6 +803,66 @@ export default function GapDetails({ gapIdProp, onClose, onValidate }) {
                                             <Server size={14} color="var(--accent-primary)" /> Environment
                                         </div>
                                         <strong style={{  color: 'var(--text-primary)', fontSize: '1.1rem', display: 'block', wordBreak: 'break-word'  }}>{Array.isArray(gap.environment) ? gap.environment.join(', ') : (gap.environment || 'Unknown Environment')}</strong>
+                                    </div>
+                                </div>
+                                <div style={{ marginTop: '18px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
+                                        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--text-muted)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 'bold' }}>
+                                            <AlertCircle size={14} color="var(--accent-primary)" /> Gap Root Cause
+                                        </span>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                            {getGapRootCauseMeta(gap.rootCause || proc?.rootCause)?.description || 'Unclassified — select a root cause below'}
+                                        </span>
+                                    </div>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                                        {GAP_ROOT_CAUSES.map((rc) => {
+                                            const activeRc = inferGapRootCause(gap.rootCause || proc?.rootCause);
+                                            const isSelected = activeRc === rc.id;
+                                            return (
+                                                <button
+                                                    key={rc.id}
+                                                    type="button"
+                                                    disabled={isReadOnly}
+                                                    onClick={() => {
+                                                        if (isReadOnly) return;
+                                                        const nextRc = isSelected ? '' : rc.id;
+                                                        updateGap(gap.id, { rootCause: nextRc });
+                                                        addToast(
+                                                            nextRc
+                                                                ? `Updated gap root cause to "${rc.label}".`
+                                                                : 'Cleared gap root cause.',
+                                                            'success'
+                                                        );
+                                                    }}
+                                                    title={rc.description}
+                                                    style={{
+                                                        padding: '6px 12px',
+                                                        borderRadius: '8px',
+                                                        fontSize: '0.78rem',
+                                                        fontWeight: isSelected ? 700 : 500,
+                                                        cursor: isReadOnly ? 'default' : 'pointer',
+                                                        background: isSelected ? rc.bg : 'rgba(255,255,255,0.03)',
+                                                        border: `1px solid ${isSelected ? rc.border : 'rgba(255,255,255,0.08)'}`,
+                                                        color: isSelected ? rc.color : 'var(--text-secondary)',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px',
+                                                        transition: 'all 0.15s ease',
+                                                        boxShadow: isSelected ? `0 0 12px ${rc.bg}` : 'none'
+                                                    }}
+                                                >
+                                                    <span
+                                                        style={{
+                                                            width: '7px',
+                                                            height: '7px',
+                                                            borderRadius: '50%',
+                                                            background: isSelected ? rc.color : 'var(--text-muted)'
+                                                        }}
+                                                    />
+                                                    {rc.label}
+                                                </button>
+                                            );
+                                        })}
                                     </div>
                                 </div>
                             </div>

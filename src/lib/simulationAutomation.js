@@ -46,13 +46,81 @@ export function normalizeOutcomeValue(rawOutcome) {
   return cleaned;
 }
 
+export const GAP_ROOT_CAUSES = [
+  {
+    id: 'Telemetry Blind Spot',
+    label: 'Telemetry Blind Spot',
+    shortLabel: 'Telemetry Blind Spot',
+    description: 'No sensor or log source telemetry was generated or collected for this activity',
+    actionItem: 'Enable OS/cloud audit policy or onboard the missing sensor/log source to capture telemetry.',
+    color: '#ef4444',
+    bg: 'rgba(239, 68, 68, 0.14)',
+    border: 'rgba(239, 68, 68, 0.35)'
+  },
+  {
+    id: 'Missing Detection Rule',
+    label: 'Missing Detection Rule',
+    shortLabel: 'Missing Detection Rule',
+    description: 'Raw telemetry was logged, but no SIEM/EDR detection rule exists to alert on it',
+    actionItem: 'Develop and deploy a SIEM/EDR detection rule targeting the captured telemetry.',
+    color: '#f59e0b',
+    bg: 'rgba(245, 158, 11, 0.14)',
+    border: 'rgba(245, 158, 11, 0.35)'
+  },
+  {
+    id: 'Detection Logic Evasion',
+    label: 'Detection Logic Evasion',
+    shortLabel: 'Detection Logic Evasion',
+    description: 'Existing detection logic was bypassed by procedural variation, obfuscation, or threshold',
+    actionItem: 'Tune existing detection logic to cover the procedural variation and resilient behavioral indicators.',
+    color: '#a855f7',
+    bg: 'rgba(168, 85, 247, 0.14)',
+    border: 'rgba(168, 85, 247, 0.35)'
+  },
+  {
+    id: 'Lack of Preventative Control',
+    label: 'Lack of Preventative Control',
+    shortLabel: 'Lack of Preventative Control',
+    description: 'Activity executed because a preventative control or block policy was absent or in audit-only mode',
+    actionItem: 'Implement or enforce a preventative control (e.g., EDR prevention policy, ASR rule, or application control) to block execution.',
+    color: '#38bdf8',
+    bg: 'rgba(56, 189, 248, 0.14)',
+    border: 'rgba(56, 189, 248, 0.35)'
+  }
+];
+
+/**
+ * Resolves the explicit Gap Root Cause category if one has been selected on the item.
+ * Does NOT auto-select or guess from outcome — returns '' when unclassified.
+ */
+export function inferGapRootCause(item = {}) {
+  if (!item) return '';
+  const rawValue = typeof item === 'string' ? item.trim() : String(item.rootCause || '').trim();
+  if (!rawValue) return '';
+  const matched = GAP_ROOT_CAUSES.find(
+    (c) => c.id.toLowerCase() === rawValue.toLowerCase()
+  );
+  return matched ? matched.id : '';
+}
+
+export function getGapRootCauseMeta(rootCauseOrItem) {
+  const categoryId = inferGapRootCause(rootCauseOrItem);
+  if (!categoryId) return null;
+  return GAP_ROOT_CAUSES.find((c) => c.id === categoryId) || null;
+}
+
+export function getGapActionItemsForRootCause(rootCauseOrItem) {
+  const meta = getGapRootCauseMeta(rootCauseOrItem);
+  return meta?.actionItem || 'Review telemetry and develop detection logic.';
+}
+
 /**
  * Given an outcome value, returns the default Coverage Rating, status, and Gap Severity.
  */
 export function getOutcomeCascadedFields(outcome, currentSeverity = 'Auto-Calculate') {
   const clean = normalizeOutcomeValue(outcome);
   if (clean === 'Prevented & Alerted' || clean === 'Prevented' || clean === 'Alerted') {
-    return { coverageRating: 'Optimal', status: 'high', severity: 'N/A' };
+    return { coverageRating: 'Optimal', status: 'high', severity: 'N/A', rootCause: '' };
   }
   if (clean === 'Logged') {
     const sev =
@@ -63,13 +131,21 @@ export function getOutcomeCascadedFields(outcome, currentSeverity = 'Auto-Calcul
       currentSeverity !== 'Informational'
         ? currentSeverity
         : 'Medium';
-    return { coverageRating: 'Partial', status: 'medium', severity: sev };
+    return {
+      coverageRating: 'Partial',
+      status: 'medium',
+      severity: sev
+    };
   }
   if (clean === 'Missed') {
     const sev = currentSeverity === 'Critical' ? 'Critical' : 'High';
-    return { coverageRating: 'None', status: 'minimal', severity: sev };
+    return {
+      coverageRating: 'None',
+      status: 'minimal',
+      severity: sev
+    };
   }
-  return { coverageRating: 'N/A', status: 'unknown', severity: 'N/A' };
+  return { coverageRating: 'N/A', status: 'unknown', severity: 'N/A', rootCause: '' };
 }
 
 /**

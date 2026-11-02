@@ -58,7 +58,8 @@ export const GapSchema = z.object({
     riskAcceptedBy: z.string().optional().nullable(),
     riskAcceptedDate: z.string().optional().nullable(),
     validationNotes: z.string().optional().nullable(),
-    remediationCode: z.string().optional().nullable()
+    remediationCode: z.string().optional().nullable(),
+    rootCause: z.string().optional().nullable()
 });
 
 export const ExerciseSchema = z.object({

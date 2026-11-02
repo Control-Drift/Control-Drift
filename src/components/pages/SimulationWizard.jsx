@@ -27,7 +27,9 @@ import {
     formatHistoricalProceduresForAIPrompt,
     scaffoldEventsFromDesignAndTTPs,
     formatCleanEventTitle,
-    computeFinalTtpAggregation
+    computeFinalTtpAggregation,
+    inferGapRootCause,
+    getGapActionItemsForRootCause
 } from '../../lib/simulationAutomation';
 import { useNavigate, useLocation } from 'react-router-dom';
 
@@ -1227,7 +1229,10 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
                 else if (covStr.includes('none') || covStr.includes('no coverage')) finalCoverage = 'None';
             }
             
-            return { ...p, severity: calcSeverity, coverageRating: finalCoverage };
+            const resolvedRootCause = finalCoverage === 'Optimal' || finalCoverage === 'N/A'
+                ? ''
+                : (p.rootCause || inferGapRootCause({ ...p, coverageRating: finalCoverage }));
+            return { ...p, severity: calcSeverity, coverageRating: finalCoverage, rootCause: resolvedRootCause };
       });
 
      const simulationTimestamp = new Date().toISOString();
@@ -1314,7 +1319,8 @@ Output ONLY the JSON object. Do not wrap it in markdown blocks.`;
                   severity: severity,
                  priorityScore: priorityScore,
                  status: 'Open',
-                 actionItems: 'Review telemetry and develop detection logic.',
+                 rootCause: p.rootCause || inferGapRootCause(p),
+                 actionItems: getGapActionItemsForRootCause(p.rootCause || p),
                  stakeholders: [],
                  remediationNotes: "",
                  environment: simulationDetails.environmentCategory,

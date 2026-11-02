@@ -30,6 +30,7 @@ import InlineEnvironmentDropdown from '../dropdowns/InlineEnvironmentDropdown';
 import RichMarkdownEditor from '../ui/RichMarkdownEditor';
 import MarkdownRenderer from '../ui/MarkdownRenderer';
 import CopyButton from '../ui/CopyButton';
+import { inferGapRootCause, getGapRootCauseMeta, getGapActionItemsForRootCause } from '../../lib/simulationAutomation';
 
 /**
  * Reports Component
@@ -413,11 +414,16 @@ export default function Reports() {
          const summaryPayload = {
              summary: manualSummary,
              details: { goals: manualSummary, environmentCategory: manualEnvironment.length > 0 ? manualEnvironment : 'Unknown Environment', participants: 'Manual Entry', tags: manualTags || [] },
-             testResults: manualProcedures.map(p => ({
-                 ...p,
-                 ttps: p.ttps || [],
-                 outcome: p.outcome || 'Missed'
-             })),
+             testResults: manualProcedures.map(p => {
+                 const covStr = String(p.coverageRating || 'None');
+                 const isGapProc = covStr === 'Partial' || covStr === 'Minimal' || covStr === 'None';
+                 return {
+                     ...p,
+                     ttps: p.ttps || [],
+                     outcome: p.outcome || 'Missed',
+                     rootCause: isGapProc ? (p.rootCause || inferGapRootCause(p)) : null
+                 };
+             }),
              timestamp: new Date().toISOString()
          };
          
@@ -428,6 +434,7 @@ export default function Reports() {
                  const baseScore = severity === 'Critical' ? 100 : severity === 'High' ? 80 : severity === 'Medium' ? 50 : 20;
                  const visibilityMultiplier = (covStr === 'None') ? 1.0 : (covStr === 'Minimal' ? 0.9 : (covStr === 'Partial' ? 0.75 : 0.0));
                  const priorityScore = Math.round(baseScore * visibilityMultiplier);
+                 const resolvedRootCause = p.rootCause || inferGapRootCause(p);
                  
                  const eventTime = p.timestamp ? new Date(p.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false }) : '';
                  const timeHeader = p.timestamp ? `Timestamp: ${eventTime} (${new Date(p.timestamp).toLocaleDateString()})\n` : '';
@@ -439,13 +446,14 @@ export default function Reports() {
                      finding: p.name || 'Unnamed Event',
                      outcome: p.outcome || 'Missed',
                      coverageRating: covStr,
+                     rootCause: resolvedRootCause,
                      details: `${timeHeader}Execution: ${p.execNotes || 'N/A'}\nDetection: ${p.detNotes || 'N/A'}`,
                      timestamp: p.timestamp || new Date().toISOString(),
                      eventTimestamp: p.timestamp || new Date().toISOString(),
                      severity: severity,
                      priorityScore: priorityScore,
                      status: 'Open',
-                     actionItems: 'Review telemetry and develop detection logic.',
+                     actionItems: getGapActionItemsForRootCause(resolvedRootCause),
                      stakeholders: [],
                      remediationNotes: "",
                      environment: manualEnvironment.length > 0 ? manualEnvironment : ['Unknown Environment'],
@@ -1508,6 +1516,30 @@ export default function Reports() {
                                              </div>
                                          </div>
                                          {(proc.expectedOutcome || 'N/A') !== outStr && outStr !== 'Untested' && outStr !== 'N/A' && outStr && <div style={{  marginTop: '8px', fontSize: '0.7rem', color: 'var(--danger)', fontStyle: 'italic', textAlign: 'center', width: '100%'  }}>Control Drift</div>}
+                                         {(proc.coverageRating === 'Partial' || proc.coverageRating === 'Minimal' || proc.coverageRating === 'None' || outStr === 'Logged' || outStr === 'Missed') && (() => {
+                                             const rcMeta = getGapRootCauseMeta(proc);
+                                             if (!rcMeta) return null;
+                                             return (
+                                                 <div style={{ marginTop: '6px', display: 'flex', justifyContent: 'center' }}>
+                                                     <span
+                                                         title={`Root Cause: ${rcMeta.label} — ${rcMeta.description}`}
+                                                         style={{
+                                                             display: 'inline-block',
+                                                             padding: '2px 8px',
+                                                             borderRadius: '999px',
+                                                             fontSize: '0.66rem',
+                                                             fontWeight: 700,
+                                                             color: rcMeta.color,
+                                                             background: rcMeta.bg,
+                                                             border: `1px solid ${rcMeta.border}`,
+                                                             letterSpacing: '0.2px'
+                                                         }}
+                                                     >
+                                                         {rcMeta.shortLabel}
+                                                     </span>
+                                                 </div>
+                                             );
+                                         })()}
                                       </td>
                                       <td style={{  padding: '15px 10px', verticalAlign: 'top', width: '9%', textAlign: 'center'  }}>
                                          <div style={{  fontSize: '0.65rem', color: 'transparent', textTransform: 'uppercase', marginBottom: '2px', userSelect: 'none'  }}>Spacer</div>

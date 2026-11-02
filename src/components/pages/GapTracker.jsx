@@ -30,6 +30,7 @@ import SeverityDropdown from '../dropdowns/SeverityDropdown';
 import TTPSelector from '../features/TTPSelector';
 import ValidationOutcomeDropdown from '../dropdowns/ValidationOutcomeDropdown';
 import UnifiedPosturePill from '../ui/UnifiedPosturePill';
+import { GAP_ROOT_CAUSES, inferGapRootCause, getGapRootCauseMeta } from '../../lib/simulationAutomation';
 
 const renderTechnicalDetails = (remediationStr) => {
     if (!remediationStr) return null;
@@ -140,6 +141,29 @@ const MemoizedGapCard = React.memo(({ gap, handleDragStart, handleDragEnd, setSe
                 <span style={{  fontSize: '0.75rem', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px', color: 'var(--text-secondary)'  }}>
                     Env: {Array.isArray(gap.environment) ? gap.environment.join(', ') : (gap.environment || 'Unknown Environment')}
                 </span>
+                {(() => {
+                    const rcMeta = getGapRootCauseMeta(gap.rootCause || gap);
+                    if (!rcMeta) return null;
+                    return (
+                        <span
+                            title={rcMeta.description}
+                            style={{
+                                fontSize: '0.68rem',
+                                fontWeight: 700,
+                                color: rcMeta.color,
+                                background: rcMeta.bg,
+                                border: `1px solid ${rcMeta.border}`,
+                                padding: '2px 7px',
+                                borderRadius: '4px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px'
+                            }}
+                        >
+                            {rcMeta.shortLabel}
+                        </span>
+                    );
+                })()}
                 {(() => {
                     const controls = (gap.securityControls && gap.securityControls.length > 0)
                         ? gap.securityControls
@@ -269,6 +293,7 @@ export default function GapTracker() {
 
   const [searchQuery, setSearchQuery] = useState(() => sessionStorage.getItem('gap_search') || '');
   const [severityFilter, setSeverityFilter] = useState(() => sessionStorage.getItem('gap_sev_filter') || 'All');
+  const [rootCauseFilter, setRootCauseFilter] = useState('All');
   const [isSeverityDropdownOpen, setIsSeverityDropdownOpen] = useState(false);
   const severityDropdownRef = React.useRef(null);
 
@@ -496,14 +521,20 @@ export default function GapTracker() {
 
     gaps.forEach(g => {
       if (severityFilter !== 'All' && g.severity !== severityFilter && g.status !== 'Resolved') return;
+      if (rootCauseFilter !== 'All') {
+          const gRc = inferGapRootCause(g);
+          if (rootCauseFilter === 'Unclassified' ? Boolean(gRc) : gRc !== rootCauseFilter) return;
+      }
       if (activeEnvironmentFilter !== 'All' && !(Array.isArray(g.environment) ? g.environment.includes(activeEnvironmentFilter) : g.environment === activeEnvironmentFilter)) return;
       if (activeTagFilter !== 'All' && !(Array.isArray(g.tags) ? g.tags.includes(activeTagFilter) : g.tags === activeTagFilter)) return;
       if (searchQuery) {
           const q = searchQuery.toLowerCase();
+          const rcLabel = inferGapRootCause(g).toLowerCase();
           const matches = String(g.id || '').toLowerCase().includes(q) || 
                           String(g.ttp || '').toLowerCase().includes(q) || 
                           String(g.details || '').toLowerCase().includes(q) ||
-                          String(g.finding || '').toLowerCase().includes(q);
+                          String(g.finding || '').toLowerCase().includes(q) ||
+                          rcLabel.includes(q);
           if (!matches) return;
       }
       const status = g.status || 'Open';
@@ -518,7 +549,7 @@ export default function GapTracker() {
     });
 
     return grouped;
-  }, [gaps, severityFilter, activeEnvironmentFilter, activeTagFilter, searchQuery]);
+  }, [gaps, severityFilter, rootCauseFilter, activeEnvironmentFilter, activeTagFilter, searchQuery]);
 
   const calculateMTTR = () => {
       const resolvedGaps = gaps.filter(g => g.status === 'Resolved' && g.resolvedDate && g.createdDate);
@@ -696,6 +727,122 @@ export default function GapTracker() {
              </div>
           </div>
       )}
+
+      {gaps.length > 0 && (() => {
+          const activeBacklog = gaps.filter(g => {
+              if (g.status !== 'Open' && g.status !== 'In Progress') return false;
+              if (activeEnvironmentFilter !== 'All' && !(Array.isArray(g.environment) ? g.environment.includes(activeEnvironmentFilter) : g.environment === activeEnvironmentFilter)) return false;
+              if (activeTagFilter !== 'All' && !(Array.isArray(g.tags) ? g.tags.includes(activeTagFilter) : g.tags === activeTagFilter)) return false;
+              return true;
+          });
+          const countsByRc = GAP_ROOT_CAUSES.reduce((acc, rc) => {
+              acc[rc.id] = 0;
+              return acc;
+          }, {});
+          let unclassifiedCount = 0;
+          activeBacklog.forEach(g => {
+              const rcId = inferGapRootCause(g);
+              if (rcId && countsByRc[rcId] !== undefined) countsByRc[rcId]++;
+              else unclassifiedCount++;
+          });
+          const totalActive = activeBacklog.length;
+          const classifiedCount = totalActive - unclassifiedCount;
+          const ruleClosableCount = (countsByRc['Missing Detection Rule'] || 0) + (countsByRc['Detection Logic Evasion'] || 0);
+          const ruleQuickWinsPct = classifiedCount > 0 ? Math.round((ruleClosableCount / classifiedCount) * 100) : 0;
+
+          return (
+              <div className="glass-panel" style={{ padding: '14px 18px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '10px', background: 'rgba(10, 12, 18, 0.55)', border: '1px solid var(--glass-border)' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-secondary)' }}>
+                              Active Backlog Root-Cause Breakdown
+                          </span>
+                          {classifiedCount > 0 && (
+                              <span style={{ fontSize: '0.75rem', padding: '2px 9px', borderRadius: '12px', background: 'rgba(245, 158, 11, 0.14)', border: '1px solid rgba(245, 158, 11, 0.35)', color: '#fbbf24', fontWeight: 700 }}>
+                                  {ruleQuickWinsPct}% of Classified Gaps Closable via Detection Rule Engineering
+                              </span>
+                          )}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          {unclassifiedCount > 0 && (
+                              <button
+                                  type="button"
+                                  onClick={() => setRootCauseFilter(rootCauseFilter === 'Unclassified' ? 'All' : 'Unclassified')}
+                                  title="Click to filter active gaps that have not been assigned a root cause yet"
+                                  style={{
+                                      background: rootCauseFilter === 'Unclassified' ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
+                                      border: `1px solid ${rootCauseFilter === 'Unclassified' ? 'var(--text-primary)' : 'var(--glass-border)'}`,
+                                      color: rootCauseFilter === 'Unclassified' ? 'var(--text-primary)' : 'var(--text-muted)',
+                                      fontSize: '0.72rem',
+                                      fontWeight: rootCauseFilter === 'Unclassified' ? 700 : 500,
+                                      padding: '3px 10px',
+                                      borderRadius: '6px',
+                                      cursor: 'pointer'
+                                  }}
+                              >
+                                  {unclassifiedCount} Unclassified
+                              </button>
+                          )}
+                          {rootCauseFilter !== 'All' && (
+                              <button
+                                  type="button"
+                                  onClick={() => setRootCauseFilter('All')}
+                                  style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)', fontSize: '0.72rem', padding: '3px 10px', borderRadius: '6px', cursor: 'pointer' }}
+                              >
+                                  Clear Filter ({rootCauseFilter}) ×
+                              </button>
+                          )}
+                      </div>
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: '10px' }}>
+                      {GAP_ROOT_CAUSES.map((rc) => {
+                          const count = countsByRc[rc.id] || 0;
+                          const pct = totalActive > 0 ? Math.round((count / totalActive) * 100) : 0;
+                          const isActiveFilter = rootCauseFilter === rc.id;
+                          return (
+                              <button
+                                  key={rc.id}
+                                  type="button"
+                                  onClick={() => setRootCauseFilter(isActiveFilter ? 'All' : rc.id)}
+                                  title={`${rc.description}\nClick to filter Kanban board`}
+                                  style={{
+                                      textAlign: 'left',
+                                      padding: '10px 12px',
+                                      borderRadius: '8px',
+                                      cursor: 'pointer',
+                                      background: isActiveFilter ? rc.bg : 'rgba(255,255,255,0.025)',
+                                      border: `1px solid ${isActiveFilter ? rc.color : rc.border}`,
+                                      display: 'flex',
+                                      justifyContent: 'space-between',
+                                      alignItems: 'center',
+                                      gap: '10px',
+                                      transition: 'all 0.15s ease',
+                                      boxShadow: isActiveFilter ? `0 0 14px ${rc.bg}` : 'none'
+                                  }}
+                              >
+                                  <div style={{ minWidth: 0 }}>
+                                      <div style={{ fontSize: '0.78rem', fontWeight: 700, color: rc.color, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                          {rc.label}
+                                      </div>
+                                      <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                          {rc.description}
+                                      </div>
+                                  </div>
+                                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                      <div style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'monospace', lineHeight: 1 }}>
+                                          {count}
+                                      </div>
+                                      <div style={{ fontSize: '0.68rem', color: rc.color, fontWeight: 700, marginTop: '2px' }}>
+                                          {pct}%
+                                      </div>
+                                  </div>
+                              </button>
+                          );
+                      })}
+                  </div>
+              </div>
+          );
+      })()}
 
       {gaps.length === 0 ? (
          <div className="glass-panel" style={{  padding: '40px', textAlign: 'center', color: 'var(--text-muted)'  }}>
