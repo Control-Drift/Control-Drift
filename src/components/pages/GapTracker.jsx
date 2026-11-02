@@ -746,9 +746,6 @@ export default function GapTracker() {
               else unclassifiedCount++;
           });
           const totalActive = activeBacklog.length;
-          const classifiedCount = totalActive - unclassifiedCount;
-          const ruleClosableCount = (countsByRc['Missing Detection Rule'] || 0) + (countsByRc['Detection Logic Evasion'] || 0);
-          const ruleQuickWinsPct = classifiedCount > 0 ? Math.round((ruleClosableCount / classifiedCount) * 100) : 0;
 
           return (
               <div className="glass-panel" style={{ padding: '14px 18px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '10px', background: 'rgba(10, 12, 18, 0.55)', border: '1px solid var(--glass-border)' }}>
@@ -757,11 +754,6 @@ export default function GapTracker() {
                           <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-secondary)' }}>
                               Active Backlog Root-Cause Breakdown
                           </span>
-                          {classifiedCount > 0 && (
-                              <span style={{ fontSize: '0.75rem', padding: '2px 9px', borderRadius: '12px', background: 'rgba(245, 158, 11, 0.14)', border: '1px solid rgba(245, 158, 11, 0.35)', color: '#fbbf24', fontWeight: 700 }}>
-                                  {ruleQuickWinsPct}% of Classified Gaps Closable via Detection Rule Engineering
-                              </span>
-                          )}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                           {unclassifiedCount > 0 && (

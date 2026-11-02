@@ -16,7 +16,7 @@
 
 import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink, Navigate, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Crosshair, Shield, FileText, Settings as SettingsIcon, Activity, ListTodo, ChevronLeft, ChevronRight, Command, Menu, X, Globe, Compass } from 'lucide-react';
+import { LayoutDashboard, Crosshair, Shield, FileText, Settings as SettingsIcon, Activity, ListTodo, ChevronLeft, ChevronRight, Menu, X, Globe, Compass } from 'lucide-react';
 import CustomLogo from './components/ui/CustomLogo';
 
 import AIAssistant from './components/features/AIAssistant';
@@ -50,7 +50,6 @@ const GapDetails = lazyWithRetry(() => import('./components/features/GapDetails'
 const Reports = lazyWithRetry(() => import('./components/pages/Reports'));
 const Settings = lazyWithRetry(() => import('./components/pages/Settings'));
 const MitreHeatmap = lazyWithRetry(() => import('./components/pages/MitreHeatmap'));
-const AttackPath = lazyWithRetry(() => import('./components/features/AttackPath'));
 
 import { AppProvider, useAppContext } from './AppContext';
 import { ToastProvider } from './components/ui/Toast';
@@ -137,9 +136,6 @@ function AppContent() {
                        <NavLink to="/gaps" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={handleNavClick}>
                          <ListTodo size={20} /><span className="nav-label">Gap Tracker</span>
                        </NavLink>
-                        <NavLink to="/attack-path" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={handleNavClick}>
-                          <Command size={20} /><span className="nav-label">Attack Path</span>
-                        </NavLink>
                        <NavLink to="/reports" className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={handleNavClick}>
                          <FileText size={20} /><span className="nav-label">Reports</span>
                        </NavLink>
@@ -182,7 +178,6 @@ function AppContent() {
                       <Route path="/posture" element={<MitreHeatmap />} />
                       <Route path="/gaps" element={<GapTracker />} />
                       <Route path="/gaps/:id" element={<GapDetails />} />
-                      <Route path="/attack-path" element={<AttackPath />} />
                       <Route path="/reports" element={<Reports />} />
                       <Route path="/settings" element={<Settings />} />
                       <Route path="*" element={<Navigate to="/" replace />} />
