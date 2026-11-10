@@ -7,7 +7,7 @@ Welcome to the Control Drift User Guide. This document provides a walkthrough of
 When you first load Control Drift, you are greeted by the Dashboard. This acts as your command center providing high-level posture and operational metrics.
 
 - **Global Readiness Score:** A high-level metric quantifying your defensive posture based on historical simulation data, resolved gaps, and active vulnerabilities.
-- **Top Security Controls:** Visualizations detailing which controls (e.g., EDR, Firewall, IAM) are performing best and which require immediate attention.
+- **Security Control Efficacy:** Visualizations detailing which controls (e.g., EDR, Firewall, IAM) are performing best and which require immediate attention.
 - **Remediation Burndown:** Remediation Resolution Rate, Weighted Residual Risk, and MTTR cards tracking gap & remediation metrics.
 - **TTP Decay Watchlist & Decayed Metric:** Dedicated monitoring of techniques that have exceeded their dynamic decay lifespan and require re-testing to preserve posture confidence. Click any entry to immediately launch a re-test.
 

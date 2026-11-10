@@ -1913,12 +1913,12 @@ export default function Dashboard() {
             </div>
          </div>
 
-         {/* Top Security Controls / TTP Decay Watchlist (Tabbed to preserve 3-column symmetry) */}
+         {/* Security Control Efficacy / TTP Decay Watchlist (Tabbed to preserve 3-column symmetry) */}
          <div ref={rightCardRef} className="glass-panel hover-lift animate-fade-in" style={{ padding: '20px 30px', display: 'flex', flexDirection: 'column', height: '100%', animationDelay: '0.1s' }}>
             <div style={{ margin: '0 0 20px 0', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        {rightCardTab === 'controls' ? 'Top Security Controls' : 'TTP Decay Watchlist'}
+                        {rightCardTab === 'controls' ? 'Security Control Efficacy' : 'TTP Decay Watchlist'}
                     </h3>
                     <Tooltip content={<div style={{ whiteSpace: 'normal', width: '100%', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>
                         {rightCardTab === 'controls'

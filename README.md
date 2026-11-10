@@ -45,7 +45,7 @@ While many commercial solutions attempt to completely automate the testing lifec
 
 ## Features
 
-- **Security Operations Dashboard**: Track real-time, meaningful metrics including your Global Readiness Score (combining event-driven Coverage Rate and Validation Maturity), Top Security Controls, Remediation Burndown, and the **TTP Decay Watchlist** for techniques needing re-validation.
+- **Security Operations Dashboard**: Track real-time, meaningful metrics including your Global Readiness Score (combining event-driven Coverage Rate and Validation Maturity), Security Control Efficacy, Remediation Burndown, and the **TTP Decay Watchlist** for techniques needing re-validation.
   <br/>
   <img src="docs/assets/Dashboard.png" alt="Dashboard Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
