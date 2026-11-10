@@ -23,7 +23,7 @@ import ValidationOutcomeDropdown from '../dropdowns/ValidationOutcomeDropdown';
 import { useToast } from '../ui/Toast';
 import CodeStudio from '../pages/CodeStudio';
 import RichMarkdownEditor from '../ui/RichMarkdownEditor';
-import { GAP_ROOT_CAUSES, inferGapRootCause, getGapRootCauseMeta } from '../../lib/simulationAutomation';
+import { GAP_ROOT_CAUSES, extractGapRootCauses, toggleGapRootCauseValue, getGapRootCauseMetaList } from '../../lib/simulationAutomation';
 
 const FormattedOutcome = ({ outcome, strikeThrough = false }) => {
     if (!outcome) return <span className="status-unknown" style={{ padding: '4px 10px', borderRadius: '4px', fontSize: '0.85rem', fontWeight: 'bold' }}>Unknown</span>;
@@ -811,13 +811,18 @@ export default function GapDetails({ gapIdProp, onClose, onValidate }) {
                                             <AlertCircle size={14} color="var(--accent-primary)" /> Gap Root Cause
                                         </span>
                                         <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                                            {getGapRootCauseMeta(gap.rootCause || proc?.rootCause)?.description || 'Unclassified — select a root cause below'}
+                                            {(() => {
+                                                const metas = getGapRootCauseMetaList(gap.rootCause || proc?.rootCause);
+                                                if (metas.length === 0) return 'Unclassified — select one or more root causes below';
+                                                if (metas.length === 1) return metas[0].description;
+                                                return `${metas.length} root causes selected`;
+                                            })()}
                                         </span>
                                     </div>
                                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                         {GAP_ROOT_CAUSES.map((rc) => {
-                                            const activeRc = inferGapRootCause(gap.rootCause || proc?.rootCause);
-                                            const isSelected = activeRc === rc.id;
+                                            const activeRcs = extractGapRootCauses(gap.rootCause || proc?.rootCause);
+                                            const isSelected = activeRcs.includes(rc.id);
                                             return (
                                                 <button
                                                     key={rc.id}
@@ -825,11 +830,11 @@ export default function GapDetails({ gapIdProp, onClose, onValidate }) {
                                                     disabled={isReadOnly}
                                                     onClick={() => {
                                                         if (isReadOnly) return;
-                                                        const nextRc = isSelected ? '' : rc.id;
+                                                        const nextRc = toggleGapRootCauseValue(gap.rootCause || proc?.rootCause, rc.id);
                                                         updateGap(gap.id, { rootCause: nextRc });
                                                         addToast(
                                                             nextRc
-                                                                ? `Updated gap root cause to "${rc.label}".`
+                                                                ? `Updated gap root cause: ${nextRc}`
                                                                 : 'Cleared gap root cause.',
                                                             'success'
                                                         );

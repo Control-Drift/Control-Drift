@@ -215,6 +215,13 @@ export default function ExecutiveReportPDF({
 }) {
   const {
     grsScore = 0,
+    coverageRateScore = 0,
+    validationMaturityScore = 0,
+    avgTestDepth = 0,
+    optimalEventsCount = 0,
+    totalEventsCount = 0,
+    optimalTTPsCount = 0,
+    uniqueTestedTTPsCount = 0,
     totalValidated = 0,
     mitreCoveragePercentage = 0,
     openGapsCount = 0,
@@ -264,15 +271,33 @@ export default function ExecutiveReportPDF({
           </View>
         </View>
 
-        {/* Unified Global Readiness Score Hero */}
+        {/* Unified Global Readiness Score + Sub-Scores Hero Row */}
         <View style={styles.scoreHeroRow}>
           <View style={[styles.scoreHeroBox, { borderLeftColor: getScoreColor(grsScore) }]}>
-            <Text style={styles.scoreHeroLabel}>Global Readiness Score (GRS)</Text>
-            <Text style={[styles.scoreHeroValue, { color: getScoreColor(grsScore) }]}>
+            <Text style={styles.scoreHeroLabel}>Global Readiness Score</Text>
+            <Text style={[styles.scoreHeroValue, { color: getScoreColor(grsScore), fontSize: 22 }]}>
               {totalValidated > 0 ? `${grsScore} / 100` : 'No Baseline'}
             </Text>
             <Text style={styles.scoreHeroDesc}>
-              Unified enterprise readiness metric combining simulation coverage outcomes across {totalValidated} validated MITRE ATT&amp;CK techniques, active gap severity weighting ({openGapsCount} open gaps), procedural test depth, and TTP validation decay ({driftingCount} techniques currently flagged for re-testing).
+              Maturity-weighted readiness index combining Coverage Rate and Validation Maturity across {uniqueTestedTTPsCount || totalValidated} tested TTPs.
+            </Text>
+          </View>
+          <View style={[styles.scoreHeroBox, { borderLeftColor: getScoreColor(coverageRateScore) }]}>
+            <Text style={styles.scoreHeroLabel}>Coverage Rate</Text>
+            <Text style={[styles.scoreHeroValue, { color: getScoreColor(coverageRateScore), fontSize: 22 }]}>
+              {totalValidated > 0 ? `${coverageRateScore}%` : '--'}
+            </Text>
+            <Text style={styles.scoreHeroDesc}>
+              Defensive control efficacy ({totalEventsCount > 0 ? `${optimalEventsCount} / ${totalEventsCount} Optimal Events` : `${optimalTTPsCount} / ${uniqueTestedTTPsCount || totalValidated} Optimal TTPs`}), weighted by gap severity and decay.
+            </Text>
+          </View>
+          <View style={[styles.scoreHeroBox, { borderLeftColor: validationMaturityScore >= 75 ? '#059669' : validationMaturityScore >= 45 ? '#0284c7' : '#d97706' }]}>
+            <Text style={styles.scoreHeroLabel}>Validation Maturity</Text>
+            <Text style={[styles.scoreHeroValue, { color: validationMaturityScore >= 75 ? '#059669' : validationMaturityScore >= 45 ? '#0284c7' : '#d97706', fontSize: 22 }]}>
+              {totalValidated > 0 ? `${validationMaturityScore}%` : '--'}
+            </Text>
+            <Text style={styles.scoreHeroDesc}>
+              Baseline confidence: {mitreCoveragePercentage}% in-scope ATT&amp;CK breadth at {avgTestDepth || 1}x avg procedural test depth.
             </Text>
           </View>
         </View>

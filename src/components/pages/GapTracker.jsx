@@ -30,7 +30,7 @@ import SeverityDropdown from '../dropdowns/SeverityDropdown';
 import TTPSelector from '../features/TTPSelector';
 import ValidationOutcomeDropdown from '../dropdowns/ValidationOutcomeDropdown';
 import UnifiedPosturePill from '../ui/UnifiedPosturePill';
-import { GAP_ROOT_CAUSES, inferGapRootCause, getGapRootCauseMeta } from '../../lib/simulationAutomation';
+import { GAP_ROOT_CAUSES, inferGapRootCause, extractGapRootCauses, getGapRootCauseMetaList } from '../../lib/simulationAutomation';
 
 const renderTechnicalDetails = (remediationStr) => {
     if (!remediationStr) return null;
@@ -141,29 +141,26 @@ const MemoizedGapCard = React.memo(({ gap, handleDragStart, handleDragEnd, setSe
                 <span style={{  fontSize: '0.75rem', background: 'rgba(255,255,255,0.1)', padding: '2px 6px', borderRadius: '4px', color: 'var(--text-secondary)'  }}>
                     Env: {Array.isArray(gap.environment) ? gap.environment.join(', ') : (gap.environment || 'Unknown Environment')}
                 </span>
-                {(() => {
-                    const rcMeta = getGapRootCauseMeta(gap.rootCause || gap);
-                    if (!rcMeta) return null;
-                    return (
-                        <span
-                            title={rcMeta.description}
-                            style={{
-                                fontSize: '0.68rem',
-                                fontWeight: 700,
-                                color: rcMeta.color,
-                                background: rcMeta.bg,
-                                border: `1px solid ${rcMeta.border}`,
-                                padding: '2px 7px',
-                                borderRadius: '4px',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '4px'
-                            }}
-                        >
-                            {rcMeta.shortLabel}
-                        </span>
-                    );
-                })()}
+                {getGapRootCauseMetaList(gap.rootCause || gap).map((rcMeta) => (
+                    <span
+                        key={rcMeta.id}
+                        title={rcMeta.description}
+                        style={{
+                            fontSize: '0.68rem',
+                            fontWeight: 700,
+                            color: rcMeta.color,
+                            background: rcMeta.bg,
+                            border: `1px solid ${rcMeta.border}`,
+                            padding: '2px 7px',
+                            borderRadius: '4px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                        }}
+                    >
+                        {rcMeta.shortLabel}
+                    </span>
+                ))}
                 {(() => {
                     const controls = (gap.securityControls && gap.securityControls.length > 0)
                         ? gap.securityControls
@@ -293,7 +290,12 @@ export default function GapTracker() {
 
   const [searchQuery, setSearchQuery] = useState(() => sessionStorage.getItem('gap_search') || '');
   const [severityFilter, setSeverityFilter] = useState(() => sessionStorage.getItem('gap_sev_filter') || 'All');
-  const [rootCauseFilter, setRootCauseFilter] = useState('All');
+  const [selectedRootCauses, setSelectedRootCauses] = useState([]);
+  const toggleRootCauseFilter = (rcId) => {
+      setSelectedRootCauses(prev =>
+          prev.includes(rcId) ? prev.filter(id => id !== rcId) : [...prev, rcId]
+      );
+  };
   const [isSeverityDropdownOpen, setIsSeverityDropdownOpen] = useState(false);
   const severityDropdownRef = React.useRef(null);
 
@@ -521,9 +523,11 @@ export default function GapTracker() {
 
     gaps.forEach(g => {
       if (severityFilter !== 'All' && g.severity !== severityFilter && g.status !== 'Resolved') return;
-      if (rootCauseFilter !== 'All') {
-          const gRc = inferGapRootCause(g);
-          if (rootCauseFilter === 'Unclassified' ? Boolean(gRc) : gRc !== rootCauseFilter) return;
+      if (selectedRootCauses.length > 0) {
+          const gRcs = extractGapRootCauses(g);
+          const matchesUnclassified = selectedRootCauses.includes('Unclassified') && gRcs.length === 0;
+          const matchesCategory = gRcs.some(rc => selectedRootCauses.includes(rc));
+          if (!matchesUnclassified && !matchesCategory) return;
       }
       if (activeEnvironmentFilter !== 'All' && !(Array.isArray(g.environment) ? g.environment.includes(activeEnvironmentFilter) : g.environment === activeEnvironmentFilter)) return;
       if (activeTagFilter !== 'All' && !(Array.isArray(g.tags) ? g.tags.includes(activeTagFilter) : g.tags === activeTagFilter)) return;
@@ -549,7 +553,7 @@ export default function GapTracker() {
     });
 
     return grouped;
-  }, [gaps, severityFilter, rootCauseFilter, activeEnvironmentFilter, activeTagFilter, searchQuery]);
+  }, [gaps, severityFilter, selectedRootCauses, activeEnvironmentFilter, activeTagFilter, searchQuery]);
 
   const calculateMTTR = () => {
       const resolvedGaps = gaps.filter(g => g.status === 'Resolved' && g.resolvedDate && g.createdDate);
@@ -741,11 +745,17 @@ export default function GapTracker() {
           }, {});
           let unclassifiedCount = 0;
           activeBacklog.forEach(g => {
-              const rcId = inferGapRootCause(g);
-              if (rcId && countsByRc[rcId] !== undefined) countsByRc[rcId]++;
-              else unclassifiedCount++;
+              const rcIds = extractGapRootCauses(g);
+              if (rcIds.length > 0) {
+                  rcIds.forEach(rcId => {
+                      if (countsByRc[rcId] !== undefined) countsByRc[rcId]++;
+                  });
+              } else {
+                  unclassifiedCount++;
+              }
           });
           const totalActive = activeBacklog.length;
+          const isUnclassifiedSelected = selectedRootCauses.includes('Unclassified');
 
           return (
               <div className="glass-panel" style={{ padding: '14px 18px', marginBottom: '20px', display: 'flex', flexDirection: 'column', gap: '10px', background: 'rgba(10, 12, 18, 0.55)', border: '1px solid var(--glass-border)' }}>
@@ -759,14 +769,14 @@ export default function GapTracker() {
                           {unclassifiedCount > 0 && (
                               <button
                                   type="button"
-                                  onClick={() => setRootCauseFilter(rootCauseFilter === 'Unclassified' ? 'All' : 'Unclassified')}
-                                  title="Click to filter active gaps that have not been assigned a root cause yet"
+                                  onClick={() => toggleRootCauseFilter('Unclassified')}
+                                  title="Click to toggle filtering active gaps that have not been assigned a root cause yet"
                                   style={{
-                                      background: rootCauseFilter === 'Unclassified' ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
-                                      border: `1px solid ${rootCauseFilter === 'Unclassified' ? 'var(--text-primary)' : 'var(--glass-border)'}`,
-                                      color: rootCauseFilter === 'Unclassified' ? 'var(--text-primary)' : 'var(--text-muted)',
+                                      background: isUnclassifiedSelected ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
+                                      border: `1px solid ${isUnclassifiedSelected ? 'var(--text-primary)' : 'var(--glass-border)'}`,
+                                      color: isUnclassifiedSelected ? 'var(--text-primary)' : 'var(--text-muted)',
                                       fontSize: '0.72rem',
-                                      fontWeight: rootCauseFilter === 'Unclassified' ? 700 : 500,
+                                      fontWeight: isUnclassifiedSelected ? 700 : 500,
                                       padding: '3px 10px',
                                       borderRadius: '6px',
                                       cursor: 'pointer'
@@ -775,13 +785,13 @@ export default function GapTracker() {
                                   {unclassifiedCount} Unclassified
                               </button>
                           )}
-                          {rootCauseFilter !== 'All' && (
+                          {selectedRootCauses.length > 0 && (
                               <button
                                   type="button"
-                                  onClick={() => setRootCauseFilter('All')}
+                                  onClick={() => setSelectedRootCauses([])}
                                   style={{ background: 'transparent', border: '1px solid var(--glass-border)', color: 'var(--text-secondary)', fontSize: '0.72rem', padding: '3px 10px', borderRadius: '6px', cursor: 'pointer' }}
                               >
-                                  Clear Filter ({rootCauseFilter}) ×
+                                  Clear Filters ({selectedRootCauses.length}) ×
                               </button>
                           )}
                       </div>
@@ -790,13 +800,13 @@ export default function GapTracker() {
                       {GAP_ROOT_CAUSES.map((rc) => {
                           const count = countsByRc[rc.id] || 0;
                           const pct = totalActive > 0 ? Math.round((count / totalActive) * 100) : 0;
-                          const isActiveFilter = rootCauseFilter === rc.id;
+                          const isActiveFilter = selectedRootCauses.includes(rc.id);
                           return (
                               <button
                                   key={rc.id}
                                   type="button"
-                                  onClick={() => setRootCauseFilter(isActiveFilter ? 'All' : rc.id)}
-                                  title={`${rc.description}\nClick to filter Kanban board`}
+                                  onClick={() => toggleRootCauseFilter(rc.id)}
+                                  title={`${rc.description}\nClick to toggle filter on Kanban board`}
                                   style={{
                                       textAlign: 'left',
                                       padding: '10px 12px',

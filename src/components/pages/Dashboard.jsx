@@ -79,7 +79,7 @@ const CyberMTTRIcon = ({ size = 150, color = "currentColor", ...props }) => (
     </svg>
 );
 
-const Tooltip = ({ children, content }) => {
+const Tooltip = ({ children, content, width = '270px' }) => {
   const [show, setShow] = React.useState(false);
   return (
     <div 
@@ -103,15 +103,21 @@ const Tooltip = ({ children, content }) => {
           borderRadius: '8px',
           color: '#fff',
           fontSize: '0.85rem',
-          width: '260px',
+          width: width,
+          maxWidth: '90vw',
+          boxSizing: 'border-box',
+          whiteSpace: 'normal',
+          overflowWrap: 'break-word',
           zIndex: 100,
-          lineHeight: '1.4',
+          lineHeight: '1.45',
           pointerEvents: 'none',
           fontWeight: 'normal',
           textTransform: 'none',
           letterSpacing: 'normal'
         }}>
-          {content}
+          <div style={{ width: '100%', boxSizing: 'border-box', whiteSpace: 'normal', overflowWrap: 'break-word' }}>
+            {content}
+          </div>
           <div style={{
             position: 'absolute',
             top: '-6px',
@@ -352,6 +358,15 @@ export default function Dashboard() {
   
   const [metrics, setMetrics] = React.useState({
       grsScore: 0,
+      coverageRateScore: 0,
+      validationMaturityScore: 0,
+      breadthScore: 0,
+      depthScore: 0,
+      avgTestDepth: 0,
+      optimalEventsCount: 0,
+      totalEventsCount: 0,
+      optimalTTPsCount: 0,
+      uniqueTestedTTPsCount: 0,
       driftingCount: 0,
       totalValidated: 0,
       totalGaps: 0,
@@ -601,11 +616,23 @@ export default function Dashboard() {
                };
 
                // Calculate GRS accurately from rolled-up MITRE data AND active gaps
-               let totalValidated = 0;
+               let weightedValidatedDenominator = 0;
                let points = 0;
                let driftAdjustedPoints = 0;
+               let optimalTTPsCount = 0;
+               let totalDepthDensitySum = 0;
+               let totalTestExecutionsSum = 0;
                const processedTTPs = new Set();
                const watchlistMap = new Map();
+
+               const recordTtpMaturityDepth = (decayObj, fallbackCount = 1) => {
+                   const tCount = Math.max(1, Number(decayObj?.testCount || fallbackCount || 1));
+                   const dFactor = typeof decayObj?.densityFactor === 'number' && decayObj.densityFactor > 0
+                       ? decayObj.densityFactor
+                       : Math.min(1.0, 0.40 + 0.20 * Math.max(0, tCount - 1));
+                   totalTestExecutionsSum += tCount;
+                   totalDepthDensitySum += dFactor;
+               };
 
                 // Helper to get severity weight
                 const getSeverityWeight = (severity) => {
@@ -624,6 +651,7 @@ export default function Dashboard() {
                     if (g.ttp) {
                         g.ttp.split(',').forEach(t => {
                             const ttpId = t.trim();
+                            if (!ttpId || outOfScopeTTPs.has(ttpId)) return;
                             if (g.status === 'Open' || g.status === 'In Progress') {
                                 if (!ttpActiveGaps.has(ttpId)) {
                                     ttpActiveGaps.set(ttpId, []);
@@ -656,15 +684,18 @@ export default function Dashboard() {
                             }
                         }
                         
-                        totalValidated += maxWeight;
+                        weightedValidatedDenominator += maxWeight;
                         
                         let basePoints = 0;
                         const posture = getNormalizedPosture(worstGap);
-                        if (posture.coverage === 'Optimal') basePoints = 1.0;
-                        else if (posture.coverage === 'Partial') basePoints = 0.5;
+                        if (posture.coverage === 'Optimal') {
+                            basePoints = 1.0;
+                            optimalTTPsCount += 1;
+                        } else if (posture.coverage === 'Partial') basePoints = 0.5;
                         else if (posture.coverage === 'Minimal') basePoints = 0.25;
                         
                         const decayInfo = getDecayForTtp(ttpId);
+                        recordTtpMaturityDepth(decayInfo, gaps.length);
                         points += (basePoints * maxWeight);
                         driftAdjustedPoints += (basePoints * maxWeight * (decayInfo.decayFactor || 1.0));
                     }
@@ -682,10 +713,13 @@ export default function Dashboard() {
                             const d = g.resolvedDate || g.validationDate || g.createdDate;
                             return d && (!latest || new Date(d) > new Date(latest)) ? d : latest;
                         }, null);
-                        const decayInfo = calculateConfidenceAndDecay(gaps.length, latestResolvedDate);
+                        const statCount = ttpStatsMap.get(ttpId)?.count || gaps.length;
+                        const decayInfo = calculateConfidenceAndDecay(statCount, latestResolvedDate);
+                        recordTtpMaturityDepth(decayInfo, statCount);
                         
-                        totalValidated += 1; // Standard weight for resolved/accepted
+                        weightedValidatedDenominator += 1; // Standard weight for resolved/accepted
                         if (isResolved) {
+                            optimalTTPsCount += 1;
                             points += 1.0;
                             driftAdjustedPoints += (1.0 * (decayInfo.decayFactor || 1.0));
                         } else {
@@ -717,11 +751,14 @@ export default function Dashboard() {
                                    });
                                }
                                if (!processedTTPs.has(tech.id)) {
-                                   totalValidated++;
+                                   weightedValidatedDenominator++;
                                    processedTTPs.add(tech.id);
+                                   recordTtpMaturityDepth(decayInfo, tech.totalCount || 1);
                                    let base = 0;
-                                   if (tech.status === 'high') base = 1.0;
-                                   else if (tech.status === 'medium') base = 0.5;
+                                   if (tech.status === 'high') {
+                                       base = 1.0;
+                                       optimalTTPsCount += 1;
+                                   } else if (tech.status === 'medium') base = 0.5;
                                    else if (tech.status === 'minimal') base = 0.25;
                                    points += base;
                                    driftAdjustedPoints += base * (decayInfo.decayFactor ?? 1.0);
@@ -748,11 +785,14 @@ export default function Dashboard() {
                                            });
                                        }
                                        if (!processedTTPs.has(sub.id)) {
-                                           totalValidated++;
+                                           weightedValidatedDenominator++;
                                            processedTTPs.add(sub.id);
+                                           recordTtpMaturityDepth(subDecay, sub.totalCount || 1);
                                            let base = 0;
-                                           if (sub.status === 'high') base = 1.0;
-                                           else if (sub.status === 'medium') base = 0.5;
+                                           if (sub.status === 'high') {
+                                               base = 1.0;
+                                               optimalTTPsCount += 1;
+                                           } else if (sub.status === 'medium') base = 0.5;
                                            else if (sub.status === 'minimal') base = 0.25;
                                            points += base;
                                            driftAdjustedPoints += base * (subDecay.decayFactor ?? 1.0);
@@ -764,7 +804,10 @@ export default function Dashboard() {
                    }
                }
                
-               const grsScore = totalValidated > 0 ? Math.round((driftAdjustedPoints / totalValidated) * 100) : 0;
+               const uniqueTestedTTPsCount = processedTTPs.size;
+               const totalValidated = uniqueTestedTTPsCount;
+               const depthScore = uniqueTestedTTPsCount > 0 ? Math.round((totalDepthDensitySum / uniqueTestedTTPsCount) * 100) : 0;
+               const avgTestDepth = uniqueTestedTTPsCount > 0 ? Number((totalTestExecutionsSum / uniqueTestedTTPsCount).toFixed(1)) : 0;
                const sortedWatchlist = Array.from(watchlistMap.values()).sort((a, b) => {
                    if (a.needsRetest !== b.needsRetest) return a.needsRetest ? -1 : 1;
                    return (b.daysSinceLastTest || 0) - (a.daysSinceLastTest || 0);
@@ -910,8 +953,10 @@ export default function Dashboard() {
                }
 
                // Include standalone/historical exercises whose simulation is not already represented in simulationSummaries
+               const standaloneEventMap = new Map();
                allExercises.forEach(ex => {
                    if (!ex || ex.isSimEvent || ex.status === 'unknown' || ex.status === 'na' || ex.coverageRating === 'N/A' || !ex.ttp) return;
+                   if (ex.remediation && typeof ex.remediation === 'string' && ex.remediation.includes('No specific execution or detection notes')) return;
                    const simKey = ex.simulation || ex.simId || '';
                    if (simKey && coveredSimulations.has(simKey)) return;
 
@@ -921,16 +966,66 @@ export default function Dashboard() {
                    const posture = getNormalizedPosture(ex);
                    if (posture.exposure === null) return;
 
-                   killChainEvents.push({
+                   const exDateStr = (() => { try { return ex.date ? new Date(ex.date).toISOString().split('T')[0] : ''; } catch (e) { return ''; } })();
+                   const dedupeKey = ex.remediation
+                       ? `${simKey}-${exDateStr}-${ex.remediation}`
+                       : `${simKey}-${exDateStr}-${ex.name || ex.finding || ex.id || validTtps.join(',')}`;
+
+                   if (standaloneEventMap.has(dedupeKey)) {
+                       const existingEvt = standaloneEventMap.get(dedupeKey);
+                       validTtps.forEach(t => {
+                           if (!existingEvt.ttps.includes(t)) existingEvt.ttps.push(t);
+                       });
+                       return;
+                   }
+
+                   const evtObj = {
                        id: ex.id,
                        name: ex.name || ex.finding || `${validTtps[0]} Validation`,
-                       ttps: validTtps,
+                       ttps: [...validTtps],
+                       severity: ex.severity,
                        outcome: ex.outcome || posture.outcome,
                        coverageRating: posture.coverage,
                        exposure: posture.exposure,
                        simulationName: simKey || 'Historical Validation'
-                   });
+                   };
+                   standaloneEventMap.set(dedupeKey, evtObj);
+                   killChainEvents.push(evtObj);
                });
+
+               // Calculate Event-Level Coverage Rate (since a single event can encompass multiple TTPs)
+               const totalEventsCount = killChainEvents.length;
+               let optimalEventsCount = 0;
+               let eventWeightedPoints = 0;
+               let eventWeightedDenominator = 0;
+
+               killChainEvents.forEach(evt => {
+                   let baseEvtPoints = 0;
+                   if (evt.coverageRating === 'Optimal' || evt.exposure === 0) {
+                       baseEvtPoints = 1.0;
+                       optimalEventsCount += 1;
+                   } else if (evt.coverageRating === 'Partial' || evt.exposure === 0.5) {
+                       baseEvtPoints = 0.5;
+                   } else if (evt.coverageRating === 'Minimal' || evt.exposure === 0.75) {
+                       baseEvtPoints = 0.25;
+                   }
+
+                   const evtWeight = evt.coverageRating !== 'Optimal' ? getSeverityWeight(evt.severity) : 1;
+                   const evtTtps = Array.isArray(evt.ttps) && evt.ttps.length > 0 ? evt.ttps : [];
+                   const avgEvtDecay = evtTtps.length > 0
+                       ? evtTtps.reduce((sum, tId) => sum + (getDecayForTtp(tId).decayFactor ?? 1.0), 0) / evtTtps.length
+                       : 1.0;
+
+                   eventWeightedDenominator += evtWeight;
+                   eventWeightedPoints += baseEvtPoints * evtWeight * avgEvtDecay;
+               });
+
+               const fallbackTtpCoverageRate = weightedValidatedDenominator > 0
+                   ? Math.round((driftAdjustedPoints / weightedValidatedDenominator) * 100)
+                   : 0;
+               const coverageRateScore = eventWeightedDenominator > 0
+                   ? Math.round((eventWeightedPoints / eventWeightedDenominator) * 100)
+                   : fallbackTtpCoverageRate;
 
                const radarData = Object.entries(KILL_CHAIN_PHASES).map(([phase, tactics]) => {
                    const phaseEvents = killChainEvents.filter(evt =>
@@ -957,6 +1052,64 @@ export default function Dashboard() {
                        fullMark: 100
                    };
                });
+
+               let mitreCoveragePercentage = 0;
+               let totalInScopeMitre = 0;
+               let testedInScopeCount = 0;
+               if (mitreData && Object.keys(mitreData).length > 0) {
+                   const testedTTPs = new Set();
+                   
+                   allExercises.forEach(ex => {
+                        if (ex.status !== 'na' && ex.status !== 'unknown' && ex.ttp) {
+                            ex.ttp.split(',').forEach(t => testedTTPs.add(t.trim()));
+                        }
+                    });
+                   
+                   Object.keys(mitreData).forEach(tacticName => {
+                       if (tacticName === 'Reconnaissance' || tacticName === 'Resource Development') return;
+                       
+                       const tactic = mitreData[tacticName];
+                       tactic.techniques.forEach(tech => {
+                           if (tech.status !== 'na' && tech.environments?.['All'] !== 'na') {
+                               totalInScopeMitre++;
+                               
+                               let isTested = testedTTPs.has(tech.id);
+                               if (!isTested && tech.subTechniques) {
+                                   isTested = tech.subTechniques.some(sub => testedTTPs.has(sub.id));
+                               }
+                               
+                               if (isTested) testedInScopeCount++;
+                           }
+                       });
+                   });
+                   
+                   if (totalInScopeMitre > 0) {
+                       mitreCoveragePercentage = Math.round((testedInScopeCount / totalInScopeMitre) * 100);
+                   }
+               }
+
+               // Calculate Validation Maturity Sub-Score (MITRE Breadth + Procedural Test Depth)
+               const effectiveCoveragePct = totalInScopeMitre > 0
+                   ? (testedInScopeCount / totalInScopeMitre) * 100
+                   : Math.min(100, (uniqueTestedTTPsCount / 180) * 100);
+               const targetCoveragePct = 40; // 40% in-scope MITRE ATT&CK coverage represents full enterprise breadth maturity
+               const coverageRatio = Math.min(1, Math.max(0, effectiveCoveragePct / targetCoveragePct));
+               const coverageBreadth = 0.70 * Math.sqrt(coverageRatio) + 0.30 * coverageRatio;
+               const testedPhasesCount = radarData.filter(phase => phase.tested > 0).length;
+               const phaseBreadth = uniqueTestedTTPsCount > 0
+                   ? Math.min(1, (testedPhasesCount > 0 ? testedPhasesCount : Math.min(5, uniqueTestedTTPsCount)) / 5)
+                   : 0;
+               const breadthScore = uniqueTestedTTPsCount > 0
+                   ? Math.min(100, Math.round((0.80 * coverageBreadth + 0.20 * phaseBreadth) * 100))
+                   : 0;
+               const depthBreadthGate = Math.min(1, 0.40 + 0.60 * (breadthScore / 50));
+               const validationMaturityScore = uniqueTestedTTPsCount > 0
+                   ? Math.min(100, Math.round(0.60 * breadthScore + 0.40 * depthScore * depthBreadthGate))
+                   : 0;
+               const maturityMultiplier = 0.15 + 0.85 * (validationMaturityScore / 100);
+               const grsScore = totalValidated > 0
+                   ? Math.min(100, Math.round(coverageRateScore * maturityMultiplier))
+                   : 0;
 
                const trendEvents = [];
                allExercises.forEach(ex => {
@@ -1023,7 +1176,8 @@ export default function Dashboard() {
                    .filter(c => c.date >= cutoffDate)
                    .sort((a,b) => a.date - b.date)
                    .map(c => {
-                       const score = Math.round(((c.high + (c.medium * 0.5) + (c.minimal * 0.25)) / c.total) * 100);
+                       const rawEfficacy = ((c.high + (c.medium * 0.5) + (c.minimal * 0.25)) / c.total) * 100;
+                       const score = Math.min(100, Math.round(rawEfficacy * maturityMultiplier));
                        return {
                            name: c.date.toLocaleDateString('default', { month: 'short', day: 'numeric' }),
                            score: score
@@ -1062,47 +1216,20 @@ export default function Dashboard() {
                    }
                }
 
-               let mitreCoveragePercentage = 0;
-               if (mitreData && Object.keys(mitreData).length > 0) {
-                   let totalInScope = 0;
-                   const testedTTPs = new Set();
-                   
-                   allExercises.forEach(ex => {
-                        if (ex.status !== 'na' && ex.status !== 'unknown' && ex.ttp) {
-                            ex.ttp.split(',').forEach(t => testedTTPs.add(t.trim()));
-                        }
-                    });
-                   
-                   let testedInScopeCount = 0;
-                   
-                   Object.keys(mitreData).forEach(tacticName => {
-                       if (tacticName === 'Reconnaissance' || tacticName === 'Resource Development') return;
-                       
-                       const tactic = mitreData[tacticName];
-                       tactic.techniques.forEach(tech => {
-                           if (tech.status !== 'na' && tech.environments?.['All'] !== 'na') {
-                               totalInScope++;
-                               
-                               let isTested = testedTTPs.has(tech.id);
-                               if (!isTested && tech.subTechniques) {
-                                   isTested = tech.subTechniques.some(sub => testedTTPs.has(sub.id));
-                               }
-                               
-                               if (isTested) testedInScopeCount++;
-                           }
-                       });
-                   });
-                   
-                   if (totalInScope > 0) {
-                       mitreCoveragePercentage = Math.round((testedInScopeCount / totalInScope) * 100);
-                   }
-               }
-
                setDriftingTTPs(sortedWatchlist);
                setOpenGapsList(sortedOpenGaps);
 
                setMetrics({
                    grsScore,
+                   coverageRateScore,
+                   validationMaturityScore,
+                   breadthScore,
+                   depthScore,
+                   avgTestDepth,
+                   optimalEventsCount,
+                   totalEventsCount,
+                   optimalTTPsCount,
+                   uniqueTestedTTPsCount,
                    driftingCount,
                    totalValidated,
                    totalGaps,
@@ -1165,6 +1292,14 @@ export default function Dashboard() {
 
   const {
       grsScore,
+      coverageRateScore = 0,
+      validationMaturityScore = 0,
+      depthScore = 0,
+      avgTestDepth = 0,
+      optimalEventsCount = 0,
+      totalEventsCount = 0,
+      optimalTTPsCount = 0,
+      uniqueTestedTTPsCount = 0,
       driftingCount,
       totalValidated,
       totalGaps,
@@ -1241,11 +1376,11 @@ export default function Dashboard() {
         </div>
       </div>
       
-      <div className="slide-in-staggered responsive-row" style={{ marginBottom: '40px', background: 'radial-gradient(ellipse at center, rgba(31,40,51,0.95) 0%, rgba(11,12,16,0.95) 100%)', borderRadius: '16px', border: '1px solid var(--glass-border)', padding: '40px', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 20px 50px rgba(0,0,0,0.5), inset 0 0 40px rgba(156,39,176,0.1)' }}>
-          <div style={{ flex: 1 }}>
+      <div className="slide-in-staggered responsive-row" style={{ marginBottom: '40px', background: 'radial-gradient(ellipse at center, rgba(31,40,51,0.95) 0%, rgba(11,12,16,0.95) 100%)', borderRadius: '16px', border: '1px solid var(--glass-border)', padding: '40px', alignItems: 'center', justifyContent: 'space-between', gap: '30px', boxShadow: '0 20px 50px rgba(0,0,0,0.5), inset 0 0 40px rgba(156,39,176,0.1)' }}>
+          <div style={{ flex: 1, minWidth: '300px' }}>
               <h2 style={{ margin: '0 0 10px 0', fontSize: '2.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '15px' }}>
                   <Shield size={32} color="var(--accent-primary)" /> Global Readiness Score
-                  <Tooltip content={<div style={{ whiteSpace: 'normal', width: '270px', fontSize: '0.85rem', fontWeight: 'normal', letterSpacing: 'normal' }}>Unified enterprise readiness metric combining simulation coverage outcomes, active gap severity weighting, procedural test depth, and TTP validation decay.</div>}>
+                  <Tooltip width="310px" content={<div style={{ whiteSpace: 'normal', width: '100%', fontSize: '0.85rem', fontWeight: 'normal', letterSpacing: 'normal', lineHeight: 1.45 }}>Unified enterprise readiness index combining <strong>Coverage Rate</strong> (defensive outcome quality, active gap severity, and freshness decay) with <strong>Validation Maturity</strong> (in-scope MITRE ATT&amp;CK breadth and procedural test depth) so small sample sizes never create a false sense of security.</div>}>
                      <span style={{ cursor: 'help', color: 'var(--text-muted)', display: 'flex', marginTop: '4px' }}><Info size={20} /></span>
                   </Tooltip>
               </h2>
@@ -1257,18 +1392,23 @@ export default function Dashboard() {
                       <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', letterSpacing: '1.5px', marginBottom: '8px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                           TESTED TTPs
                       </div>
-                      <div style={{ fontSize: '2.2rem', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'monospace', lineHeight: 1 }}>{totalValidated}</div>
+                      <div style={{ fontSize: '2.2rem', fontWeight: '900', color: 'var(--text-primary)', fontFamily: 'monospace', lineHeight: 1 }}>{uniqueTestedTTPsCount || totalValidated}</div>
                   </div>
                   <div style={{ background: 'rgba(59, 130, 246, 0.05)', border: '1px solid rgba(59, 130, 246, 0.2)', borderRadius: '12px', padding: '15px 25px', textAlign: 'center', boxShadow: 'inset 0 0 20px rgba(59, 130, 246, 0.05)' }}>
                       <div style={{ fontSize: '0.75rem', color: '#60a5fa', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '8px', opacity: 0.8, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                           ATT&CK Coverage
-                          <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', color: '#fff', textTransform: 'none', letterSpacing: 'normal', fontWeight: 'normal' }}>The percentage of in-scope MITRE ATT&CK techniques that have been tested at least once.</div>}>
+                          <Tooltip width="260px" content={<div style={{ whiteSpace: 'normal', width: '100%', fontSize: '0.85rem', color: '#fff', textTransform: 'none', letterSpacing: 'normal', fontWeight: 'normal' }}>The percentage of in-scope MITRE ATT&CK techniques that have been tested at least once.</div>}>
                              <span style={{ cursor: 'help', color: '#60a5fa', display: 'flex' }}><Info size={12} /></span>
                           </Tooltip>
                       </div>
                       <div style={{ fontSize: '2.2rem', fontWeight: '900', color: '#60a5fa', fontFamily: 'monospace', lineHeight: 1, textShadow: '0 0 15px rgba(59, 130, 246, 0.4)' }}>{mitreCoveragePercentage}%</div>
                   </div>
-                  <div style={{ background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: '12px', padding: '15px 25px', textAlign: 'center', boxShadow: 'inset 0 0 20px rgba(245, 158, 11, 0.05)' }}>
+                  <div
+                      onClick={() => navigate('/gaps')}
+                      className="hover-lift"
+                      title="Click to open the Gap Tracker"
+                      style={{ background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.2)', borderRadius: '12px', padding: '15px 25px', textAlign: 'center', cursor: 'pointer', boxShadow: 'inset 0 0 20px rgba(245, 158, 11, 0.05)' }}
+                  >
                       <div style={{ fontSize: '0.75rem', color: 'var(--warning)', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '8px', opacity: 0.8, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                           Active Gaps
                       </div>
@@ -1293,7 +1433,7 @@ export default function Dashboard() {
                   >
                       <div style={{ fontSize: '0.75rem', color: driftingCount > 0 ? '#fbbf24' : '#10b981', textTransform: 'uppercase', letterSpacing: '1.5px', marginBottom: '8px', opacity: 0.9, fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
                           <Clock size={12} /> Decayed TTPs
-                          <Tooltip content={<div style={{ whiteSpace: 'normal', width: '230px', fontSize: '0.85rem', color: '#fff', textTransform: 'none', letterSpacing: 'normal', fontWeight: 'normal' }}>Validated techniques whose freshness lifespan has decayed and need re-testing. Click to open the Watchlist.</div>}>
+                          <Tooltip width="260px" content={<div style={{ whiteSpace: 'normal', width: '100%', fontSize: '0.85rem', color: '#fff', textTransform: 'none', letterSpacing: 'normal', fontWeight: 'normal' }}>Validated techniques whose freshness lifespan has decayed and need re-testing. Click to open the Watchlist.</div>}>
                              <span style={{ cursor: 'help', color: driftingCount > 0 ? '#fbbf24' : '#10b981', display: 'flex' }}><Info size={12} /></span>
                           </Tooltip>
                       </div>
@@ -1302,31 +1442,95 @@ export default function Dashboard() {
               </div>
           </div>
           
-          <div style={{ flex: '0 0 300px', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
-              <svg width="240" height="240" viewBox="0 0 240 240" style={{ transform: 'rotate(-90deg)', filter: 'drop-shadow(0 0 20px rgba(156,39,176,0.4))' }}>
-                  <circle cx="120" cy="120" r="100" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="15" />
-                  <circle 
-                      cx="120" cy="120" r="100" 
-                      fill="none" 
-                      stroke="url(#gradientScore)" 
-                      strokeWidth="15" 
-                      strokeLinecap="round"
-                      strokeDasharray="628"
-                      strokeDashoffset={628 - (628 * grsScore) / 100}
-                      style={{ transition: 'stroke-dashoffset 1.5s ease-in-out' }}
-                  />
-                  <defs>
-                      <linearGradient id="gradientScore" x1="0%" y1="0%" x2="100%" y2="100%">
-                          <stop offset="0%" stopColor={grsScore >= 80 ? '#10b981' : grsScore >= 50 ? '#f59e0b' : '#ef4444'} />
-                          <stop offset="100%" stopColor={grsScore >= 80 ? '#3b82f6' : grsScore >= 50 ? '#ef4444' : '#9f1239'} />
-                      </linearGradient>
-                  </defs>
-              </svg>
-              <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <span style={{ fontSize: totalValidated === 0 ? '1.5rem' : '4.5rem', fontWeight: 900, color: 'var(--text-primary)', textShadow: '0 0 20px rgba(255,255,255,0.2)', lineHeight: 1, textAlign: 'center' }}>
-                      {totalValidated === 0 ? 'Ready for\nBaseline' : grsScore}
-                  </span>
-                  {totalValidated > 0 && <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 'bold', letterSpacing: '2px' }}>/ 100</span>}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '28px', flexWrap: 'wrap', justifyContent: 'center' }}>
+              {/* Sub-Scores Breakdown Column */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', width: '265px' }}>
+                  {/* Sub-Score 1: Coverage Rate (Optimal Outcomes) */}
+                  {(() => {
+                      const covColor = coverageRateScore >= 80 ? '#10b981' : coverageRateScore >= 50 ? '#f59e0b' : '#ef4444';
+                      return (
+                          <div style={{ background: 'rgba(10, 11, 16, 0.65)', border: '1px solid var(--glass-border)', borderLeft: `3px solid ${covColor}`, borderRadius: '12px', padding: '14px 16px', boxShadow: 'inset 0 0 20px rgba(255,255,255,0.02)' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                  <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      Coverage Rate
+                                      <Tooltip width="280px" content={<div style={{ whiteSpace: 'normal', width: '100%', fontSize: '0.82rem', color: '#fff', textTransform: 'none', letterSpacing: 'normal', fontWeight: 'normal', lineHeight: 1.4 }}>Measures defensive outcome efficacy across executed simulation events (Optimal = 100%, Partial = 50%, Minimal = 25%, None = 0%), weighted by active gap severity and freshness decay.</div>}>
+                                          <span style={{ cursor: 'help', color: 'var(--text-muted)', display: 'flex' }}><Info size={12} /></span>
+                                      </Tooltip>
+                                  </div>
+                                  <div style={{ fontSize: '1.35rem', fontWeight: 900, fontFamily: 'monospace', color: totalValidated > 0 ? covColor : 'var(--text-muted)', lineHeight: 1 }}>
+                                      {totalValidated > 0 ? `${coverageRateScore}%` : '--'}
+                                  </div>
+                              </div>
+                              <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginBottom: '8px' }}>
+                                  <div style={{ width: `${totalValidated > 0 ? coverageRateScore : 0}%`, height: '100%', background: covColor, borderRadius: '3px', transition: 'width 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }} />
+                              </div>
+                              <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span>Optimal Outcomes</span>
+                                  <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                                      {totalEventsCount > 0 ? `${optimalEventsCount} / ${totalEventsCount} Events` : `${optimalTTPsCount} / ${uniqueTestedTTPsCount} TTPs`}
+                                  </span>
+                              </div>
+                          </div>
+                      );
+                  })()}
+
+                  {/* Sub-Score 2: Validation Maturity (MITRE Coverage & Test Depth) */}
+                  {(() => {
+                      const matColor = validationMaturityScore >= 75 ? '#10b981' : validationMaturityScore >= 45 ? '#38bdf8' : '#f59e0b';
+                      return (
+                          <div style={{ background: 'rgba(10, 11, 16, 0.65)', border: '1px solid var(--glass-border)', borderLeft: `3px solid ${matColor}`, borderRadius: '12px', padding: '14px 16px', boxShadow: 'inset 0 0 20px rgba(255,255,255,0.02)' }}>
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                                  <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', fontWeight: 800, letterSpacing: '1px', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                      Validation Maturity
+                                      <Tooltip width="280px" content={<div style={{ whiteSpace: 'normal', width: '100%', fontSize: '0.82rem', color: '#fff', textTransform: 'none', letterSpacing: 'normal', fontWeight: 'normal', lineHeight: 1.4 }}>Measures confidence in your testing baseline by combining MITRE ATT&amp;CK Breadth (in-scope coverage &amp; Kill Chain spread) with Procedural Test Depth (1x Low, 2–3x Medium, 4x+ High).</div>}>
+                                          <span style={{ cursor: 'help', color: 'var(--text-muted)', display: 'flex' }}><Info size={12} /></span>
+                                      </Tooltip>
+                                  </div>
+                                  <div style={{ fontSize: '1.35rem', fontWeight: 900, fontFamily: 'monospace', color: totalValidated > 0 ? matColor : 'var(--text-muted)', lineHeight: 1 }}>
+                                      {totalValidated > 0 ? `${validationMaturityScore}%` : '--'}
+                                  </div>
+                              </div>
+                              <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden', marginBottom: '8px' }}>
+                                  <div style={{ width: `${totalValidated > 0 ? validationMaturityScore : 0}%`, height: '100%', background: matColor, borderRadius: '3px', transition: 'width 0.8s cubic-bezier(0.16, 1, 0.3, 1)' }} />
+                              </div>
+                              <div style={{ fontSize: '0.73rem', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <span>{mitreCoveragePercentage}% MITRE Breadth</span>
+                                  <span style={{ fontFamily: 'monospace', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                                      {avgTestDepth > 0 ? `${avgTestDepth}x` : '0x'} Depth ({depthScore}%)
+                                  </span>
+                              </div>
+                          </div>
+                      );
+                  })()}
+              </div>
+
+              {/* Headline Global Readiness Score Ring */}
+              <div style={{ flex: '0 0 240px', display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative' }}>
+                  <svg width="240" height="240" viewBox="0 0 240 240" style={{ transform: 'rotate(-90deg)', filter: 'drop-shadow(0 0 20px rgba(156,39,176,0.4))' }}>
+                      <circle cx="120" cy="120" r="100" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="15" />
+                      <circle 
+                          cx="120" cy="120" r="100" 
+                          fill="none" 
+                          stroke="url(#gradientScore)" 
+                          strokeWidth="15" 
+                          strokeLinecap="round"
+                          strokeDasharray="628"
+                          strokeDashoffset={628 - (628 * grsScore) / 100}
+                          style={{ transition: 'stroke-dashoffset 1.5s ease-in-out' }}
+                      />
+                      <defs>
+                          <linearGradient id="gradientScore" x1="0%" y1="0%" x2="100%" y2="100%">
+                              <stop offset="0%" stopColor={grsScore >= 80 ? '#10b981' : grsScore >= 50 ? '#f59e0b' : '#ef4444'} />
+                              <stop offset="100%" stopColor={grsScore >= 80 ? '#3b82f6' : grsScore >= 50 ? '#ef4444' : '#9f1239'} />
+                          </linearGradient>
+                      </defs>
+                  </svg>
+                  <div style={{ position: 'absolute', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: totalValidated === 0 ? '1.5rem' : '4.5rem', fontWeight: 900, color: 'var(--text-primary)', textShadow: '0 0 20px rgba(255,255,255,0.2)', lineHeight: 1, textAlign: 'center' }}>
+                          {totalValidated === 0 ? 'Ready for\nBaseline' : grsScore}
+                      </span>
+                      {totalValidated > 0 && <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 'bold', letterSpacing: '2px' }}>/ 100</span>}
+                  </div>
               </div>
           </div>
       </div>
@@ -1339,7 +1543,7 @@ export default function Dashboard() {
           </div>
           <h3 style={{ margin: '0 0 15px 0', color: 'var(--text-secondary)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
               Remediation Resolution Rate
-              <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px' }}>The percentage of identified coverage gaps that have successfully traversed the engineering pipeline and reached the Resolved state.</div>}>
+              <Tooltip content={<div style={{ whiteSpace: 'normal', width: '100%' }}>The percentage of identified coverage gaps that have successfully traversed the engineering pipeline and reached the Resolved state.</div>}>
                  <span style={{ cursor: 'help', color: 'var(--text-muted)', display: 'flex' }}><Info size={14} /></span>
               </Tooltip>
           </h3>
@@ -1374,7 +1578,7 @@ export default function Dashboard() {
           </div>
           <h3 style={{ margin: '0 0 15px 0', color: 'var(--text-secondary)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
               Weighted Residual Risk
-              <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px' }}>The cumulative risk score of all open gaps in the backlog, weighted heavily by severity:<br/><br/>Critical = 10 pts<br/>High = 7 pts<br/>Medium = 3 pts<br/>Low = 1 pt</div>}>
+              <Tooltip content={<div style={{ whiteSpace: 'normal', width: '100%' }}>The cumulative risk score of all open gaps in the backlog, weighted heavily by severity:<br/><br/>Critical = 10 pts<br/>High = 7 pts<br/>Medium = 3 pts<br/>Low = 1 pt</div>}>
                  <span style={{ cursor: 'help', color: 'var(--text-muted)', display: 'flex' }}><Info size={14} /></span>
               </Tooltip>
           </h3>
@@ -1411,7 +1615,7 @@ export default function Dashboard() {
           </div>
           <h3 style={{ margin: '0 0 15px 0', color: 'var(--text-secondary)', fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
               Mean Time To Remediate (MTTR)
-              <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px' }}>The average time taken to transition a logged coverage gap from 'Open' to fully 'Resolved' via an engineering deployment and re-test.</div>}>
+              <Tooltip content={<div style={{ whiteSpace: 'normal', width: '100%' }}>The average time taken to transition a logged coverage gap from 'Open' to fully 'Resolved' via an engineering deployment and re-test.</div>}>
                  <span style={{ cursor: 'help', color: 'var(--text-muted)', display: 'flex' }}><Info size={14} /></span>
               </Tooltip>
           </h3>
@@ -1430,7 +1634,7 @@ export default function Dashboard() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', marginBottom: '15px', zIndex: 2 }}>
                         <h3 style={{ margin: 0, fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                             Kill Chain Exposure
-                            <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>A breakdown of your defensive posture across the Lockheed Martin Cyber Kill Chain. Highlights which stages of an attack are most vulnerable.</div>}>
+                            <Tooltip content={<div style={{ whiteSpace: 'normal', width: '100%', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>A breakdown of your defensive posture across the Lockheed Martin Cyber Kill Chain. Highlights which stages of an attack are most vulnerable.</div>}>
                                <span style={{ cursor: 'help', color: 'var(--text-muted)', display: 'flex' }}><Info size={14} /></span>
                             </Tooltip>
                         </h3>
@@ -1563,7 +1767,7 @@ export default function Dashboard() {
                                 </div>
                             </div>
 
-                            <div style={{ flex: 1, overflowY: 'auto', paddingRight: '5px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '6px 10px 8px 6px', margin: '-6px -5px -8px -6px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                 {relevantEvents.length === 0 ? (
                                     <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-muted)' }}>
                                         No event data found for {expandedPhaseSubject}.
@@ -1666,7 +1870,7 @@ export default function Dashboard() {
             <h3 style={{ margin: '0 0 25px 0', borderBottom: '1px solid var(--glass-border)', paddingBottom: '15px', fontSize: '1.2rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     Readiness Score Trend
-                    <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>Historical tracking of your Global Readiness Score over time, plotting the outcomes of past adversary simulations against your current baseline.</div>}>
+                    <Tooltip content={<div style={{ whiteSpace: 'normal', width: '100%', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>Historical tracking of your Global Readiness Score over time, plotting the outcomes of past adversary simulations against your current baseline.</div>}>
                        <span style={{ cursor: 'help', color: 'var(--text-muted)', display: 'flex' }}><Info size={14} /></span>
                     </Tooltip>
                 </div>
@@ -1716,7 +1920,7 @@ export default function Dashboard() {
                     <h3 style={{ margin: 0, fontSize: '1.15rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {rightCardTab === 'controls' ? 'Top Security Controls' : 'TTP Decay Watchlist'}
                     </h3>
-                    <Tooltip content={<div style={{ whiteSpace: 'normal', width: '220px', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>
+                    <Tooltip content={<div style={{ whiteSpace: 'normal', width: '100%', fontSize: '0.85rem', fontWeight: 'normal', color: '#fff' }}>
                         {rightCardTab === 'controls'
                             ? 'Performance metrics for your deployed security tools. Efficacy is calculated based on successful defenses against tested techniques.'
                             : 'Techniques whose validation freshness is Aging or Decayed based on their Depth lifespan cycle. Click Re-Test to launch an evolved validation campaign.'}
@@ -1794,7 +1998,7 @@ export default function Dashboard() {
                       <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>No security controls mapped yet.</p>
                    </div>
                 ) : (
-                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, overflowY: 'auto', paddingRight: '5px' }}>
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, overflowY: 'auto', padding: '6px 10px 8px 6px', margin: '-6px -5px -8px -6px' }}>
                      {topSecurityControls.map((ctrl, i) => {
                          const pct = ctrl.totalTTPs > 0 ? (ctrl.positiveOutcomes / ctrl.totalTTPs) : 0;
                          const heatColor = pct >= 0.75 ? 'var(--success)' : pct >= 0.4 ? 'var(--warning)' : 'var(--danger)';
@@ -1847,7 +2051,7 @@ export default function Dashboard() {
                       <p style={{ color: 'var(--text-muted)', fontSize: '0.82rem', margin: 0 }}>All validated techniques are within their active freshness window.</p>
                    </div>
                 ) : (
-                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, overflowY: 'auto', paddingRight: '5px' }}>
+                   <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, overflowY: 'auto', padding: '6px 10px 8px 6px', margin: '-6px -5px -8px -6px' }}>
                      {driftingTTPs.map((item) => {
                          const isDrifting = item.needsRetest || item.driftStatus === 'Decayed';
                          const accent = isDrifting ? '#f59e0b' : '#eab308';

@@ -45,9 +45,11 @@ While many commercial solutions attempt to completely automate the testing lifec
 
 ## Features
 
-- **Security Operations Dashboard**: Track real-time, meaningful metrics including your Global Readiness Score, Top Security Controls, Remediation Burndown, and the **TTP Decay Watchlist** for techniques needing re-validation.
+- **Security Operations Dashboard**: Track real-time, meaningful metrics including your Global Readiness Score (combining event-driven Coverage Rate and Validation Maturity), Top Security Controls, Remediation Burndown, and the **TTP Decay Watchlist** for techniques needing re-validation.
   <br/>
   <img src="docs/assets/Dashboard.png" alt="Dashboard Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
+
+- **Threat Catalog & Adversary Readiness**: Explore the MITRE ATT&CK STIX 2.1 knowledge base of APT groups, malware, and tools. Evaluate your real-time defensive readiness against specific threat actors, prioritize techniques across the Cyber Kill Chain by exposure and control decay, export ATT&CK Navigator layers, and launch scoped adversary emulation campaigns with one click.
 
 - **MITRE ATT&CK Heatmap & 3D Globe**: Fully interactive 3D globe and 2D matrix providing an empirical representation of your security posture across the MITRE ATT&CK framework with **strict testing depth tiers** (Low, Medium, High) and automatic sub-technique rollups.
   <br/>
@@ -62,9 +64,6 @@ While many commercial solutions attempt to completely automate the testing lifec
   <br/>
   <img src="docs/assets/Gap_Tracker.png" alt="Gap Tracker Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 
-- **Attack Path Mapping**: Visualize attack paths across your environment. Leverage your AI integration to automatically map viable attack paths based on your active gaps.
-  <br/>
-  <img src="docs/assets/attack_path.png" alt="Attack Path Demo" width="800" style="border-radius: 8px; margin: 10px 0;" />
 - **Integrated AI**: Plug-and-play AI integration to enhance workflows, design varied emulation campaigns, and generate executive summaries.
 - **Code Studio**: An integrated, AI-assisted IDE for writing, editing, and managing detection rules (Sigma, YARA, Splunk SPL, Azure KQL) and emulation payloads directly in the browser.
 - **Flexible Data Adapters**: Start with `localStorage`/`IndexedDB` for quick testing, then migrate to a backend database (`Supabase`, `Firebase`) or a custom `REST API` when you're ready to scale.

@@ -11,7 +11,7 @@ When AI is configured, the following features become available across the platfo
 1. **Global AI Assistant:** A context-aware assistant available throughout the console to help you interpret data, suggest simulation ideas, refine remediation strategies, or explain complex MITRE techniques.
 2. **Automated Detection Engineering:** Within the Code Studio, the AI can automatically draft Splunk SPL, YARA, Sigma, or Azure KQL queries tailored to the specific gaps you've discovered.
 3. **Simulation Strategy Generation:** In the Simulation Launcher, the AI can automatically generate step-by-step procedures and payload recommendations based on the threat scenario or TTPs you've selected.
-4. **Automated Attack Path Mapping:** The AI can analyze your currently open gaps and generate viable attack paths, demonstrating how an adversary might chain those gaps together.
+4. **Threat-Informed Emulation & Executive Reporting:** Combine real-world adversary procedure intelligence from the **Threat Catalog** with AI-assisted campaign design and automated executive posture summaries.
 
 ## Setup Option 1: Local In-Browser Configuration
 

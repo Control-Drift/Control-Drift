@@ -30,7 +30,7 @@ import InlineEnvironmentDropdown from '../dropdowns/InlineEnvironmentDropdown';
 import RichMarkdownEditor from '../ui/RichMarkdownEditor';
 import MarkdownRenderer from '../ui/MarkdownRenderer';
 import CopyButton from '../ui/CopyButton';
-import { inferGapRootCause, getGapRootCauseMeta, getGapActionItemsForRootCause } from '../../lib/simulationAutomation';
+import { inferGapRootCause, getGapRootCauseMetaList, getGapActionItemsForRootCause } from '../../lib/simulationAutomation';
 
 /**
  * Reports Component
@@ -1517,26 +1517,29 @@ export default function Reports() {
                                          </div>
                                          {(proc.expectedOutcome || 'N/A') !== outStr && outStr !== 'Untested' && outStr !== 'N/A' && outStr && <div style={{  marginTop: '8px', fontSize: '0.7rem', color: 'var(--danger)', fontStyle: 'italic', textAlign: 'center', width: '100%'  }}>Control Drift</div>}
                                          {(proc.coverageRating === 'Partial' || proc.coverageRating === 'Minimal' || proc.coverageRating === 'None' || outStr === 'Logged' || outStr === 'Missed') && (() => {
-                                             const rcMeta = getGapRootCauseMeta(proc);
-                                             if (!rcMeta) return null;
+                                             const rcMetas = getGapRootCauseMetaList(proc);
+                                             if (!rcMetas || rcMetas.length === 0) return null;
                                              return (
-                                                 <div style={{ marginTop: '6px', display: 'flex', justifyContent: 'center' }}>
-                                                     <span
-                                                         title={`Root Cause: ${rcMeta.label} — ${rcMeta.description}`}
-                                                         style={{
-                                                             display: 'inline-block',
-                                                             padding: '2px 8px',
-                                                             borderRadius: '999px',
-                                                             fontSize: '0.66rem',
-                                                             fontWeight: 700,
-                                                             color: rcMeta.color,
-                                                             background: rcMeta.bg,
-                                                             border: `1px solid ${rcMeta.border}`,
-                                                             letterSpacing: '0.2px'
-                                                         }}
-                                                     >
-                                                         {rcMeta.shortLabel}
-                                                     </span>
+                                                 <div style={{ marginTop: '6px', display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '4px' }}>
+                                                     {rcMetas.map((rcMeta) => (
+                                                         <span
+                                                             key={rcMeta.id}
+                                                             title={`Root Cause: ${rcMeta.label} — ${rcMeta.description}`}
+                                                             style={{
+                                                                 display: 'inline-block',
+                                                                 padding: '2px 8px',
+                                                                 borderRadius: '999px',
+                                                                 fontSize: '0.66rem',
+                                                                 fontWeight: 700,
+                                                                 color: rcMeta.color,
+                                                                 background: rcMeta.bg,
+                                                                 border: `1px solid ${rcMeta.border}`,
+                                                                 letterSpacing: '0.2px'
+                                                             }}
+                                                         >
+                                                             {rcMeta.shortLabel}
+                                                         </span>
+                                                     ))}
                                                  </div>
                                              );
                                          })()}

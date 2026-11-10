@@ -49,12 +49,14 @@ When a simulation event is classified as less than optimal coverage, a **Gap** i
 - **Remediation Workflow:** Click on an active gap to open a detailed overlay, featuring Remediation Strategy, Code Studio, and Tracking tabs.
 - **Automated Score Updates:** When a gap is marked as "Resolved," the associated simulation, posture metrics, and Global Readiness Score instantly update to reflect the successful re-test and improved posture.
 
-## 5. Attack Path Mapping
+## 5. Threat Catalog
 
-Understanding isolated gaps is useful, but understanding how they chain together is crucial.
+The **Threat Catalog** connects the official MITRE ATT&CK STIX 2.1 threat intelligence knowledge base directly to your empirical validation data.
 
-- **Visualizing Paths:** The Attack Path Mapping feature allows you to visualize how an adversary could string together multiple active gaps to move laterally across your environment.
-- **AI-Assisted Mapping:** With an active AI integration, you can automatically generate viable attack paths based on the gaps currently open in your Gap Tracker.
+- **APT Groups & Malware/Tools Browser:** Search and inspect documented adversary groups, malware families, and offensive tools along with their aliases, descriptions, and mapped TTPs.
+- **Adversary Readiness & Priority Scoring:** Instantly see how many of a threat actor's techniques are validated versus exposed or decayed in your environment. Techniques are organized across the Cyber Kill Chain and ranked by priority (weighing active gaps, control decay, arsenal tool overlap, and documented CTI procedures).
+- **Compound Operational Chains & Simulation Handoff:** Scope individual techniques, high-priority phase TTPs, or compound operational chains, then click **Send to Simulation Launcher** to pre-populate a tailored adversary emulation campaign with real-world procedure context.
+- **ATT&CK Navigator Export:** Export any threat actor or software profile as a color-coded MITRE ATT&CK Navigator JSON layer reflecting your current readiness posture.
 
 ## 6. Code Studio & AI Assistant
 

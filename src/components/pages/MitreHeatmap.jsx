@@ -1584,12 +1584,12 @@ export default function MitreHeatmap() {
           if (tactic === 'Reconnaissance' || tactic === 'Resource Development') return;
           resolvedMitreData[tactic].techniques.forEach(tech => {
               if (tech.environments?.[activeEnvironmentFilter] !== 'na') {
-                  if (tech.status && tech.status !== 'unknown' && tech.status !== 'na') {
+                  if (tech.status && tech.status !== 'unknown' && tech.status !== 'na' && tech.status !== 'pending') {
                       processedTTPs.add(tech.id);
                   }
                   if (tech.subTechniques) {
                       tech.subTechniques.forEach(sub => {
-                          if (sub.hasTests) {
+                          if (sub.hasTests || (sub.status && sub.status !== 'unknown' && sub.status !== 'na' && sub.status !== 'pending')) {
                               processedTTPs.add(sub.id);
                           }
                       });

@@ -1967,7 +1967,7 @@ export default function Research() {
                         Threat Catalog
                     </h1>
                     <p style={{ color: 'var(--text-secondary)', margin: 0 }}>
-                        MITRE ATT&CK STIX 2.1 • Cyber Kill Chain Prioritization & Scoping
+                        MITRE ATT&CK STIX 2.1
                     </p>
                 </div>
 

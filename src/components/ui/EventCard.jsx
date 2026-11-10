@@ -22,7 +22,7 @@ import CoverageRatingDropdown from '../dropdowns/CoverageRatingDropdown';
 import SeverityDropdown from '../dropdowns/SeverityDropdown';
 import EventTTPDropdown from '../dropdowns/EventTTPDropdown';
 import SecurityControlsDropdown from '../dropdowns/SecurityControlsDropdown';
-import { getOutcomeCascadedFields, GAP_ROOT_CAUSES, inferGapRootCause } from '../../lib/simulationAutomation';
+import { getOutcomeCascadedFields, GAP_ROOT_CAUSES, extractGapRootCauses, toggleGapRootCauseValue } from '../../lib/simulationAutomation';
 
 const getOutcomeStyle = (outcome) => {
     if (outcome === 'Prevented & Alerted') return { color: 'var(--success)', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)' };
@@ -547,21 +547,21 @@ export default function EventCard({
                                     <label style={{ fontSize: '0.73rem', color: 'var(--text-secondary)', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '6px' }}>
                                         Gap Root Cause
                                         <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 500 }}>
-                                            (Optional — click to select or clear)
+                                            (Optional — select one or more)
                                         </span>
                                     </label>
                                 </div>
                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                                     {GAP_ROOT_CAUSES.map((rc) => {
-                                        const effectiveRc = inferGapRootCause(proc);
-                                        const isSelected = effectiveRc === rc.id;
+                                        const selectedRcs = extractGapRootCauses(proc);
+                                        const isSelected = selectedRcs.includes(rc.id);
                                         return (
                                             <button
                                                 key={rc.id}
                                                 type="button"
                                                 onClick={(e) => {
                                                     e.stopPropagation();
-                                                    updateProcedure(proc.id, 'rootCause', isSelected ? '' : rc.id);
+                                                    updateProcedure(proc.id, 'rootCause', toggleGapRootCauseValue(proc, rc.id));
                                                 }}
                                                 title={rc.description}
                                                 style={{

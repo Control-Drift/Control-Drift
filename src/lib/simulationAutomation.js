@@ -90,28 +90,70 @@ export const GAP_ROOT_CAUSES = [
 ];
 
 /**
- * Resolves the explicit Gap Root Cause category if one has been selected on the item.
- * Does NOT auto-select or guess from outcome — returns '' when unclassified.
+ * Extracts all valid Gap Root Cause category IDs from a string, array, or gap/procedure object.
+ * Does NOT auto-select or guess from outcome — returns [] when unclassified.
+ */
+export function extractGapRootCauses(item = {}) {
+  if (!item) return [];
+  const raw =
+    typeof item === 'string' || Array.isArray(item)
+      ? item
+      : item.rootCause;
+  if (!raw) return [];
+
+  const parts = Array.isArray(raw)
+    ? raw.flatMap((v) => String(v || '').split(','))
+    : String(raw).split(',');
+
+  const matchedIds = new Set();
+  parts.forEach((part) => {
+    const trimmed = part.trim().toLowerCase();
+    if (!trimmed) return;
+    const matched = GAP_ROOT_CAUSES.find((c) => c.id.toLowerCase() === trimmed);
+    if (matched) matchedIds.add(matched.id);
+  });
+
+  return GAP_ROOT_CAUSES.filter((c) => matchedIds.has(c.id)).map((c) => c.id);
+}
+
+/**
+ * Toggles a root cause ID on/off and returns the normalized comma-separated string.
+ */
+export function toggleGapRootCauseValue(currentValueOrItem, categoryId) {
+  const current = new Set(extractGapRootCauses(currentValueOrItem));
+  if (current.has(categoryId)) {
+    current.delete(categoryId);
+  } else {
+    current.add(categoryId);
+  }
+  return GAP_ROOT_CAUSES.filter((c) => current.has(c.id))
+    .map((c) => c.id)
+    .join(', ');
+}
+
+/**
+ * Resolves the canonical comma-separated Gap Root Cause string if one or more have been selected.
  */
 export function inferGapRootCause(item = {}) {
-  if (!item) return '';
-  const rawValue = typeof item === 'string' ? item.trim() : String(item.rootCause || '').trim();
-  if (!rawValue) return '';
-  const matched = GAP_ROOT_CAUSES.find(
-    (c) => c.id.toLowerCase() === rawValue.toLowerCase()
-  );
-  return matched ? matched.id : '';
+  return extractGapRootCauses(item).join(', ');
+}
+
+export function getGapRootCauseMetaList(rootCauseOrItem) {
+  const ids = extractGapRootCauses(rootCauseOrItem);
+  return ids
+    .map((id) => GAP_ROOT_CAUSES.find((c) => c.id === id))
+    .filter(Boolean);
 }
 
 export function getGapRootCauseMeta(rootCauseOrItem) {
-  const categoryId = inferGapRootCause(rootCauseOrItem);
-  if (!categoryId) return null;
-  return GAP_ROOT_CAUSES.find((c) => c.id === categoryId) || null;
+  const list = getGapRootCauseMetaList(rootCauseOrItem);
+  return list[0] || null;
 }
 
 export function getGapActionItemsForRootCause(rootCauseOrItem) {
-  const meta = getGapRootCauseMeta(rootCauseOrItem);
-  return meta?.actionItem || 'Review telemetry and develop detection logic.';
+  const list = getGapRootCauseMetaList(rootCauseOrItem);
+  if (list.length === 0) return 'Review telemetry and develop detection logic.';
+  return list.map((m) => m.actionItem).join('\n');
 }
 
 /**
