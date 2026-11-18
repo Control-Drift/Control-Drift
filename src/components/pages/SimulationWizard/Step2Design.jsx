@@ -235,9 +235,10 @@ export default function Step2Design({
                                       justifyContent: 'space-between',
                                       alignItems: 'center',
                                       cursor: 'pointer',
-                                      borderBottom: isBlueprintOpen ? '1px solid rgba(168, 85, 247, 0.2)' : 'none',
+                                      borderBottom: isBlueprintOpen ? '1px solid rgba(168, 85, 247, 0.2)' : '1px solid transparent',
                                       background: 'rgba(168, 85, 247, 0.1)',
-                                      userSelect: 'none'
+                                      userSelect: 'none',
+                                      transition: 'border-color 0.3s ease'
                                   }}
                               >
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -290,22 +291,36 @@ export default function Step2Design({
                                       >
                                           <FileCode size={12} /> Stamp to Editor
                                       </button>
-                                      {isBlueprintOpen ? <ChevronUp size={16} color="var(--text-muted)" /> : <ChevronDown size={16} color="var(--text-muted)" />}
+                                      <ChevronDown
+                                          size={16}
+                                          color="var(--text-muted)"
+                                          style={{
+                                              transform: isBlueprintOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                              transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+                                          }}
+                                      />
                                   </div>
                               </div>
 
-                              {isBlueprintOpen && (
-                                  <div style={{ padding: '8px' }}>
-                                      {/* Fully Interactive C2, Tooling & Target Topology Map */}
-                                      <OperationalTopologyMap
-                                          blueprint={blueprint}
-                                          updateBlueprint={updateBlueprint}
-                                          environmentLabels={simulationDetails.environmentCategory || []}
-                                          selectedTTPs={selectedTTPs}
-                                          selectedTTPsCount={(selectedTTPs || []).length}
-                                      />
+                              <div style={{
+                                  display: 'grid',
+                                  gridTemplateRows: isBlueprintOpen ? '1fr' : '0fr',
+                                  opacity: isBlueprintOpen ? 1 : 0,
+                                  transition: 'grid-template-rows 0.38s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                              }}>
+                                  <div style={{ overflow: 'hidden', minHeight: 0 }}>
+                                      <div style={{ padding: '8px' }}>
+                                          {/* Fully Interactive C2, Tooling & Target Topology Map */}
+                                          <OperationalTopologyMap
+                                              blueprint={blueprint}
+                                              updateBlueprint={updateBlueprint}
+                                              environmentLabels={simulationDetails.environmentCategory || []}
+                                              selectedTTPs={selectedTTPs}
+                                              selectedTTPsCount={(selectedTTPs || []).length}
+                                          />
+                                      </div>
                                   </div>
-                              )}
+                              </div>
                           </div>
                           
                           <div style={{ marginBottom: '16px' }}>

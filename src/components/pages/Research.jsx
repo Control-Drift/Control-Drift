@@ -456,17 +456,22 @@ export default function Research() {
 
         const stagedIdSet = new Set(enrichedStagedTTPs.map((t) => t.id));
         const suggestedToolsSet = new Set();
+        const actorTools = entityKillChainBoard?.actorTools || [];
         if (catalogType === 'software' && selectedEntity?.name) {
             suggestedToolsSet.add(selectedEntity.name);
         } else if (catalogType === 'groups') {
-            if (selectedToolFilter !== 'All') {
-                const matchedFilterTool = actorTools.find((sw) => sw.id === selectedToolFilter);
-                if (matchedFilterTool?.name) suggestedToolsSet.add(matchedFilterTool.name);
+            if (selectedToolFilter && selectedToolFilter !== 'all' && selectedToolFilter !== 'All') {
+                const matchedFilterTool = actorTools.find(
+                    (sw) => sw.name === selectedToolFilter || sw.id === selectedToolFilter
+                );
+                suggestedToolsSet.add(matchedFilterTool?.name || selectedToolFilter);
             }
             // Also include up to 4 actor tools whose TTPs overlap with the staged TTPs
             actorTools.forEach((sw) => {
                 if (suggestedToolsSet.size >= 5) return;
-                const overlaps = (sw.ttps || []).some((t) => stagedIdSet.has(t.id));
+                const overlaps =
+                    (sw.ttpIds || []).some((id) => stagedIdSet.has(id)) ||
+                    (sw.ttps || []).some((t) => stagedIdSet.has(typeof t === 'string' ? t : t.id));
                 if (overlaps && sw.name) {
                     suggestedToolsSet.add(sw.name);
                 }

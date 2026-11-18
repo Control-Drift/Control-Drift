@@ -400,6 +400,34 @@ export default function SimulationWizard() {
      });
   }, [selectedTTPs, mitreData]);
 
+  // Automatically recover any missing Phase Event Cards on Step 3 if no manual execution outcomes have been logged yet
+  useEffect(() => {
+     if (step !== 3 || !simulationPayload?.trim() || !Array.isArray(selectedTTPs) || selectedTTPs.length === 0) return;
+     const hasAnyUserOutcome = (testResults || []).some(
+         p => (p.outcome && p.outcome !== 'N/A') || p.execNotes?.trim() || p.detNotes?.trim()
+     );
+     if (hasAnyUserOutcome) return;
+
+     const defaultTargetAsset = simulationDetails?.operationalBlueprint?.targetAssets?.trim() || '';
+     const executionMethodology = simulationDetails?.executionMethodology || 'compound';
+     const expectedCards = scaffoldEventsFromDesignAndTTPs({
+         simulationPayload,
+         selectedTTPs,
+         existingTestResults: [],
+         simulationSummaries,
+         events,
+         mitreData,
+         executionMethodology
+     }).map(ev => ({
+         ...ev,
+         targetAsset: ev.targetAsset || defaultTargetAsset
+     }));
+
+     if (expectedCards.length > (testResults || []).length) {
+         setTestResults(expectedCards);
+     }
+  }, [step, simulationPayload, selectedTTPs, testResults, simulationDetails, simulationSummaries, events, mitreData]);
+
   useEffect(() => {
      sessionStorage.setItem('wizard_step', step);
      sessionStorage.setItem('wizard_details', JSON.stringify(simulationDetails));

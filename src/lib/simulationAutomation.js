@@ -718,8 +718,22 @@ export function parseDesignCodeBlocks(simulationPayload = '', selectedTTPs = [])
     } else {
       const headingMatch = line.match(/^(?:#{1,4}\s+(.+)|\*\*(.+?)\*\*)\s*$/);
       if (headingMatch) {
-        currentHeading = (headingMatch[1] || headingMatch[2] || '').trim();
-        contextLinesBeforeFence = [];
+        const candidateHeading = (headingMatch[1] || headingMatch[2] || '').trim();
+        const isMarkdownHeader = Boolean(headingMatch[1]);
+        const isPhaseOrTtpHeader =
+          /^(?:phase|step|event|procedure|stage)\s*\d+/i.test(candidateHeading) ||
+          /T\d{4}(?:\.\d{3})?/i.test(candidateHeading) ||
+          /(?:teardown|clean\s*up)/i.test(candidateHeading);
+        const currentIsPhaseHeader =
+          /^(?:phase|step|event|procedure|stage)\s*\d+/i.test(currentHeading);
+
+        // Do not let an inline bold sub-label (e.g. "**Expected Telemetry:**") overwrite an active Phase heading before its code block
+        if (isPhaseOrTtpHeader || (isMarkdownHeader && !currentIsPhaseHeader)) {
+          currentHeading = candidateHeading;
+          contextLinesBeforeFence = [];
+        } else {
+          contextLinesBeforeFence.push(line.trim());
+        }
       } else if (line.trim()) {
         contextLinesBeforeFence.push(line.trim());
       }
@@ -774,20 +788,45 @@ export function scaffoldEventsFromDesignAndTTPs({
 
   const newEvents = [];
 
-  // Pre-filter teardown blocks and (when in Compound mode) fuse any standalone Precursor/Conduit/Modifier-only block
-  // into its companion Anchor block so Step 3 never gets fragmented enumeration-only cards.
+  // Pre-filter teardown blocks and (when in Compound mode) only fuse unnumbered single-supporter blocks
+  // into their companion Anchor block; NEVER swallow an explicit Phase/Step/Event block or multi-TTP compound phase.
   const actionableBlocks = parsedBlocks.filter(
     (block) => !/(?:teardown|clean\s*up)/i.test(block.title)
   );
-  const blockHasAnchor = (blk) =>
-    (blk.ttps || []).some((id) => classifyTtpOperationalRole({ id }).role === 'ANCHOR');
-  const anyBlockHasAnchor = actionableBlocks.some(blockHasAnchor);
+  const blockIsStandalonePhase = (blk) => {
+    const title = String(blk?.title || '').trim();
+    if (/^(?:phase|step|event|procedure|stage)\s*\d+/i.test(title)) return true;
+    const ttps = blk?.ttps || [];
+    if (ttps.length >= 2) return true;
+    return ttps.some((id) => {
+      const roleInfo = classifyTtpOperationalRole({ id });
+      return roleInfo.role === 'ANCHOR' || Boolean(roleInfo.canPromoteToAnchor);
+    });
+  };
+  const anyBlockIsStandalone = actionableBlocks.some(blockIsStandalonePhase);
 
   const mergedBlocks = [];
-  if (!isAtomicMode && anyBlockHasAnchor && actionableBlocks.length > 1) {
+  if (!isAtomicMode && anyBlockIsStandalone && actionableBlocks.length > 1) {
     let pendingSupportBlocks = [];
     actionableBlocks.forEach((blk) => {
-      if (blockHasAnchor(blk)) {
+      // If two consecutive code blocks share the exact same non-empty Phase title, combine them into one card for that Phase
+      const prevMerged = mergedBlocks[mergedBlocks.length - 1];
+      if (
+        prevMerged &&
+        blk.title &&
+        prevMerged.title &&
+        blk.title.trim().toLowerCase() === prevMerged.title.trim().toLowerCase()
+      ) {
+        const combinedTtps = [
+          ...new Set([...(prevMerged.ttps || []), ...(blk.ttps || [])])
+        ];
+        prevMerged.code = [prevMerged.code, blk.code].filter(Boolean).join('\n\n');
+        prevMerged.ttps = combinedTtps;
+        prevMerged.mappedTTPs = combinedTtps;
+        return;
+      }
+
+      if (blockIsStandalonePhase(blk)) {
         if (pendingSupportBlocks.length > 0) {
           const combinedTtps = [
             ...new Set([
@@ -815,7 +854,7 @@ export function scaffoldEventsFromDesignAndTTPs({
         pendingSupportBlocks.push(blk);
       }
     });
-    // If trailing support blocks remain after the last Anchor block, fuse them into the last Anchor block
+    // If trailing support blocks remain after the last standalone block, fuse them into the last block
     if (pendingSupportBlocks.length > 0 && mergedBlocks.length > 0) {
       const last = mergedBlocks[mergedBlocks.length - 1];
       const combinedTtps = [
@@ -829,16 +868,31 @@ export function scaffoldEventsFromDesignAndTTPs({
         .join('\n\n');
       last.ttps = combinedTtps;
       last.mappedTTPs = combinedTtps;
+    } else if (pendingSupportBlocks.length > 0) {
+      mergedBlocks.push(...pendingSupportBlocks);
     }
   } else {
     mergedBlocks.push(...actionableBlocks);
   }
 
+  const existingCoveredIds = new Set(coveredTtpIds);
+
   // 1. Create events from merged Compound Operational Blocks (or 1:1 Atomic Blocks)
   mergedBlocks.forEach((block, idx) => {
-    let assignedTtps = (block.ttps || [])
+    const blockSelectedTtps = (block.ttps || [])
       .map((id) => id.toUpperCase())
-      .filter((id) => selectedIds.has(id) && !coveredTtpIds.has(id));
+      .filter((id) => selectedIds.has(id));
+    let assignedTtps = blockSelectedTtps.filter((id) => !coveredTtpIds.has(id));
+
+    // In Compound mode, if a distinct Phase block shares a Conduit/Modifier with an earlier Phase
+    // (or all its TTPs are in blockSelectedTtps and were not already executed in existingTestResults),
+    // preserve the Phase's full explicit TTP list from its heading
+    if (!isAtomicMode && blockSelectedTtps.length > 0) {
+      const allAlreadyExecuted = blockSelectedTtps.every((id) => existingCoveredIds.has(id));
+      if (!allAlreadyExecuted) {
+        assignedTtps = blockSelectedTtps;
+      }
+    }
 
     if (isAtomicMode && assignedTtps.length > 1) {
       assignedTtps = [assignedTtps[0]];

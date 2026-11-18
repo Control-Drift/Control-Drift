@@ -194,7 +194,8 @@ export default function Step3Execute({
                                       background: 'linear-gradient(180deg, rgba(168, 85, 247, 0.08) 0%, rgba(15, 23, 42, 0.55) 100%)',
                                       border: '1px solid rgba(168, 85, 247, 0.28)',
                                       display: 'flex',
-                                      flexDirection: 'column'
+                                      flexDirection: 'column',
+                                      overflow: 'hidden'
                                   }}>
                                       <div
                                           onClick={() => setIsBlueprintCollapsed(prev => !prev)}
@@ -203,37 +204,48 @@ export default function Step3Execute({
                                               alignItems: 'center',
                                               justifyContent: 'space-between',
                                               padding: '11px 16px',
-                                              borderTopLeftRadius: '10px',
-                                              borderTopRightRadius: '10px',
-                                              borderBottomLeftRadius: isBlueprintCollapsed ? '10px' : 0,
-                                              borderBottomRightRadius: isBlueprintCollapsed ? '10px' : 0,
-                                              borderBottom: isBlueprintCollapsed ? 'none' : '1px solid rgba(168, 85, 247, 0.2)',
+                                              borderBottom: isBlueprintCollapsed ? '1px solid transparent' : '1px solid rgba(168, 85, 247, 0.2)',
                                               background: 'rgba(168, 85, 247, 0.1)',
                                               cursor: 'pointer',
-                                              userSelect: 'none'
+                                              userSelect: 'none',
+                                              transition: 'border-color 0.3s ease'
                                           }}
                                       >
                                           <span style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', fontWeight: 700, color: '#e9d5ff', letterSpacing: '0.3px' }}>
                                               <Wrench size={14} color="#c084fc" /> Blueprint
                                           </span>
                                           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                              {isBlueprintCollapsed ? <ChevronDown size={16} color="var(--text-muted)" /> : <ChevronUp size={16} color="var(--text-muted)" />}
+                                              <ChevronDown
+                                                  size={16}
+                                                  color="var(--text-muted)"
+                                                  style={{
+                                                      transform: isBlueprintCollapsed ? 'rotate(0deg)' : 'rotate(180deg)',
+                                                      transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)'
+                                                  }}
+                                              />
                                           </div>
                                       </div>
 
-                                      {!isBlueprintCollapsed && (
-                                          <div style={{ padding: '10px' }}>
-                                              <OperationalTopologyMap
-                                                  blueprint={blueprint}
-                                                  environmentLabels={simulationDetails?.environmentCategory || []}
-                                                  selectedTTPs={selectedTTPs}
-                                                  selectedTTPsCount={(selectedTTPs || []).length}
-                                                  simulationPayload={simulationPayload}
-                                                  testResults={testResults}
-                                                  compact={true}
-                                              />
+                                      <div style={{
+                                          display: 'grid',
+                                          gridTemplateRows: isBlueprintCollapsed ? '0fr' : '1fr',
+                                          opacity: isBlueprintCollapsed ? 0 : 1,
+                                          transition: 'grid-template-rows 0.38s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+                                      }}>
+                                          <div style={{ overflow: 'hidden', minHeight: 0 }}>
+                                              <div style={{ padding: '10px' }}>
+                                                  <OperationalTopologyMap
+                                                      blueprint={blueprint}
+                                                      environmentLabels={simulationDetails?.environmentCategory || []}
+                                                      selectedTTPs={selectedTTPs}
+                                                      selectedTTPsCount={(selectedTTPs || []).length}
+                                                      simulationPayload={simulationPayload}
+                                                      testResults={testResults}
+                                                      compact={true}
+                                                  />
+                                              </div>
                                           </div>
-                                      )}
+                                      </div>
                                   </div>
                               )}
                               {simulationPayload ? (
